@@ -58,11 +58,11 @@ const ForgotPassword = () => {
  required
  />
  </div>
- <button type="submit" className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-colors shadow-lg">
+ <button type="submit" className="w-full py-4 bg-slate-900  text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-colors shadow-lg">
  Send Reset Token
  </button>
  <div className="text-center mt-6">
- <button type="button" onClick={() => navigate('/login')} className="text-sm font-semibold text-slate-500 hover:text-brand-500 transition-colors">Return to Login</button>
+ <button type="button" onClick={() => navigate('/login')} className="text-sm font-semibold text-slate-500  transition-colors">Return to Login</button>
  </div>
  </form>
  )}
@@ -92,7 +92,7 @@ const ForgotPassword = () => {
  required
  />
  </div>
- <button type="submit" className="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-colors shadow-xl shadow-brand-500/20">
+ <button type="submit" className="w-full py-4 bg-brand-500  text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-colors shadow-xl shadow-brand-500/20">
  Confirm Reset
  </button>
  </form>

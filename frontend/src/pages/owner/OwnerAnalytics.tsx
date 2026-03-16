@@ -57,7 +57,7 @@ const OwnerAnalytics = () => {
  <div className="max-w-7xl mx-auto pb-40 px-6 animate-none pt-10">
  {/* Header */}
  <div className="mb-16">
- <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500 hover:text-brand-500 transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent hover:border-brand-500/20 mb-10 shadow-sm">
+ <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
  <FiArrowLeft className="w-3.5 h-3.5 transition-" />
  <span>Back to Dashboard</span>
  </Link>

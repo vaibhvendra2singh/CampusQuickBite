@@ -7,6 +7,7 @@ import { useCart } from '../../hooks/context/CartContext';
 import { useAuth } from '../../hooks/context/AuthContext';
 import { FiArrowLeft, FiClock, FiMessageSquare, FiPlus, FiMinus, FiShoppingBag, FiAlertTriangle, FiTrash2 } from 'react-icons/fi';
 import { useToast } from '../../hooks/context/ToastContext';
+import { FadeIn } from '../../components/animations/FadeIn';
 
 const CAMPUS_TIMESLOTS = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
@@ -101,8 +102,9 @@ const Cart = () => {
 
     if (items.length === 0) {
         return (
-            <div className="human-container section-spacing animate-fade-in">
-                <div className="max-w-2xl mx-auto align-middle text-center mt-12 mb-20 card-modern py-16 px-8 flex flex-col items-center">
+            <FadeIn>
+            <div className="human-container section-spacing">
+                <div className="max-w-2xl mx-auto align-middle text-center mt-12 mb-20 bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] shadow-2xl py-16 px-8 flex flex-col items-center rounded-3xl">
                     <div className="w-24 h-24 bg-brand-50 rounded-full flex items-center justify-center mb-6">
                         <FiShoppingBag className="w-10 h-10 text-brand-500" />
                     </div>
@@ -110,26 +112,28 @@ const Cart = () => {
                     <p className="text-[var(--text-muted)] text-lg mb-8 max-w-md mx-auto">
                         Looks like you haven't added anything to your cart yet. Discover your next favorite meal!
                     </p>
-                    <button onClick={() => navigate('/restaurants')} className="btn-primary px-8 py-3 text-lg">
+                    <button onClick={() => navigate('/restaurants')} className="btn-primary px-8 py-3 text-lg shadow-xl shadow-brand-500/20  transition-all">
                         Browse Restaurants
                     </button>
                 </div>
             </div>
+            </FadeIn>
         );
     }
 
     return (
-        <div className="human-container section-spacing animate-fade-in relative z-10 py-10 mt-6 lg:mt-10">
+        <FadeIn delay={0.1}>
+        <div className="human-container section-spacing relative z-10 py-10 mt-6 lg:mt-10">
             <div className="flex items-center gap-4 mb-8">
                 <button
                     onClick={() => navigate('/restaurants')}
-                    className="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)] hover:text-brand-500 hover:border-brand-500/30 transition-all shadow-sm"
+                    className="w-10 h-10 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-[var(--text-secondary)]   transition-all shadow-sm"
                 >
                     <FiArrowLeft className="w-5 h-5" />
                 </button>
                 <div className="flex flex-col">
-                    <h1 className="text-3xl font-heading font-bold text-[var(--text-primary)]">Your Cart</h1>
-                    <p className="text-sm font-medium text-[var(--text-muted)]">{items.length} item(s) from selected outlet</p>
+                    <h1 className="text-4xl lg:text-5xl font-heading font-black tracking-tighter text-[var(--text-primary)] mb-1">Your Cart</h1>
+                    <p className="text-lg font-medium text-[var(--text-secondary)]">{items.length} item(s) hovering in orbit</p>
                 </div>
             </div>
 
@@ -153,10 +157,10 @@ const Cart = () => {
 
                 {/* Left Column: Cart Items & Settings */}
                 <div className="flex-1 w-full space-y-6">
-                    <div className="card-modern rounded-2xl overflow-hidden p-0 border border-[var(--border-color)] shadow-sm">
-                        <div className="flex flex-col divide-y divide-[var(--border-color)]">
+                    <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-[2.5rem] overflow-hidden p-0 border border-[var(--glass-border)] shadow-2xl">
+                        <div className="flex flex-col divide-y divide-[var(--glass-border)]">
                             {items.map((item) => (
-                                <div key={item.menuItemId} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[var(--bg-input)] transition-colors">
+                                <div key={item.menuItemId} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4  dark: transition-colors">
                                     <div className="flex flex-col flex-1">
                                         <h3 className="font-bold text-lg text-[var(--text-primary)] mb-1">{item.name}</h3>
                                         <p className="text-sm text-[var(--text-muted)] font-medium">₹{item.price.toFixed(2)} each</p>
@@ -171,7 +175,7 @@ const Cart = () => {
                                                         updateItemQuantity(item.id!, 'decrease');
                                                     }
                                                 }}
-                                                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 hover:bg-red-50 transition-colors rounded-l-xl"
+                                                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)]   transition-colors rounded-l-xl"
                                             >
                                                 {item.quantity === 1 ? <FiTrash2 className="w-4 h-4" /> : <FiMinus className="w-4 h-4" />}
                                             </button>
@@ -180,7 +184,7 @@ const Cart = () => {
                                             </span>
                                             <button
                                                 onClick={() => updateItemQuantity(item.id!, 'increase')}
-                                                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)] hover:text-brand-500 hover:bg-brand-50 transition-colors rounded-r-xl"
+                                                className="w-10 h-10 flex items-center justify-center text-[var(--text-secondary)]   transition-colors rounded-r-xl"
                                             >
                                                 <FiPlus className="w-4 h-4" />
                                             </button>
@@ -192,9 +196,9 @@ const Cart = () => {
                                 </div>
                             ))}
                         </div>
-                        <div className="p-5 bg-[var(--bg-input)] flex justify-between items-center border-t border-[var(--border-color)]">
-                            <span className="text-sm font-semibold text-[var(--text-muted)]">Looking for more?</span>
-                            <Link to={`/outlets/${outletId}/menu`} className="text-sm font-bold text-brand-500 flex items-center gap-1 hover:text-brand-600 transition-colors">
+                        <div className="p-6 bg-white/20 dark:bg-slate-900/20 flex justify-between items-center border-t border-[var(--glass-border)] backdrop-blur-md">
+                            <span className="text-sm font-semibold text-[var(--text-muted)]">Room for dessert?</span>
+                            <Link to={`/outlets/${outletId}/menu`} className="text-sm font-bold text-brand-500 flex items-center gap-1  transition-colors">
                                 <FiPlus className="w-4 h-4" /> Add more items
                             </Link>
                         </div>
@@ -203,7 +207,7 @@ const Cart = () => {
                     {/* Additional Options */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Schedule Pickup */}
-                        <div className="card-modern rounded-2xl p-6 border border-[var(--border-color)] shadow-sm">
+                        <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-3xl p-6 border border-[var(--glass-border)] shadow-xl">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
                                     <FiClock className="w-5 h-5" />
@@ -236,7 +240,7 @@ const Cart = () => {
                         </div>
 
                         {/* Order Notes */}
-                        <div className="card-modern rounded-2xl p-6 border border-[var(--border-color)] shadow-sm">
+                        <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-3xl p-6 border border-[var(--glass-border)] shadow-xl">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center flex-shrink-0">
                                     <FiMessageSquare className="w-5 h-5" />
@@ -259,8 +263,8 @@ const Cart = () => {
 
                 {/* Right Column: Order Summary */}
                 <div className="w-full lg:w-[400px] flex-shrink-0">
-                    <div className="card-modern rounded-2xl border border-[var(--border-color)] shadow-md sticky top-28 p-6">
-                        <h3 className="text-xl font-heading font-bold text-[var(--text-primary)] mb-6">Bill Details</h3>
+                    <div className="bg-[var(--glass-bg)] backdrop-blur-2xl rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl sticky top-28 p-8">
+                        <h3 className="text-2xl font-heading font-black tracking-tighter text-[var(--text-primary)] mb-6">Bill Details</h3>
 
                         <div className="space-y-4 mb-6 text-sm">
                             <div className="flex justify-between items-center text-[var(--text-secondary)]">
@@ -309,6 +313,7 @@ const Cart = () => {
                 </div>
             </div>
         </div>
+        </FadeIn>
     );
 };
 

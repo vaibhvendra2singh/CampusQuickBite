@@ -139,7 +139,7 @@ const MenuManagement = () => {
     return (
         <div className="max-w-6xl mx-auto animate-none relative pb-40 px-6">
             <div className="mb-16 pt-10">
-                <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500 hover:text-brand-500 transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent hover:border-brand-500/20 mb-10 shadow-sm">
+                <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
                     <FiArrowLeft className="w-3.5 h-3.5 transition-" />
                     <span>Back to Dashboard</span>
                 </Link>
@@ -159,9 +159,9 @@ const MenuManagement = () => {
                     {!isAdding && (
                         <button
                             onClick={() => setIsAdding(true)}
-                            className="bg-brand-500 text-white pl-1.5 pr-8 py-1.5 rounded-2xl flex items-center group shadow-lg hover:shadow-brand-500/20 transition-all ]"
+                            className="bg-brand-500 text-white pl-1.5 pr-8 py-1.5 rounded-2xl flex items-center group shadow-lg  transition-all ]"
                         >
-                            <span className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-5 group-hover:rotate-90 transition-">
+                            <span className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mr-5 group- transition-">
                                 <FiPlus className="w-6 h-6 stroke-[3]" />
                             </span>
                             <span className="font-bold uppercase tracking-wider text-[11px]">Add New Dish</span>
@@ -175,7 +175,7 @@ const MenuManagement = () => {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full -translate-y-16 translate-x-16"></div>
                     <div className="flex items-center justify-between mb-10 relative z-10">
                         <h3 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">New Listing</h3>
-                        <button onClick={() => setIsAdding(false)} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400 hover:text-rose-500 transition-colors border border-transparent shadow-sm">
+                        <button onClick={() => setIsAdding(false)} className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400  transition-colors border border-transparent shadow-sm">
                             <FiX className="w-5 h-5" />
                         </button>
                     </div>
@@ -220,7 +220,7 @@ const MenuManagement = () => {
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" className="w-full bg-slate-900 dark:bg-slate-800 text-white py-5 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-lg hover:bg-black dark:hover:bg-slate-700 transition-all ]">
+                        <button type="submit" className="w-full bg-slate-900 dark:bg-slate-800 text-white py-5 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-lg  dark: transition-all ]">
                             Add to Menu
                         </button>
                     </form>
@@ -229,7 +229,7 @@ const MenuManagement = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {menuItems.map((item) => (
-                    <div key={item.id} className="group bg-[var(--bg-card)] rounded-2xl border border-slate-200 dark:border-slate-800 p-8 hover:border-brand-500/30 hover:shadow-lg transition-all duration-150 relative overflow-hidden">
+                    <div key={item.id} className="group bg-[var(--bg-card)] rounded-2xl border border-slate-200 dark:border-slate-800 p-8   transition-all duration-150 relative overflow-hidden">
                         {editingId === item.id ? (
                             <form onSubmit={(e) => handleUpdateItem(e, item.id)} className="space-y-5">
                                 <div className="space-y-2">
@@ -289,7 +289,7 @@ const MenuManagement = () => {
                                     </button>
                                 </div>
                                 <div className="mb-8 relative z-10">
-                                    <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1 truncate group-hover:text-brand-500 transition-colors">{item.name}</h3>
+                                    <h3 className="text-xl font-bold text-[var(--text-primary)] tracking-tight mb-1 truncate group- transition-colors">{item.name}</h3>
                                     <p className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">₹{item.price.toFixed(0)}</p>
                                     {item.stock !== undefined && item.stock <= 5 && (
                                         <div className="mt-2 flex items-center gap-1.5 text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-2.5 py-1 rounded-lg w-fit">
@@ -301,23 +301,23 @@ const MenuManagement = () => {
                                     )}
                                 </div>
 
-                                <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-all relative z-10">
+                                <div className="flex gap-3 opacity-0 group- transition-all relative z-10">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); startEditing(item); }}
-                                        className="flex-1 bg-slate-900 dark:bg-slate-800 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-black transition-all flex items-center justify-center space-x-2 shadow-sm"
+                                        className="flex-1 bg-slate-900 dark:bg-slate-800 text-white py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider  transition-all flex items-center justify-center space-x-2 shadow-sm"
                                     >
                                         <FiEdit2 className="w-3.5 h-3.5" /> <span>Edit</span>
                                     </button>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); window.print(); }}
-                                        className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center shadow-sm"
+                                        className="p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-500 rounded-xl font-bold text-[10px] uppercase tracking-wider   transition-all flex items-center justify-center shadow-sm"
                                         title="Print Item Info"
                                     >
                                         <FiPrinter className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                         onClick={(e) => handleDeleteItem(e, item.id)}
-                                        className="p-3 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl font-bold text-[10px] uppercase tracking-wider hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center shadow-sm"
+                                        className="p-3 bg-rose-50 dark:bg-rose-500/10 text-rose-500 rounded-xl font-bold text-[10px] uppercase tracking-wider   transition-all flex items-center justify-center shadow-sm"
                                     >
                                         <FiTrash2 className="w-3.5 h-3.5" />
                                     </button>

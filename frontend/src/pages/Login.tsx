@@ -6,6 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/context/AuthContext';
 import { FiMail, FiLock, FiArrowRight, FiAlertOctagon } from 'react-icons/fi';
+import { FadeIn } from '../components/animations/FadeIn';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -13,6 +14,7 @@ const Login = () => {
     const [error, setError] = useState('');
     const [banNotice, setBanNotice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [showSplash, setShowSplash] = useState(true);
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -44,18 +46,17 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen w-full flex bg-[var(--bg-primary)] relative overflow-hidden font-sans">
-            <div className="flex w-full z-10 animate-none">
+        <div className="min-h-screen w-full flex bg-transparent relative overflow-hidden font-sans">
+            <div className="flex w-full z-10">
                 {/* Left Panel */}
-                <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden bg-[#0A0F1A]">
-                    <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+                <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden">
 
                     <div className="relative z-10 flex flex-col h-full">
-                        <div>
+                        <FadeIn delay={0.1} direction="up" startAnimation={!showSplash}>
                             <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center mb-10 shadow-lg">
                                 <span className="text-xl font-bold text-white">CB</span>
                             </div>
-                            <h1 className="text-5xl xl:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-6">
+                            <h1 className="text-5xl xl:text-6xl font-black text-slate-800 dark:text-white tracking-tight leading-[1.1] mb-6 drop-shadow-md">
                                 Campus<br />
                                 <span className="text-brand-500">Bite</span>
                             </h1>
@@ -66,21 +67,24 @@ const Login = () => {
                             <p className="text-lg text-gray-400 max-w-sm leading-relaxed">
                                 Browse menus, order from your phone, and pick up when it's ready.
                             </p>
-                        </div>
+                        </FadeIn>
 
                         <div className="mt-auto">
-                            <div className="space-y-1 border-l-2 border-brand-500 pl-5">
-                                <p className="text-white font-bold text-2xl tracking-tight">Zero wait time.</p>
-                                <p className="text-brand-400 font-bold text-2xl tracking-tight">More eating.</p>
-                                <p className="text-sm text-gray-400 mt-3">Simple campus dining</p>
-                            </div>
+                            <FadeIn delay={0.2} direction="right" startAnimation={!showSplash}>
+                                <div className="space-y-1 border-l-4 border-brand-500 pl-5">
+                                <p className="text-slate-800 dark:text-white font-black text-3xl tracking-tight drop-shadow-sm">Zero wait time.</p>
+                                <p className="text-brand-600 dark:text-brand-400 font-black text-3xl tracking-tight drop-shadow-sm">More eating.</p>
+                                <p className="text-base text-slate-600 dark:text-gray-300 mt-3 font-medium">Simple campus dining</p>
+                                </div>
+                            </FadeIn>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Panel — Form */}
-                <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 bg-[var(--bg-primary)]">
-                    <div className="w-full max-w-md animate-none" style={{ animationDelay: "0.1s" }}>
+                <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 relative">
+                    <FadeIn delay={0.3} direction="up" startAnimation={!showSplash} className="w-full max-w-md">
+                    <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
                         <div className="mb-10">
                             <div className="lg:hidden w-10 h-10 bg-brand-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
                                 <span className="text-lg font-bold text-white">CB</span>
@@ -140,7 +144,7 @@ const Login = () => {
                             </div>
 
                             <div className="flex justify-end">
-                                <Link to="/forgot-password" className="text-sm font-medium text-brand-500 hover:text-brand-600 transition-colors">Forgot password?</Link>
+                                <Link to="/forgot-password" className="text-sm font-medium text-brand-500  transition-colors">Forgot password?</Link>
                             </div>
 
                             <button
@@ -175,6 +179,51 @@ const Login = () => {
                             </div>
                         </form>
                     </div>
+                    </FadeIn>
+                </div>
+            </div>
+
+            {/* Planetoño-style Splash Screen */}
+            <div 
+                className={`absolute inset-0 z-50 flex flex-col items-center justify-center bg-white transition-transform duration-[1200ms] ease-[cubic-bezier(0.85,0,0.15,1)] origin-top ${
+                    showSplash 
+                        ? 'translate-y-0 pointer-events-auto' 
+                        : '-translate-y-full pointer-events-none'
+                }`}
+            >
+                <div className="flex-1 flex items-center justify-center pt-32">
+                    <img loading="lazy" decoding="async" 
+                        src="/logo.png" 
+                        alt="CampusBite Logo" 
+                        className={`w-64 h-auto drop-shadow-2xl transition-all duration-700 delay-300 ${showSplash ? 'scale-100' : 'scale-75'}`}
+                        onError={(e) => {
+                            // Fallback if no logo.png exists
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                    />
+                    <div className="hidden flex-col items-center justify-center relative">
+                        {/* Text Fallback highly stylized like Planetoño */}
+                        <h1 className="text-6xl md:text-8xl font-black text-white px-8 py-2 tracking-tighter" style={{
+                            WebkitTextStroke: '6px black',
+                            textShadow: '8px 8px 0px black'
+                        }}>
+                            CAMPUS<br/>BITE
+                        </h1>
+                        <span className="absolute -bottom-6 -right-6 text-xl md:text-3xl font-black text-brand-500 transform -rotate-12" style={{
+                            WebkitTextStroke: '2px black'
+                        }}>キャンパス</span>
+                    </div>
+                </div>
+
+                <div className="pb-12 md:pb-24 flex flex-col items-center space-y-8 mt-auto">
+                    <button 
+                        onClick={() => setShowSplash(false)}
+                        className={`bg-white text-black font-black text-3xl md:text-5xl px-8 py-3 md:px-12 md:py-4 rounded-3xl border-4 md:border-8 border-black  active:scale-95 transition-transform duration-150 relative shadow-[0_8px_0_0_black]   active:translate-y-[8px] active:shadow-none `}
+                        style={{ fontFamily: "'Outfit', sans-serif" }}
+                    >
+                        START
+                    </button>
                 </div>
             </div>
         </div>

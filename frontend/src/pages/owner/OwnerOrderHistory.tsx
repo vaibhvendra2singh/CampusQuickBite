@@ -124,7 +124,7 @@ const OwnerOrderHistory = () => {
  <div className="animate-none pb-40 px-6 max-w-7xl mx-auto pt-10">
  {/* Header */}
  <div className="mb-16">
- <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500 hover:text-brand-500 transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent hover:border-brand-500/20 mb-10 shadow-sm">
+ <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
  <FiChevronLeft className="w-3.5 h-3.5 transition-" />
  <span>Back to Dashboard</span>
  </Link>
@@ -198,10 +198,10 @@ const OwnerOrderHistory = () => {
  </div>
  </div>
  <div className="flex space-x-3">
- <button type="submit" className="flex-1 bg-slate-900 dark:bg-slate-800 text-white py-4 rounded-xl font-bold uppercase tracking-wider text-[11px] hover:bg-black dark:hover:bg-slate-700 transition-all shadow-sm">
+ <button type="submit" className="flex-1 bg-slate-900 dark:bg-slate-800 text-white py-4 rounded-xl font-bold uppercase tracking-wider text-[11px]  dark: transition-all shadow-sm">
  Apply
  </button>
- <button type="button" onClick={resetFilters} className="w-14 bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-all rounded-xl flex items-center justify-center border border-transparent shadow-sm">
+ <button type="button" onClick={resetFilters} className="w-14 bg-slate-100 dark:bg-slate-800 text-slate-400  transition-all rounded-xl flex items-center justify-center border border-transparent shadow-sm">
  <FiRefreshCcw className="w-5 h-5" />
  </button>
  </div>
@@ -244,7 +244,7 @@ const OwnerOrderHistory = () => {
  </tr>
  ) : (
  orders.map((order) => (
- <tr key={order.id} className="group hover:bg-slate-50/50 dark:hover:bg-brand-500/[0.02] transition-colors">
+ <tr key={order.id} className="group  dark: transition-colors">
  <td className="p-8">
  <span className="text-xl font-bold text-[var(--text-primary)] tracking-tight">#{order.id}</span>
  </td>
@@ -257,7 +257,7 @@ const OwnerOrderHistory = () => {
  <td className="p-8">
  <div className="flex flex-wrap gap-1.5 max-w-xs">
  {order.items.map((item, i) => (
- <span key={i} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-500 dark:text-slate-400 rounded-lg border border-transparent group-hover:border-slate-200 dark:group-hover:border-slate-700 transition-colors">
+ <span key={i} className="px-3 py-1 bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-500 dark:text-slate-400 rounded-lg border border-transparent group- dark:group- transition-colors">
  {item.quantity}× {item.itemName}
  </span>
  ))}
@@ -294,7 +294,7 @@ const OwnerOrderHistory = () => {
  <button
  onClick={() => handleViewReceipt(order.id)}
  disabled={downloadingReceiptId === order.id}
- className="w-12 h-12 bg-slate-900 border border-slate-800 text-white flex items-center justify-center rounded-xl hover:bg-black transition-all shadow-sm opacity-0 group-hover:opacity-100"
+ className="w-12 h-12 bg-slate-900 border border-slate-800 text-white flex items-center justify-center rounded-xl  transition-all shadow-sm opacity-0 group-"
  title="View Receipt"
  >
  <FiDownload className="w-5 h-5 stroke-[2]" />
@@ -316,14 +316,14 @@ const OwnerOrderHistory = () => {
  <button
  onClick={() => setPage(p => Math.max(0, p - 1))}
  disabled={page === 0 || loading}
- className="w-12 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:border-brand-500 hover:text-brand-500 disabled:opacity-30 transition-all rounded-xl flex items-center justify-center shadow-sm"
+ className="w-12 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400   disabled:opacity-30 transition-all rounded-xl flex items-center justify-center shadow-sm"
  >
  <FiChevronLeft className="w-6 h-6 stroke-[2]" />
  </button>
  <button
  onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
  disabled={page >= totalPages - 1 || loading}
- className="w-12 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 hover:border-brand-500 hover:text-brand-500 disabled:opacity-30 transition-all rounded-xl flex items-center justify-center shadow-sm"
+ className="w-12 h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400   disabled:opacity-30 transition-all rounded-xl flex items-center justify-center shadow-sm"
  >
  <FiChevronRight className="w-6 h-6 stroke-[2]" />
  </button>
@@ -336,7 +336,7 @@ const OwnerOrderHistory = () => {
  <div className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-3xl shadow-2xl flex flex-col items-center p-12 overflow-hidden border border-slate-200 dark:border-slate-800" onClick={e => e.stopPropagation()}>
  <button
  onClick={() => setShowReceiptModal(false)}
- className="absolute top-6 right-6 w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center rounded-xl hover:text-rose-500 transition-all"
+ className="absolute top-6 right-6 w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center rounded-xl  transition-all"
  >
  <FiX className="w-6 h-6 stroke-[2]" />
  </button>
@@ -345,18 +345,18 @@ const OwnerOrderHistory = () => {
  <h3 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">Order Receipt</h3>
  </div>
  <div className="w-full aspect-[3/4] bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-inner flex items-center justify-center">
- {receiptUrl ? <img src={receiptUrl} alt="Receipt" className="w-full h-full object-contain p-4" /> : <div className="text-[10px] font-bold animate-pulse text-slate-300 uppercase tracking-widest">Loading...</div>}
+ {receiptUrl ? <img loading="lazy" decoding="async" src={receiptUrl} alt="Receipt" className="w-full h-full object-contain p-4" /> : <div className="text-[10px] font-bold animate-pulse text-slate-300 uppercase tracking-widest">Loading...</div>}
  </div>
  <div className="flex w-full gap-4 mt-10">
  <button
  onClick={downloadImageReceipt}
- className="flex-1 bg-brand-500 text-white py-5 rounded-2xl font-bold uppercase tracking-wider text-[11px] shadow-lg hover:bg-brand-600 transition-all"
+ className="flex-1 bg-brand-500 text-white py-5 rounded-2xl font-bold uppercase tracking-wider text-[11px] shadow-lg  transition-all"
  >
  <FiDownload className="mr-2 inline w-4.5 h-4.5" /> Download
  </button>
  <button
  onClick={() => setShowReceiptModal(false)}
- className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold uppercase tracking-wider text-[11px] rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+ className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold uppercase tracking-wider text-[11px] rounded-2xl  dark: transition-all"
  >
  Dismiss
  </button>

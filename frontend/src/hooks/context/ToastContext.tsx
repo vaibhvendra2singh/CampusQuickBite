@@ -53,7 +53,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
                         </div>
                         <button
                             onClick={() => removeToast(toast.id)}
-                            className="p-2 text-white/20 hover:text-white transition-colors"
+                            className="p-2 text-white/20  transition-colors"
                         >
                             <FiX className="w-4 h-4" />
                         </button>

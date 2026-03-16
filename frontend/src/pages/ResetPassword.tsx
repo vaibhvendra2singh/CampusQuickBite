@@ -81,11 +81,11 @@ const ResetPassword = () => {
  required
  />
  </div>
- <button type="submit" className="w-full py-4 mt-4 bg-brand-500 text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-xl shadow-brand-500/20 hover:bg-brand-600 transition-colors">
+ <button type="submit" className="w-full py-4 mt-4 bg-brand-500 text-white text-sm font-bold uppercase tracking-widest rounded-xl shadow-xl shadow-brand-500/20  transition-colors">
  Commit Changes
  </button>
  <div className="text-center mt-6">
- <button type="button" onClick={() => navigate(-1)} className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors">Abort & Return</button>
+ <button type="button" onClick={() => navigate(-1)} className="text-sm font-semibold text-slate-500  transition-colors">Abort & Return</button>
  </div>
  </form>
  </div>

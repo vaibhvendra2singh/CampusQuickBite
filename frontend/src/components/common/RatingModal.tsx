@@ -58,7 +58,7 @@ const RatingModal = ({ isOpen, onClose, menuItemId, menuItemName, outletId, outl
             <div className="relative w-full max-w-md bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] shadow-2xl overflow-hidden">
                 <div className="px-6 py-4 border-b border-[var(--border-color)] flex items-center justify-between">
                     <h3 className="font-bold text-[var(--text-primary)] text-base">{outletId ? 'Rate this Outlet' : 'Rate your meal'}</h3>
-                    <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-[var(--bg-input)] text-[var(--text-muted)] transition-colors">
+                    <button onClick={onClose} className="p-1.5 rounded-lg  text-[var(--text-muted)] transition-colors">
                         <FiX className="w-5 h-5" />
                     </button>
                 </div>

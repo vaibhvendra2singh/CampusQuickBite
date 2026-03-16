@@ -82,7 +82,7 @@ const RestaurantsPage = () => {
         <div className="max-w-7xl mx-auto px-6 py-12 mt-4 animate-none pb-32">
             {/* Header Section */}
             <div className="mb-12">
-                <Link to="/" className="inline-flex items-center text-sm font-bold text-[var(--text-muted)] hover:text-brand-500 transition-all mb-8 group">
+                <Link to="/" className="inline-flex items-center text-sm font-bold text-[var(--text-muted)]  transition-all mb-8 group">
                     <FiArrowLeft className="mr-2 transition-all duration-150" />
                     Back to explore
                 </Link>
@@ -114,7 +114,7 @@ const RestaurantsPage = () => {
                     <select
                         value={sortBy}
                         onChange={(e) => setSortBy(e.target.value as 'rating' | 'name')}
-                        className="w-full md:w-auto bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-primary)] px-6 py-4 rounded-2xl outline-none font-bold focus:border-brand-500 transition-all shadow-sm cursor-pointer appearance-none hover:bg-[var(--bg-card-hover)]"
+                        className="w-full md:w-auto bg-[var(--bg-card)] border border-[var(--border-color)] text-[var(--text-primary)] px-6 py-4 rounded-2xl outline-none font-bold focus:border-brand-500 transition-all shadow-sm cursor-pointer appearance-none "
                     >
                         <option value="rating">Top Rated</option>
                         <option value="name">Alphabetical</option>
@@ -145,7 +145,7 @@ const RestaurantsPage = () => {
                         }
 
                         return (
-                            <div key={outlet.id} className="group bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] overflow-hidden shadow-sm hover:shadow-xl hover:border-brand-500/30 transition-all duration-150 flex flex-col">
+                            <div key={outlet.id} className="group bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] overflow-hidden shadow-sm   transition-all duration-150 flex flex-col">
                                 <div className={`relative aspect-[16/9] ${containerColor} overflow-hidden`}>
                                     <img
                                         src={image}
@@ -161,7 +161,7 @@ const RestaurantsPage = () => {
                                 <div className="p-5 flex-1 flex flex-col justify-between">
                                     <div>
                                         <div className="flex justify-between items-start mb-2">
-                                            <h3 className="text-xl font-bold text-[var(--text-primary)] group-hover:text-brand-500 transition-colors line-clamp-1">{outlet.name}</h3>
+                                            <h3 className="text-xl font-bold text-[var(--text-primary)] group- transition-colors line-clamp-1">{outlet.name}</h3>
                                             <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-md text-xs font-bold">
                                                 <FiStar className="w-3.5 h-3.5 fill-current" />
                                                 {outlet.average_rating ? outlet.average_rating.toFixed(1) : 'New'}
@@ -183,7 +183,7 @@ const RestaurantsPage = () => {
                                     </div>
                                     <Link
                                         to={`/outlets/${outlet.id}/menu`}
-                                        className="block w-full text-center py-3 bg-[var(--bg-input)] hover:bg-brand-500 text-[var(--text-primary)] hover:text-white font-bold rounded-xl transition-all duration-150"
+                                        className="block w-full text-center py-3 bg-[var(--bg-input)]  text-[var(--text-primary)]  font-bold rounded-xl transition-all duration-150"
                                     >
                                         View Menu
                                     </Link>

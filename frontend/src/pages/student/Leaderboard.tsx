@@ -64,13 +64,13 @@ const Leaderboard = () => {
  const isTop = index === 0;
 
  return (
- <div key={user.id} className={`group flex items-center p-5 rounded-2xl border transition-all duration-150 ${isTop ? 'bg-brand-50 dark:bg-brand-500/5 border-brand-500/50 shadow-md' : 'bg-[var(--bg-card)] border-[var(--border-color)] hover:border-brand-500/50 hover:bg-[var(--bg-card-hover)]'}`}>
- <div className={`w-10 text-center text-xl font-bold ${isTop ? 'text-brand-500' : 'text-[var(--border-color)] group-hover:text-[var(--text-muted)]'}`}>
+ <div key={user.id} className={`group flex items-center p-5 rounded-2xl border transition-all duration-150 ${isTop ? 'bg-brand-50 dark:bg-brand-500/5 border-brand-500/50 shadow-md' : 'bg-[var(--bg-card)] border-[var(--border-color)]  '}`}>
+ <div className={`w-10 text-center text-xl font-bold ${isTop ? 'text-brand-500' : 'text-[var(--border-color)] group-'}`}>
  #{index + 1}
  </div>
  <div className="mx-6 w-16 h-16 rounded-xl bg-[var(--bg-input)] flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
  {user.profilePic ? (
- <img src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
+ <img loading="lazy" decoding="async" src={user.profilePic} alt={user.name} className="w-full h-full object-cover" />
  ) : (
  <div className="text-lg font-bold text-[var(--text-muted)]">{user.name.charAt(0)}</div>
  )}

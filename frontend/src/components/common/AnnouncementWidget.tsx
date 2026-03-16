@@ -77,7 +77,7 @@ const AnnouncementWidget = ({ compact = false }: Props) => {
                         >
                             <button
                                 onClick={() => setDismissed(prev => new Set([...prev, a.id]))}
-                                className="absolute top-3 right-3 text-slate-300 hover:text-red-400 transition-colors"
+                                className="absolute top-3 right-3 text-slate-300  transition-colors"
                                 title="Dismiss"
                             >
                                 <FiX className="w-3.5 h-3.5" />

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FiMove } from 'react-icons/fi';
 
 interface MiniGameWindowProps {
@@ -26,7 +26,7 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
         x: defaultX ?? Math.random() * (window.innerWidth - defaultWidth - 40) + 20,
         y: defaultY ?? Math.random() * (window.innerHeight - defaultHeight - 80) + 80,
     });
-    const [size, setSize] = useState({ w: defaultWidth, h: defaultHeight });
+    const [{ w: sizeW, h: sizeH }] = useState({ w: defaultWidth, h: defaultHeight });
     const [dragging, setDragging] = useState(false);
     const [maximized, setMaximized] = useState(false);
     const [minimized, setMinimized] = useState(false);
@@ -44,7 +44,7 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
         if (!dragging) return;
         const handleMove = (e: MouseEvent) => {
             setPos({
-                x: Math.max(0, Math.min(window.innerWidth - size.w, e.clientX - dragOffset.current.x)),
+                x: Math.max(0, Math.min(window.innerWidth - sizeW, e.clientX - dragOffset.current.x)),
                 y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dragOffset.current.y)),
             });
         };
@@ -55,13 +55,13 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
             window.removeEventListener('mousemove', handleMove);
             window.removeEventListener('mouseup', handleUp);
         };
-    }, [dragging, size.w]);
+    }, [dragging, sizeW]);
 
     const windowStyle = maximized
         ? { top: 0, left: 0, width: '100vw', height: '100vh', borderRadius: 0 }
         : minimized
         ? { bottom: 20, right: 20, width: 220, height: 48, top: 'auto', left: 'auto' }
-        : { top: pos.y, left: pos.x, width: size.w, height: size.h };
+        : { top: pos.y, left: pos.x, width: sizeW, height: sizeH };
 
     return (
         <div
@@ -101,21 +101,21 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => setMinimized(m => !m)}
-                        className="w-3.5 h-3.5 rounded-full transition-all hover:scale-110"
+                        className="w-3.5 h-3.5 rounded-full transition-all "
                         style={{ background: '#fbbf24', boxShadow: '0 1px 4px rgba(251,191,36,0.4)' }}
                         title="Minimize"
                     />
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={() => { setMaximized(m => !m); setMinimized(false); }}
-                        className="w-3.5 h-3.5 rounded-full transition-all hover:scale-110"
+                        className="w-3.5 h-3.5 rounded-full transition-all "
                         style={{ background: '#34d399', boxShadow: '0 1px 4px rgba(52,211,153,0.4)' }}
                         title="Maximize"
                     />
                     <button
                         onMouseDown={e => e.stopPropagation()}
                         onClick={onClose}
-                        className="w-3.5 h-3.5 rounded-full transition-all hover:scale-110"
+                        className="w-3.5 h-3.5 rounded-full transition-all "
                         style={{ background: '#f87171', boxShadow: '0 1px 4px rgba(248,113,113,0.4)' }}
                         title="Close"
                     />

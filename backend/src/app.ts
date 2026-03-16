@@ -23,9 +23,22 @@ const app = express();
 
 app.use(helmet());
 
-const allowedOrigins = process.env.FRONTEND_URL
-    ? [process.env.FRONTEND_URL, 'http://localhost:5173']
-    : ['http://localhost:5173'];
+const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (mobile apps, curl, etc)
+    if (!origin) return callback(null, true);
+    // Allow localhost and local network IPs (10.x.x.x, 192.168.x.x, 172.x.x.x)
+    if (
+        origin.includes('localhost') ||
+        origin.match(/^https?:\/\/(10|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+/)
+    ) {
+        return callback(null, true);
+    }
+    // Allow explicitly set FRONTEND_URL
+    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
+        return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+};
 
 app.use(cors({
     origin: allowedOrigins,

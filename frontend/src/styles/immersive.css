@@ -1,0 +1,73 @@
+/* Lenis Smooth Scroll Recommended CSS */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Planetoño Typography Utilities */
+.text-massive {
+  font-size: clamp(2.5rem, 8vw, 5.5rem);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.text-fluid-large {
+  font-size: clamp(1.5rem, 4.5vw, 3rem);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.canvas-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0; 
+  pointer-events: none; /* Let clicks pass through to HTML unless intercepted */
+}
+
+/* We often need pointer events enabled on the canvas when it has interactive 3D objects, 
+   but for now we will toggle this class conditionally or rely on HTML overlays. */
+.canvas-interactive {
+  pointer-events: auto;
+}
+
+/* Main content wrapper on top of canvas */
+.html-overlay {
+  position: relative;
+  z-index: 10;
+  /* Ensure backgrounds of normal containers don't hide the 3D space. 
+     We will apply transparent backgrounds to sections. */
+}
+
+/* Glassmorphic Nav */
+.nav-immersive {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .nav-immersive {
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}

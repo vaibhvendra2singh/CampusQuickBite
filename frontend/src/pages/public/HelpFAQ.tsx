@@ -8,7 +8,7 @@ const HelpFAQ = () => {
  Welcome to the CampusBite Help Center. Here you’ll find answers to common questions about ordering food, managing your account, and using the platform.
  </p>
  <div className="bg-brand-50 dark:bg-brand-500/10 border border-brand-100 dark:border-brand-500/20 rounded-xl p-5 mb-10 text-[var(--text-primary)]">
- If you cannot find the answer you need, please <a href="/contact" className="text-brand-500 font-semibold hover:underline">contact our support team</a>.
+ If you cannot find the answer you need, please <a href="/contact" className="text-brand-500 font-semibold ">contact our support team</a>.
  </div>
 
  <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-6">Frequently Asked Questions</h2>

@@ -108,7 +108,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-brand-700"></div>
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 w-9 h-9 bg-white/10 hover:bg-white/20 text-white rounded-xl flex items-center justify-center transition-all z-20 backdrop-blur-md"
+                        className="absolute top-4 right-4 w-9 h-9 bg-white/10  text-white rounded-xl flex items-center justify-center transition-all z-20 backdrop-blur-md"
                     >
                         <FiX className="w-5 h-5" />
                     </button>
@@ -118,12 +118,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         <div className="p-1 bg-[var(--bg-primary)] rounded-full">
                             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative shadow-sm group">
                                 {(isEditing ? formData.profilePic : user.profilePic) ? (
-                                    <img src={isEditing ? formData.profilePic : user.profilePic} alt={user.name} className="w-full h-full object-cover transition-all duration-150" />
+                                    <img loading="lazy" decoding="async" src={isEditing ? formData.profilePic : user.profilePic} alt={user.name} className="w-full h-full object-cover transition-all duration-150" />
                                 ) : (
                                     <FiUser className="w-8 h-8 text-slate-400" />
                                 )}
                                 {isEditing && (
-                                    <button onClick={() => setShowAvatarPicker(!showAvatarPicker)} className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => setShowAvatarPicker(!showAvatarPicker)} className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center cursor-pointer opacity-0 group- transition-opacity">
                                         <FiCamera className="w-5 h-5 text-white" />
                                     </button>
                                 )}
@@ -159,7 +159,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                             <div className="grid grid-cols-4 gap-3">
                                 {AVATAR_OPTIONS.map((url, idx) => (
                                     <button key={idx} onClick={() => selectAvatar(url)} className={`aspect-square rounded-xl overflow-hidden border-2 transition-all ${formData.profilePic === url ? 'border-brand-500 bg-brand-50' : 'border-transparent'}`}>
-                                        <img src={url} alt="Avatar" className="w-full h-full object-cover" />
+                                        <img loading="lazy" decoding="async" src={url} alt="Avatar" className="w-full h-full object-cover" />
                                     </button>
                                 ))}
                             </div>
@@ -205,7 +205,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         {!isEditing && !isAdmin && !isOwner && (
                             <button
                                 onClick={() => { onClose(); navigate('/orders/history'); }}
-                                className="w-full flex items-center justify-between p-5 bg-slate-900 dark:bg-brand-500 text-white rounded-2xl hover:brightness-110 shadow-lg shadow-black/10 transition-all group ]"
+                                className="w-full flex items-center justify-between p-5 bg-slate-900 dark:bg-brand-500 text-white rounded-2xl  shadow-lg shadow-black/10 transition-all group ]"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
@@ -222,20 +222,20 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     <div className="flex gap-4 mt-8">
                         {isEditing ? (
                             <>
-                                <button onClick={handleCancel} disabled={isSaving} className="flex-1 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 rounded-xl hover:bg-slate-200 transition-all">Discard</button>
-                                <button onClick={handleSave} disabled={isSaving} className="flex-[2] py-4 text-[11px] font-bold text-white uppercase tracking-wider bg-brand-500 rounded-xl hover:bg-brand-600 transition-all shadow-lg flex items-center justify-center gap-2">
+                                <button onClick={handleCancel} disabled={isSaving} className="flex-1 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 rounded-xl  transition-all">Discard</button>
+                                <button onClick={handleSave} disabled={isSaving} className="flex-[2] py-4 text-[11px] font-bold text-white uppercase tracking-wider bg-brand-500 rounded-xl  transition-all shadow-lg flex items-center justify-center gap-2">
                                     {isSaving ? <FiLoader className="animate-spin" /> : <FiSave className="w-4 h-4" />}
                                     <span>{isSaving ? 'Updating...' : 'Save Settings'}</span>
                                 </button>
                             </>
                         ) : (
                             <>
-                                <button onClick={() => setIsEditing(true)} className="flex-1 py-4 text-[11px] font-bold text-brand-600 uppercase tracking-wider bg-brand-500/10 rounded-xl hover:bg-brand-500/20 transition-all flex items-center justify-center gap-2 border border-brand-500/10">
+                                <button onClick={() => setIsEditing(true)} className="flex-1 py-4 text-[11px] font-bold text-brand-600 uppercase tracking-wider bg-brand-500/10 rounded-xl  transition-all flex items-center justify-center gap-2 border border-brand-500/10">
                                     <FiEdit3 className="w-4 h-4" /> Personalize
                                 </button>
                                 <button
                                     onClick={() => { onClose(); navigate('/change-password'); }}
-                                    className="flex-1 py-4 text-[11px] font-bold text-rose-500 uppercase tracking-wider bg-rose-500/10 rounded-xl hover:bg-rose-500/20 transition-all border border-rose-500/10"
+                                    className="flex-1 py-4 text-[11px] font-bold text-rose-500 uppercase tracking-wider bg-rose-500/10 rounded-xl  transition-all border border-rose-500/10"
                                 >
                                     Security
                                 </button>

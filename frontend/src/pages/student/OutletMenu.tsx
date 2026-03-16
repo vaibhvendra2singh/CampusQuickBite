@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useCart } from '../../hooks/context/CartContext';
 import { FiMapPin, FiArrowLeft, FiShoppingBag, FiSearch, FiHeart, FiFilter, FiX, FiStar, FiPhone } from 'react-icons/fi';
+import { FadeIn } from '../../components/animations/FadeIn';
+import { motion } from 'framer-motion';
 import { useToast } from '../../hooks/context/ToastContext';
 import { useAuth } from '../../hooks/context/AuthContext';
 import RatingModal from '../../components/common/RatingModal';
@@ -185,21 +187,25 @@ const OutletMenu = () => {
         }
     };
 
-    let filteredItems = menuItems;
-    if (searchQuery.trim()) {
-        filteredItems = filteredItems.filter(item =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }
+    const filteredItems = useMemo(() => {
+        let items = menuItems;
+        if (searchQuery.trim()) {
+            items = items.filter(item =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
 
-    if (activeFilters.includes('Vegetarian')) {
-        filteredItems = filteredItems.filter(item => item.is_veg ?? item.isVeg);
-    }
-    if (showFavsOnly) {
-        filteredItems = filteredItems.filter(item => favorites.includes(item.id));
-    }
-    if (priceSort === 'low') filteredItems = [...filteredItems].sort((a, b) => a.price - b.price);
-    if (priceSort === 'high') filteredItems = [...filteredItems].sort((a, b) => b.price - a.price);
+        if (activeFilters.includes('Vegetarian')) {
+            items = items.filter(item => item.is_veg ?? item.isVeg);
+        }
+        if (showFavsOnly) {
+            items = items.filter(item => favorites.includes(item.id));
+        }
+        if (priceSort === 'low') items = [...items].sort((a, b) => a.price - b.price);
+        if (priceSort === 'high') items = [...items].sort((a, b) => b.price - a.price);
+        
+        return items;
+    }, [menuItems, searchQuery, activeFilters, showFavsOnly, priceSort, favorites]);
 
 
     if (isLoading) {
@@ -222,7 +228,7 @@ const OutletMenu = () => {
         <div className="max-w-6xl mx-auto animate-none relative pb-48 px-6">
             {/* Minimalist Navigation */}
             <div className="mb-10">
-                <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)] hover:text-brand-500 transition-all font-bold text-sm">
+                <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)]  transition-all font-bold text-sm">
                     <FiArrowLeft className="mr-2 transition-all duration-150" />
                     Back to all outlets
                 </Link>
@@ -239,6 +245,7 @@ const OutletMenu = () => {
             )}
 
             {/* Refined Outlet Header */}
+            <FadeIn delay={0.1}>
             <div className="relative mb-20 mt-4 p-8 md:p-12 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl rounded-[3.5rem] border border-[var(--border-color)] shadow-sm overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl"></div>
@@ -260,13 +267,13 @@ const OutletMenu = () => {
                             {outlet?.owner && (
                                 <div className="flex items-center gap-3">
                                     {outlet.owner.phone_number && (
-                                        <a href={`tel:${outlet.owner.phone_number}`} className="flex items-center text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-brand-50 dark:hover:bg-brand-500/10 px-4 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800 hover:border-brand-500 hover:text-brand-500 shadow-sm">
+                                        <a href={`tel:${outlet.owner.phone_number}`} className="flex items-center text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900  dark: px-4 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-800   shadow-sm">
                                             <FiPhone className="mr-2 w-4 h-4" /> Call
                                         </a>
                                     )}
                                     <button
                                         onClick={() => setIsRatingModalOpen(true)}
-                                        className="flex items-center text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 px-4 py-2 rounded-xl transition-all border border-amber-200 dark:border-amber-800 shadow-sm"
+                                        className="flex items-center text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20  dark: px-4 py-2 rounded-xl transition-all border border-amber-200 dark:border-amber-800 shadow-sm"
                                     >
                                         <FiStar className="mr-2 w-4 h-4 fill-current" /> Rate
                                     </button>
@@ -278,18 +285,19 @@ const OutletMenu = () => {
                         <div className="p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[2rem] shadow-sm max-w-sm">
                             <p className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-4">How's the queue?</p>
                             <div className="flex items-center gap-3">
-                                <button onClick={() => handleReportStatus('FAST')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'FAST' ? 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-green-500/50 hover:text-green-500'}`}>FAST</button>
-                                <button onClick={() => handleReportStatus('MODERATE')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'MODERATE' ? 'bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-amber-500/50 hover:text-amber-500'}`}>MODERATE</button>
-                                <button onClick={() => handleReportStatus('BUSY')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'BUSY' ? 'bg-red-500/10 border-red-500 text-red-500' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-red-500/50 hover:text-red-500'}`}>BUSY</button>
+                                <button onClick={() => handleReportStatus('FAST')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'FAST' ? 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400' : 'border-[var(--border-color)] text-[var(--text-secondary)]  '}`}>FAST</button>
+                                <button onClick={() => handleReportStatus('MODERATE')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'MODERATE' ? 'bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)]  '}`}>MODERATE</button>
+                                <button onClick={() => handleReportStatus('BUSY')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'BUSY' ? 'bg-red-500/10 border-red-500 text-red-500' : 'border-[var(--border-color)] text-[var(--text-secondary)]  '}`}>BUSY</button>
                             </div>
                         </div>
 
                     </div>
-                    <div className="hidden md:flex w-24 h-24 bg-brand-500 text-white items-center justify-center text-4xl font-black rounded-[2rem] shadow-2xl shadow-brand-500/30 rotate-3 hover:rotate-0 transition-all duration-150">
+                    <div className="hidden md:flex w-24 h-24 bg-brand-500 text-white items-center justify-center text-4xl font-black rounded-[2rem] shadow-2xl shadow-brand-500/30 rotate-3  transition-all duration-150">
                         {outlet?.name.charAt(0)}
                     </div>
                 </div>
             </div>
+            </FadeIn>
 
             {/* 🔍 Search Bar */}
             <div className="mb-12 relative max-w-2xl">
@@ -298,7 +306,7 @@ const OutletMenu = () => {
                     <input type="text" placeholder="Search menu..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 rounded-xl outline-none transition-all font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm" />
                 </div>
                 {searchQuery && (
-                    <button onClick={() => setSearchQuery('')} className="absolute right-6 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-brand-500">
+                    <button onClick={() => setSearchQuery('')} className="absolute right-6 top-1/2 -translate-y-1/2 text-[var(--text-muted)] ">
                         <FiX className="w-5 h-5" />
                     </button>
                 )}
@@ -309,13 +317,13 @@ const OutletMenu = () => {
                 <div className="flex items-center justify-between mb-4">
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all border ${isFilterOpen || hasActiveFilters ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)] hover:border-[var(--text-primary)]'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all border ${isFilterOpen || hasActiveFilters ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)] '}`}
                     >
                         <FiFilter className="w-4 h-4" />
                         {hasActiveFilters ? 'Filters Applied' : 'Filters'}
                     </button>
                     {hasActiveFilters && (
-                        <button onClick={() => { setSearchQuery(''); setActiveFilters([]); setShowFavsOnly(false); setPriceSort('none'); setIsFilterOpen(false); }} className="text-xs font-bold text-red-500 hover:bg-red-500/10 px-3 py-1.5 rounded-lg transition-all">
+                        <button onClick={() => { setSearchQuery(''); setActiveFilters([]); setShowFavsOnly(false); setPriceSort('none'); setIsFilterOpen(false); }} className="text-xs font-bold text-red-500  px-3 py-1.5 rounded-lg transition-all">
                             Clear Filters
                         </button>
                     )}
@@ -327,20 +335,20 @@ const OutletMenu = () => {
                         <div>
                             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Sort by Price</h4>
                             <div className="flex gap-3">
-                                <button onClick={() => setPriceSort('none')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'none' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--text-primary)]'}`}>Default</button>
-                                <button onClick={() => setPriceSort('low')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'low' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--text-primary)]'}`}>Low to High</button>
-                                <button onClick={() => setPriceSort('high')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'high' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-[var(--text-primary)]'}`}>High to Low</button>
+                                <button onClick={() => setPriceSort('none')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'none' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Default</button>
+                                <button onClick={() => setPriceSort('low')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'low' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Low to High</button>
+                                <button onClick={() => setPriceSort('high')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'high' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>High to Low</button>
                             </div>
                         </div>
 
                         <div>
                             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Quick Filters</h4>
                             <div className="flex gap-3">
-                                <button onClick={() => setShowFavsOnly(!showFavsOnly)} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all flex items-center gap-1.5 ${showFavsOnly ? 'bg-pink-500 border-pink-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-pink-500 hover:text-pink-500'}`}>
+                                <button onClick={() => setShowFavsOnly(!showFavsOnly)} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all flex items-center gap-1.5 ${showFavsOnly ? 'bg-pink-500 border-pink-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]  '}`}>
                                     <FiHeart className={`w-3.5 h-3.5 ${showFavsOnly ? 'fill-current' : ''}`} />
                                     <span>Saved</span>
                                 </button>
-                                <button onClick={() => toggleFilter('Vegetarian')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all flex items-center gap-1.5 ${activeFilters.includes('Vegetarian') ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-green-500 hover:text-green-500'}`}>
+                                <button onClick={() => toggleFilter('Vegetarian')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all flex items-center gap-1.5 ${activeFilters.includes('Vegetarian') ? 'bg-green-500 border-green-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]  '}`}>
                                     <span className="w-2 h-2 rounded-full bg-current"></span>
                                     <span>Veg Only</span>
                                 </button>
@@ -351,7 +359,7 @@ const OutletMenu = () => {
                             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Categories</h4>
                             <div className="flex flex-wrap gap-2">
                                 {ALL_TAGS.filter(t => t !== 'Vegetarian').map(tag => (
-                                    <button key={tag} onClick={() => toggleFilter(tag)} className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${activeFilters.includes(tag) ? 'bg-brand-500 border-brand-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] hover:border-brand-500 hover:text-brand-500'}`}>
+                                    <button key={tag} onClick={() => toggleFilter(tag)} className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${activeFilters.includes(tag) ? 'bg-brand-500 border-brand-500 text-white' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)]  '}`}>
                                         {tag}
                                     </button>
                                 ))}
@@ -374,11 +382,11 @@ const OutletMenu = () => {
                     <p className="text-sm text-[var(--text-muted)] mb-4">Items you might like</p>
                     <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
                         {personalRecs.map(item => (
-                            <div key={`rec-${item.id}`} className="min-w-[220px] bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] hover:border-purple-500/40 transition-colors">
+                            <div key={`rec-${item.id}`} className="min-w-[220px] bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)]  transition-colors">
                                 <h4 className="font-semibold text-sm text-[var(--text-primary)] line-clamp-1">{item.name}</h4>
                                 <div className="flex items-center justify-between mt-2.5">
                                     <span className="text-base font-bold text-[var(--text-primary)]">₹{item.price.toFixed(0)}</span>
-                                    <button onClick={() => handleAddToCart(item)} className="text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-md hover:bg-purple-500 hover:text-white transition-colors">Add</button>
+                                    <button onClick={() => handleAddToCart(item)} className="text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-3 py-1 rounded-md   transition-colors">Add</button>
                                 </div>
                             </div>
                         ))}
@@ -425,8 +433,9 @@ const OutletMenu = () => {
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {items.map((item) => (
-                                <div key={item.id} className={`group bg-[var(--bg-card)] rounded-[2rem] border border-[var(--border-color)] overflow-hidden flex flex-col transition-all duration-150 hover:shadow-2xl hover:shadow-brand-500/5 ${!item.availability ? 'opacity-40 grayscale pointer-events-none' : 'hover:border-brand-500/20'}`}>
+                            {items.map((item, index) => (
+                                <FadeIn key={item.id} delay={0.1 + (index % 5) * 0.05} direction="up" className="h-full contain-paint">
+                                <motion.div className={`contain-content group h-full bg-[var(--glass-bg)] backdrop-blur-md rounded-[2rem] border border-[var(--glass-border)] overflow-hidden flex flex-col transition-all duration-300   ${!item.availability ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                                     <div className="p-7 flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="flex-1 pr-4">
@@ -435,7 +444,7 @@ const OutletMenu = () => {
                                                     {!item.availability ? <span className="text-[9px] font-black uppercase tracking-widest text-red-600 bg-red-500/5 px-2 py-1 rounded-md">Currently Unavailable</span> :
                                                         (item.stock !== undefined && item.stock <= 0) ? <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 bg-amber-500/5 px-2 py-1 rounded-md">Sold Out</span> : null}
                                                 </div>
-                                                <h3 className="font-black text-lg text-[var(--text-primary)] tracking-tight leading-tight mb-2 group-hover:text-brand-500 transition-colors">{item.name}</h3>
+                                                <h3 className="font-black text-lg text-[var(--text-primary)] tracking-tight leading-tight mb-2 transition-colors">{item.name}</h3>
                                                 {item.average_rating ? (
                                                     <div className="flex items-center gap-1.5 text-amber-500 mb-2">
                                                         <FiStar className="fill-amber-500 w-3.5 h-3.5" />
@@ -445,18 +454,19 @@ const OutletMenu = () => {
                                                 ) : (<span className="text-[10px] font-black text-brand-600 uppercase tracking-widest mb-2 block opacity-70">Newly Added</span>)}
                                                 {item.displayDesc && <p className="text-[var(--text-secondary)] text-sm mt-3 line-clamp-2 font-medium leading-relaxed">{item.displayDesc}</p>}
                                             </div>
-                                            <button onClick={(e) => { e.preventDefault(); handleToggleFav(item.id, item.name); }} className={`w-10 h-10 flex-shrink-0 rounded-xl border-2 flex items-center justify-center transition-all ${favorites.includes(item.id) ? 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/20' : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-pink-500 hover:text-pink-500'}`}>
+                                            <button onClick={(e) => { e.preventDefault(); handleToggleFav(item.id, item.name); }} className={`w-10 h-10 flex-shrink-0 rounded-xl border-2 flex items-center justify-center transition-all ${favorites.includes(item.id) ? 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/20' : 'border-[var(--border-color)] text-[var(--text-muted)]  '}`}>
                                                 <FiHeart className={`w-5 h-5 ${favorites.includes(item.id) ? 'fill-current' : ''}`} />
                                             </button>
                                         </div>
                                         <div className="mt-auto pt-6 border-t border-[var(--border-color)] border-dashed flex items-center justify-between">
                                             <span className="text-2xl font-black text-[var(--text-primary)] tracking-tighter">₹{item.price.toFixed(0)}</span>
-                                            <button onClick={() => handleAddToCart(item)} disabled={!item.availability || (item.stock !== undefined && item.stock <= 0) || outlet?.is_open === false} className={`px-6 py-3 rounded-2xl text-sm font-black transition-all shadow-xl ${!item.availability || (item.stock !== undefined && item.stock <= 0) || outlet?.is_open === false ? 'bg-[var(--bg-input)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)] shadow-none' : 'bg-brand-500 text-white hover:bg-brand-600 shadow-brand-500/20'}`}>
+                                            <button onClick={() => handleAddToCart(item)} disabled={!item.availability || (item.stock !== undefined && item.stock <= 0) || outlet?.is_open === false} className={`px-6 py-3 rounded-2xl text-sm font-black transition-all shadow-xl ${!item.availability || (item.stock !== undefined && item.stock <= 0) || outlet?.is_open === false ? 'bg-[var(--bg-input)] text-[var(--text-muted)] cursor-not-allowed border border-[var(--border-color)] shadow-none' : 'bg-brand-500 text-white   shadow-brand-500/20'}`}>
                                                 {outlet?.is_open === false ? 'Closed' : !item.availability ? 'Unavailable' : (item.stock === undefined || item.stock > 0) ? 'ADD' : 'Out of Stock'}
                                             </button>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
+                                </FadeIn>
                             ))}
                         </div>
                     </div>
@@ -476,7 +486,7 @@ const OutletMenu = () => {
                                 <p className="text-2xl font-black tracking-tighter leading-none">₹{cartTotal.toFixed(0)}</p>
                             </div>
                         </div>
-                        <Link to="/cart" className="bg-brand-500 text-white px-8 py-3.5 rounded-[1.25rem] font-black text-sm hover:bg-brand-600 shadow-xl shadow-brand-500/10 transition-all">Go to Checkout</Link>
+                        <Link to="/cart" className="bg-brand-500 text-white px-8 py-3.5 rounded-[1.25rem] font-black text-sm  shadow-xl shadow-brand-500/10 transition-all">Go to Checkout</Link>
                     </div>
                 </div>
             )}

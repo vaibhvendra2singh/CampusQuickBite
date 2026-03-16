@@ -111,7 +111,7 @@ const OrderHistory = () => {
 
     return (
         <div className="max-w-6xl mx-auto animate-none relative pb-40 px-6">
-            <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)] hover:text-brand-500 transition-all font-black text-sm uppercase tracking-widest mb-10">
+            <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)]  transition-all font-black text-sm uppercase tracking-widest mb-10">
                 <FiArrowLeft className="mr-2 transition-all duration-150" />
                 Back to explore
             </Link>
@@ -132,7 +132,7 @@ const OrderHistory = () => {
                     const isCompleted = order.status?.toUpperCase() === 'COMPLETED';
 
                     return (
-                        <div key={order.id} className="bg-[var(--bg-card)] rounded-[2.5rem] border-2 border-[var(--border-color)] overflow-hidden hover:border-brand-500/20 shadow-sm transition-all duration-150 group">
+                        <div key={order.id} className="bg-[var(--bg-card)] rounded-[2.5rem] border-2 border-[var(--border-color)] overflow-hidden  shadow-sm transition-all duration-150 group">
                             <div className="flex flex-col lg:flex-row divide-y-2 lg:divide-y-0 lg:divide-x-2 divide-[var(--border-color)]">
                                 {/* Order Content */}
                                 <div className="flex-1 p-8 space-y-8">
@@ -150,7 +150,7 @@ const OrderHistory = () => {
                                                                 setSelectedItem({ outletId: order.outlet.id, outletName: order.outlet.name });
                                                                 setIsRatingModalOpen(true);
                                                             }}
-                                                            className="flex items-center px-3 py-1 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/10 hover:bg-amber-600"
+                                                            className="flex items-center px-3 py-1 bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/10 "
                                                         >
                                                             <FiStar className="mr-1.5 w-3 h-3 fill-current" /> Rate Kitchen
                                                         </button>
@@ -206,7 +206,7 @@ const OrderHistory = () => {
                                                                         setSelectedItem({ menuItemId: item.menuItem.id, menuItemName: item.menuItem.name });
                                                                         setIsRatingModalOpen(true);
                                                                     }}
-                                                                    className="mt-1 flex items-center w-fit px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-all rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-500/20"
+                                                                    className="mt-1 flex items-center w-fit px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400   transition-all rounded-lg text-[10px] font-black uppercase tracking-widest border border-amber-500/20"
                                                                 >
                                                                     <FiStar className="mr-1.5 w-3 h-3 fill-current" /> Rate item
                                                                 </button>
@@ -224,13 +224,13 @@ const OrderHistory = () => {
                                         <button
                                             onClick={() => handleViewReceipt(order.id)}
                                             disabled={downloadingReceiptId === order.id}
-                                            className="px-6 py-3 bg-[var(--bg-card)] text-[var(--text-primary)] font-black text-xs uppercase tracking-widest rounded-xl border-2 border-[var(--border-color)] hover:border-brand-500 hover:text-brand-500 transition-all disabled:opacity-50 flex items-center gap-2"
+                                            className="px-6 py-3 bg-[var(--bg-card)] text-[var(--text-primary)] font-black text-xs uppercase tracking-widest rounded-xl border-2 border-[var(--border-color)]   transition-all disabled:opacity-50 flex items-center gap-2"
                                         >
                                             <FiDownload className="w-4 h-4" /> {downloadingReceiptId === order.id ? 'Loading...' : 'View Receipt'}
                                         </button>
                                         <button
                                             onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
-                                            className={`px-6 py-3 font-black text-xs uppercase tracking-widest rounded-xl border-2 transition-all flex items-center gap-2 ${isExpanded ? 'border-brand-500 text-brand-500 bg-brand-500/5 shadow-lg shadow-brand-500/5' : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand-500 hover:text-brand-500'}`}
+                                            className={`px-6 py-3 font-black text-xs uppercase tracking-widest rounded-xl border-2 transition-all flex items-center gap-2 ${isExpanded ? 'border-brand-500 text-brand-500 bg-brand-500/5 shadow-lg shadow-brand-500/5' : 'border-[var(--border-color)] text-[var(--text-muted)]  '}`}
                                         >
                                             {isExpanded ? 'Close Timeline' : 'View Timeline'}
                                         </button>
@@ -276,7 +276,7 @@ const OrderHistory = () => {
                                 </div>
 
                                 {/* Sidebar */}
-                                <div className="lg:w-72 p-8 bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between group-hover:bg-slate-100/50 dark:group-hover:bg-slate-900/50 transition-colors">
+                                <div className="lg:w-72 p-8 bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between group- dark:group- transition-colors">
                                     <div className="space-y-8">
                                         <div>
                                             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-3">Live Status</p>
@@ -298,7 +298,7 @@ const OrderHistory = () => {
                                         {!isCancelled && !isCompleted ? (
                                             <Link
                                                 to={`/orders/${order.id}/status`}
-                                                className="w-full flex items-center justify-center gap-3 py-4 bg-brand-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-xl shadow-brand-500/20 hover:bg-brand-600 transition-all"
+                                                className="w-full flex items-center justify-center gap-3 py-4 bg-brand-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl shadow-xl shadow-brand-500/20  transition-all"
                                             >
                                                 <FiBox className="w-5 h-5" /> Track It
                                             </Link>
@@ -316,12 +316,12 @@ const OrderHistory = () => {
 
                 {orders.length === 0 && (
                     <div className="py-24 text-center bg-[var(--bg-card)] rounded-[3rem] border-2 border-[var(--border-color)] border-dashed">
-                        <div className="w-20 h-20 bg-brand-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-8 text-brand-500 rotate-12 group-hover:rotate-0 transition-">
+                        <div className="w-20 h-20 bg-brand-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-8 text-brand-500 rotate-12 group- transition-">
                             <FiPackage className="w-10 h-10" />
                         </div>
                         <h3 className="text-3xl font-black text-[var(--text-primary)] mb-3 tracking-tight">Blank Page?</h3>
                         <p className="text-base font-medium text-[var(--text-muted)] mb-10 max-w-xs mx-auto">No orders found. Your stomach must be feeling a bit lonely!</p>
-                        <Link to="/restaurants" className="bg-brand-500 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-brand-600 shadow-xl shadow-brand-500/20 inline-block">Explore Menus</Link>
+                        <Link to="/restaurants" className="bg-brand-500 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest  shadow-xl shadow-brand-500/20 inline-block">Explore Menus</Link>
                     </div>
                 )}
             </div>
@@ -342,7 +342,7 @@ const OrderHistory = () => {
                     <div className="relative w-full max-w-md bg-[var(--bg-card)] rounded-[2.5rem] border-2 border-[var(--border-color)] shadow-2xl flex flex-col items-center p-8 space-y-6 border-slate-200 dark:border-slate-800">
                         <button
                             onClick={() => setShowReceiptModal(false)}
-                            className="absolute top-6 right-6 w-10 h-10 rounded-2xl bg-[var(--bg-input)] border-2 border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] hover:text-red-500 hover:border-red-500/20 transition-all"
+                            className="absolute top-6 right-6 w-10 h-10 rounded-2xl bg-[var(--bg-input)] border-2 border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)]   transition-all"
                         >
                             <FiX className="w-5 h-5" />
                         </button>
@@ -351,13 +351,13 @@ const OrderHistory = () => {
                             <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mt-1">Order Proof</p>
                         </div>
                         <div className="w-full aspect-[3/4] bg-white rounded-3xl border-2 border-[var(--border-color)] overflow-hidden shadow-inner">
-                            {receiptUrl && <img src={receiptUrl} alt="Receipt" className="w-full h-full object-contain" />}
+                            {receiptUrl && <img loading="lazy" decoding="async" src={receiptUrl} alt="Receipt" className="w-full h-full object-contain" />}
                         </div>
                         <div className="flex w-full gap-4">
-                            <button onClick={downloadImageReceipt} className="flex-1 bg-brand-500 text-white py-4 rounded-[1.25rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-brand-600 shadow-xl shadow-brand-500/10">
+                            <button onClick={downloadImageReceipt} className="flex-1 bg-brand-500 text-white py-4 rounded-[1.25rem] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2  shadow-xl shadow-brand-500/10">
                                 <FiDownload className="w-5 h-5" /> Download
                             </button>
-                            <button onClick={() => setShowReceiptModal(false)} className="flex-1 bg-[var(--bg-input)] text-[var(--text-primary)] py-4 rounded-[1.25rem] font-black text-sm uppercase tracking-widest border-2 border-[var(--border-color)] hover:border-brand-500 transition-all">
+                            <button onClick={() => setShowReceiptModal(false)} className="flex-1 bg-[var(--bg-input)] text-[var(--text-primary)] py-4 rounded-[1.25rem] font-black text-sm uppercase tracking-widest border-2 border-[var(--border-color)]  transition-all">
                                 Done
                             </button>
                         </div>

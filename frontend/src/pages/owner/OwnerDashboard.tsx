@@ -352,41 +352,41 @@ const OwnerDashboard = () => {
                 <div className="flex flex-wrap gap-3 w-full lg:w-auto">
                     <Link
                         to={`/owner/menu/${outlet.id}`}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold hover:border-brand-500 hover:text-brand-500 transition-all shadow-sm"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold   transition-all shadow-sm"
                     >
                         <FiMenu className="mr-2 w-4 h-4" /> Menu
                     </Link>
                     <Link
                         to={`/owner/analytics/${outlet.id}`}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/10 rounded-xl text-xs font-semibold hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-all shadow-sm"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/10 rounded-xl text-xs font-semibold  dark: transition-all shadow-sm"
                     >
                         <FiBarChart2 className="mr-2 w-4 h-4" /> Insights
                     </Link>
                     <Link
                         to="/owner/orders/history"
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/10 rounded-xl text-xs font-semibold hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-all shadow-sm"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-100 dark:border-purple-500/10 rounded-xl text-xs font-semibold  dark: transition-all shadow-sm"
                     >
                         <FiClock className="mr-2 w-4 h-4" /> History
                     </Link>
                     <button
                         onClick={toggleStatus}
                         className={`flex-1 lg:flex-none px-6 py-3 rounded-xl text-xs font-semibold transition-all duration-150 shadow-md border ${outlet.is_open
-                            ? 'bg-emerald-500 border-emerald-400 text-white hover:bg-emerald-600'
-                            : 'bg-rose-500 border-rose-400 text-white hover:bg-rose-600'
+                            ? 'bg-emerald-500 border-emerald-400 text-white '
+                            : 'bg-rose-500 border-rose-400 text-white '
                             }`}
                     >
                         {outlet.is_open ? 'Shop Open' : 'Shop Closed'}
                     </button>
                     <button
                         onClick={() => setIsScanning(true)}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-brand-500 border border-brand-400 text-white rounded-xl text-xs font-semibold hover:bg-brand-600 transition-all shadow-md"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-brand-500 border border-brand-400 text-white rounded-xl text-xs font-semibold  transition-all shadow-md"
                     >
                         <FiMaximize className="mr-2 w-4 h-4" /> Verify QR
                     </button>
                     <button
                         onClick={syncAllData}
                         disabled={isSyncing}
-                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-900 dark:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-black dark:hover:bg-slate-700 transition-all shadow-md"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-900 dark:bg-slate-800 border border-slate-800 text-white rounded-xl text-xs font-semibold  dark: transition-all shadow-md"
                     >
                         <FiRefreshCw className={`mr-2 w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                         {isSyncing ? 'Syncing...' : 'Refresh'}
@@ -395,8 +395,8 @@ const OwnerDashboard = () => {
                         onClick={() => setSoundEnabled(v => !v)}
                         title={soundEnabled ? 'Mute new order alerts' : 'Unmute new order alerts'}
                         className={`flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 rounded-xl text-xs font-semibold transition-all shadow-md border ${soundEnabled
-                            ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-500/20 hover:bg-amber-100'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200'
+                            ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 border-amber-200 dark:border-amber-500/20 '
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700 '
                             }`}
                     >
                         {soundEnabled ? <FiBell className="mr-2 w-4 h-4" /> : <FiBellOff className="mr-2 w-4 h-4" />}
@@ -409,7 +409,7 @@ const OwnerDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                 <div
                     onClick={() => document.getElementById('live-orders')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8 cursor-pointer hover:border-blue-500/40 transition-all ] shadow-sm"
+                    className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8 cursor-pointer  transition-all ] shadow-sm"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-16 translate-x-16 transition-all duration-150"></div>
                     <div className="mb-6 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 w-12 h-12 rounded-xl flex items-center justify-center">
@@ -437,7 +437,7 @@ const OwnerDashboard = () => {
                     </div>
                 </div>
 
-                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8 hover:border-emerald-500/40 transition-all shadow-sm">
+                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8  transition-all shadow-sm">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -translate-y-16 translate-x-16 transition-all duration-150"></div>
                     <div className="mb-6 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 w-12 h-12 rounded-xl flex items-center justify-center">
                         <FiDollarSign className="w-6 h-6" />
@@ -450,7 +450,7 @@ const OwnerDashboard = () => {
                     <p className="mt-4 text-[11px] text-slate-400 font-medium">Tracking since midnight</p>
                 </div>
 
-                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8 hover:border-indigo-500/40 transition-all shadow-sm">
+                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8  transition-all shadow-sm">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -translate-y-16 translate-x-16 transition-all duration-150"></div>
                     <div className="mb-6 text-indigo-500 bg-indigo-50 dark:bg-indigo-500/10 w-12 h-12 rounded-xl flex items-center justify-center">
                         <FiTrendingUp className="w-6 h-6" />
@@ -463,7 +463,7 @@ const OwnerDashboard = () => {
                     <p className="mt-4 text-[11px] text-slate-400 font-medium">All-time revenue</p>
                 </div>
 
-                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8 hover:border-purple-500/40 transition-all shadow-sm">
+                <div className="card-modern relative overflow-hidden group border border-slate-200 dark:border-slate-800 rounded-2xl bg-[var(--bg-card)] p-8  transition-all shadow-sm">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -translate-y-16 translate-x-16 transition-all duration-150"></div>
                     <div className="mb-6 text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 w-12 h-12 rounded-xl flex items-center justify-center">
                         <FiCheck className="w-6 h-6" />
@@ -508,7 +508,7 @@ const OwnerDashboard = () => {
                         </div>
                     ) : (
                         activeOrders.map(order => (
-                            <div key={order.id} className="p-8 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all flex flex-col md:flex-row gap-8 md:items-center group/order">
+                            <div key={order.id} className="p-8  dark: transition-all flex flex-col md:flex-row gap-8 md:items-center group/order">
                                 <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-3 mb-4">
                                         <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider px-3 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
@@ -552,13 +552,13 @@ const OwnerDashboard = () => {
                                         <>
                                             <button
                                                 onClick={() => updateOrderStatus(order.id, 'PREPARING')}
-                                                className="px-6 py-3 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-semibold hover:bg-black dark:hover:bg-slate-700 transition-all shadow-sm"
+                                                className="px-6 py-3 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-semibold  dark: transition-all shadow-sm"
                                             >
                                                 Accept Order
                                             </button>
                                             <button
                                                 onClick={() => handleCancelOrder(order.id)}
-                                                className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 rounded-xl text-xs font-semibold hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                                                className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 rounded-xl text-xs font-semibold  dark: transition-all"
                                             >
                                                 Cancel
                                             </button>
@@ -568,13 +568,13 @@ const OwnerDashboard = () => {
                                         <>
                                             <button
                                                 onClick={() => updateOrderStatus(order.id, 'READY')}
-                                                className="px-6 py-3 bg-brand-500 text-white rounded-xl text-xs font-semibold hover:bg-brand-600 transition-all shadow-sm"
+                                                className="px-6 py-3 bg-brand-500 text-white rounded-xl text-xs font-semibold  transition-all shadow-sm"
                                             >
                                                 Ready for Pickup
                                             </button>
                                             <button
                                                 onClick={() => handleCancelOrder(order.id)}
-                                                className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 rounded-xl text-xs font-semibold hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+                                                className="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-rose-500 rounded-xl text-xs font-semibold  dark: transition-all"
                                             >
                                                 Cancel
                                             </button>
@@ -583,7 +583,7 @@ const OwnerDashboard = () => {
                                     {order.status?.toUpperCase() === 'READY' && (
                                         <button
                                             onClick={() => updateOrderStatus(order.id, 'COMPLETED')}
-                                            className="px-6 py-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold hover:bg-emerald-600 transition-all shadow-sm"
+                                            className="px-6 py-3 bg-emerald-500 text-white rounded-xl text-xs font-semibold  transition-all shadow-sm"
                                         >
                                             Mark Delivered
                                         </button>
@@ -611,7 +611,7 @@ const OwnerDashboard = () => {
                                             </body></html>`);
                                             w.document.close();
                                         }}
-                                        className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-brand-500 rounded-xl transition-all"
+                                        className="p-3 bg-slate-100 dark:bg-slate-800 text-slate-500  rounded-xl transition-all"
                                         title="Print Order Ticket"
                                     >
                                         <FiPrinter className="w-4 h-4" />
@@ -725,7 +725,7 @@ const OwnerDashboard = () => {
                 </div>
 
                 <div className="relative group">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-brand-500/10 to-indigo-600/10 rounded-[2.5rem] blur-xl opacity-50 group-hover:opacity-100 transition duration-150"></div>
+                    <div className="absolute -inset-1 bg-gradient-to-r from-brand-500/10 to-indigo-600/10 rounded-[2.5rem] blur-xl opacity-50 group- transition duration-150"></div>
                     <div className="relative card-modern bg-[var(--bg-card)] p-12 overflow-hidden border border-slate-200 dark:border-slate-800 rounded-[2.5rem] shadow-sm">
                         <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-16">
                             <div>
@@ -762,7 +762,7 @@ const OwnerDashboard = () => {
                                             animationDuration={1500}
                                         >
                                             {statusData.map((entry, index) => (
-                                                <Cell key={index} fill={COLORS[entry.name as keyof typeof COLORS] || '#64748b'} className="hover:opacity-80 transition-opacity" />
+                                                <Cell key={index} fill={COLORS[entry.name as keyof typeof COLORS] || '#64748b'} className=" transition-opacity" />
                                             ))}
                                         </Pie>
                                     </PieChart>
@@ -794,7 +794,7 @@ const OwnerDashboard = () => {
                                 </div>
                                 <button
                                     onClick={() => setVerificationOrder(null)}
-                                    className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                                    className="p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-slate-400  transition-all"
                                 >
                                     <FiX className="w-6 h-6" />
                                 </button>
@@ -822,7 +822,7 @@ const OwnerDashboard = () => {
                             <button
                                 onClick={() => handleMarkAsDelivered(verificationOrder.id)}
                                 disabled={isDelivering}
-                                className="w-full bg-slate-900 dark:bg-slate-800 text-white py-6 rounded-2xl font-bold uppercase tracking-wider text-xs shadow-lg hover:bg-black dark:hover:bg-slate-700 transition-all disabled:opacity-50 flex items-center justify-center"
+                                className="w-full bg-slate-900 dark:bg-slate-800 text-white py-6 rounded-2xl font-bold uppercase tracking-wider text-xs shadow-lg  dark: transition-all disabled:opacity-50 flex items-center justify-center"
                             >
                                 {isDelivering ? (
                                     <>
@@ -850,7 +850,7 @@ const OwnerDashboard = () => {
                             <h3 className="text-slate-900 dark:text-white font-bold uppercase tracking-wider text-xs flex items-center">
                                 <FiMaximize className="mr-3 text-brand-500 w-5 h-5" /> QR Verification
                             </h3>
-                            <button onClick={() => setIsScanning(false)} className="text-slate-400 hover:text-rose-500 transition-all p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                            <button onClick={() => setIsScanning(false)} className="text-slate-400  transition-all p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
                                 <FiX className="w-6 h-6" />
                             </button>
                         </div>
@@ -863,7 +863,7 @@ const OwnerDashboard = () => {
                                     </div>
                                 )}
                                 <div id="reader" className="w-full h-full rounded-xl overflow-hidden grayscale"></div>
-                                <div className="absolute inset-0 pointer-events-none border-[40px] border-black/10 group-hover:border-black/5 transition-all"></div>
+                                <div className="absolute inset-0 pointer-events-none border-[40px] border-black/10 group- transition-all"></div>
                                 <div className="absolute top-0 left-0 w-full h-0.5 bg-brand-500/40 animate-[scan_3s_linear_infinite]"></div>
                             </div>
                             <div className="mt-8 text-center">

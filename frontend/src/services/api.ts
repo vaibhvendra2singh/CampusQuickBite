@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5001/api`;
+const baseURL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
-    baseURL, // Dynamic host based on env or local network access
+    baseURL, // The Vite dev proxy intercepts this and forwards to localhost:5001
 });
 
 // Request Interceptor: Attach JWT Token

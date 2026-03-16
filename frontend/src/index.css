@@ -156,7 +156,8 @@
 
 /* ====== LIGHT THEME ====== */
 :root {
-  --bg-primary: #F8FAFC;
+  --bg-primary: transparent;
+  --bg-body: #f8fafc;
   --bg-card: #FFFFFF;
   --bg-card-hover: #F1F5F9;
   --bg-input: #F1F5F9;
@@ -168,14 +169,15 @@
   --border-color: #E2E8F0;
   --border-hover: #94A3B8;
   --shadow-color: rgba(15, 23, 42, 0.06);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(226, 232, 240, 0.6);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(226, 232, 240, 0.8);
   --glass-shadow: rgba(0, 112, 255, 0.04);
 }
 
 /* ====== DARK THEME ====== */
 .dark {
-  --bg-primary: #030712;
+  --bg-primary: transparent;
+  --bg-body: #030712;
   --bg-card: #0F172A;
   --bg-card-hover: #1E293B;
   --bg-input: #1E293B;
@@ -187,14 +189,14 @@
   --border-color: #1E293B;
   --border-hover: #334155;
   --shadow-color: rgba(0, 0, 0, 0.4);
-  --glass-bg: rgba(15, 23, 42, 0.6);
-  --glass-border: rgba(30, 41, 59, 0.5);
-  --glass-shadow: rgba(0, 0, 0, 0.2);
+  --glass-bg: rgba(15, 23, 42, 0.85);
+  --glass-border: rgba(30, 41, 59, 0.7);
+  --glass-shadow: rgba(0, 0, 0, 0.3);
 }
 
 /* ====== BASE ====== */
 body {
-  background-color: var(--bg-primary);
+  background-color: var(--bg-body);
   color: var(--text-primary);
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   letter-spacing: -0.011em;
@@ -361,11 +363,7 @@ img {
   box-shadow: 0 1px 3px rgba(0, 112, 255, 0.2);
 }
 
-.btn-primary:hover {
-  background-color: var(--color-brand-600);
-  box-shadow: 0 4px 12px rgba(0, 112, 255, 0.25);
-  transform: translateY(-1px);
-}
+
 
 .btn-primary:active {
   transform: translateY(0) scale(0.98);
@@ -385,10 +383,7 @@ img {
   transition: all 0.2s ease;
 }
 
-.btn-secondary:hover {
-  background-color: var(--bg-card-hover);
-  border-color: var(--border-hover);
-}
+
 
 /* ====== BADGES ====== */
 .badge {
@@ -457,9 +452,7 @@ img {
   border-radius: 3px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-hover);
-}
+
 
 .dark ::-webkit-scrollbar-thumb {
   background: #334155;
@@ -475,11 +468,7 @@ img {
   transition: all 0.25s ease;
 }
 
-.card-modern:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px var(--shadow-color);
-  border-color: var(--border-hover);
-}
+
 
 .card-vibrant {
   background: var(--bg-card);
@@ -501,6 +490,14 @@ img {
   background-image: radial-gradient(circle at 2px 2px, var(--border-color) 1px, transparent 0);
   background-size: 24px 24px;
   opacity: 0.15;
+}
+
+/* ====== PERFORMANCE HINTS ====== */
+.contain-paint {
+  contain: layout style paint;
+}
+.contain-content {
+  contain: content;
 }
 
 .gradient-border-bottom {

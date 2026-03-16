@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
  
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import api from '../../services/api';
 import { useAuth } from './AuthContext';
 
@@ -53,7 +53,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const [outletId, setOutletId] = useState<number | null>(null);
     const [items, setItems] = useState<CartItem[]>([]);
 
-    const syncCart = async () => {
+    const syncCart = useCallback(async () => {
         try {
             const res = await api.get('/cart');
             const { outletId: oid, items: itms } = mapCartResponse(res.data);
@@ -62,7 +62,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('Failed to sync cart:', err);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (isAuthenticated && user?.role === 'STUDENT') {
@@ -73,7 +73,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [isAuthenticated, user]);
 
-    const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
+    const addToCart = useCallback(async (item: Omit<CartItem, 'quantity'>) => {
         const res = await api.post('/cart/add', {
             menuItemId: item.menuItemId,
             quantity: 1,
@@ -81,9 +81,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const { outletId: oid, items: itms } = mapCartResponse(res.data);
         setOutletId(oid);
         setItems(itms);
-    };
+    }, []);
 
-    const removeFromCart = async (menuItemId: number) => {
+    const removeFromCart = useCallback(async (menuItemId: number) => {
         try {
             const res = await api.delete(`/cart/remove/${menuItemId}`);
             const { outletId: oid, items: itms } = mapCartResponse(res.data);
@@ -92,9 +92,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('Failed to remove from cart:', err);
         }
-    };
+    }, []);
 
-    const clearCart = async (localOnly: boolean = false) => {
+    const clearCart = useCallback(async (localOnly: boolean = false) => {
         try {
             if (!localOnly) {
                 await api.delete('/cart/clear');
@@ -104,9 +104,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('Failed to clear cart:', err);
         }
-    };
+    }, []);
 
-    const updateItemQuantity = async (cartItemId: number, action: 'increase' | 'decrease') => {
+    const updateItemQuantity = useCallback(async (cartItemId: number, action: 'increase' | 'decrease') => {
         try {
             const res = await api.put('/cart/update', { cartItemId, action });
             const { outletId: oid, items: itms } = mapCartResponse(res.data);
@@ -115,12 +115,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         } catch (err) {
             console.error('Failed to update cart item quantity:', err);
         }
-    };
+    }, []);
 
-    const cartTotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+    const cartTotal = useMemo(() => items.reduce((total, item) => total + item.price * item.quantity, 0), [items]);
+
+    const value = useMemo(() => ({
+        outletId,
+        items,
+        addToCart,
+        removeFromCart,
+        updateItemQuantity,
+        clearCart,
+        cartTotal,
+        syncCart
+    }), [outletId, items, addToCart, removeFromCart, updateItemQuantity, clearCart, cartTotal, syncCart]);
 
     return (
-        <CartContext.Provider value={{ outletId, items, addToCart, removeFromCart, updateItemQuantity, clearCart, cartTotal, syncCart }}>
+        <CartContext.Provider value={value}>
             {children}
         </CartContext.Provider>
     );

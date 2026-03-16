@@ -10,7 +10,15 @@ export const initSocket = (server: HTTPServer) => {
 
     io = new SocketIOServer(server, {
         cors: {
-            origin: allowedOrigins,
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                if (
+                    origin.includes('localhost') ||
+                    origin.match(/^https?:\/\/(10|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+/)
+                ) return callback(null, true);
+                if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) return callback(null, true);
+                callback(new Error('Not allowed by CORS'));
+            },
             methods: ['GET', 'POST']
         }
     });

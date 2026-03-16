@@ -377,18 +377,18 @@ const AdminDashboard = () => {
                     <div className="space-y-8 animate-none">
                         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 mb-12">
                             <div className="relative flex-1 max-w-2xl group">
-                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 group-hover:text-slate-500 transition-colors z-10 w-5 h-5 pointer-events-none" />
+                                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 group- transition-colors z-10 w-5 h-5 pointer-events-none" />
                                 <input
                                     type="text"
                                     placeholder="Search student directory by name or ID..."
-                                    className="input-field pl-12 h-12 text-base md:text-sm shadow-sm hover:shadow-md focus:shadow-lg transition-all"
+                                    className="input-field pl-12 h-12 text-base md:text-sm shadow-sm  focus:shadow-lg transition-all"
                                     value={userSearch}
                                     onChange={(e) => setUserSearch(e.target.value)}
                                 />
                                 {userSearch && (
                                     <button
                                         onClick={() => setUserSearch('')}
-                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors"
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300  transition-colors"
                                     >
                                         <FiX className="w-4 h-4" />
                                     </button>
@@ -402,7 +402,7 @@ const AdminDashboard = () => {
                                 {/* Export CSV */}
                                 <button
                                     onClick={exportUsersCSV}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg hover:bg-emerald-600 transition-all shadow-sm"
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg  transition-all shadow-sm"
                                 >
                                     <FiDownload className="w-4 h-4" /> Export CSV
                                 </button>
@@ -414,7 +414,7 @@ const AdminDashboard = () => {
                                         <button onClick={() => bulkAction('unfreeze')} className="text-[10px] font-black px-2 py-1 bg-blue-500 text-white rounded-md">Unfreeze All</button>
                                         <button onClick={() => bulkAction('ban')} className="text-[10px] font-black px-2 py-1 bg-red-500 text-white rounded-md">Ban All</button>
                                         <button onClick={() => bulkAction('unban')} className="text-[10px] font-black px-2 py-1 bg-green-500 text-white rounded-md">Unban All</button>
-                                        <button onClick={() => setSelectedUsers(new Set())} className="text-[10px] text-slate-400 hover:text-red-500"><FiX className="w-3 h-3" /></button>
+                                        <button onClick={() => setSelectedUsers(new Set())} className="text-[10px] text-slate-400 "><FiX className="w-3 h-3" /></button>
                                     </div>
                                 )}
                             </div>
@@ -456,7 +456,7 @@ const AdminDashboard = () => {
                                             const isSelf = user.id === currentUser?.id;
                                             const isProtected = isAdminAccount || isSelf;
                                             return (
-                                                <tr key={user.id} className={`hover:bg-slate-50/5 transition-colors group ${selectedUsers.has(user.id) ? 'bg-brand-50/10' : ''} ${isProtected ? 'opacity-75' : ''}`}>
+                                                <tr key={user.id} className={` transition-colors group ${selectedUsers.has(user.id) ? 'bg-brand-50/10' : ''} ${isProtected ? 'opacity-75' : ''}`}>
                                                     <td className="px-4 py-4">
                                                         <input type="checkbox"
                                                             checked={selectedUsers.has(user.id)}
@@ -495,7 +495,7 @@ const AdminDashboard = () => {
                                                             <select
                                                                 value={user.role}
                                                                 onChange={(e) => handleUpdateUserRole(user.id, e.target.value)}
-                                                                className="bg-transparent text-sm font-bold text-brand-600 outline-none cursor-pointer hover:underline"
+                                                                className="bg-transparent text-sm font-bold text-brand-600 outline-none cursor-pointer "
                                                             >
                                                                 <option value="student">Student</option>
                                                                 <option value="owner">Outlet Owner</option>
@@ -525,7 +525,7 @@ const AdminDashboard = () => {
                                                                 {user.isBanned ? (
                                                                     <button
                                                                         onClick={() => handleToggleUserStatus(user.id, 'is_banned', false)}
-                                                                        className="p-2 rounded-lg border bg-green-500 text-white border-green-500 shadow-sm transition-all hover:bg-green-600"
+                                                                        className="p-2 rounded-lg border bg-green-500 text-white border-green-500 shadow-sm transition-all "
                                                                         title="Unban User"
                                                                     >
                                                                         <FiUnlock className="w-4 h-4" />
@@ -533,7 +533,7 @@ const AdminDashboard = () => {
                                                                 ) : (
                                                                     <button
                                                                         onClick={() => handleToggleUserStatus(user.id, 'is_banned', true)}
-                                                                        className="p-2 rounded-lg border text-red-500 border-red-100 hover:bg-red-50 transition-all"
+                                                                        className="p-2 rounded-lg border text-red-500 border-red-100  transition-all"
                                                                         title="Ban User"
                                                                     >
                                                                         <FiLock className="w-4 h-4" />
@@ -541,7 +541,7 @@ const AdminDashboard = () => {
                                                                 )}
                                                                 <button
                                                                     onClick={() => handleToggleUserStatus(user.id, 'is_frozen', !user.isFrozen)}
-                                                                    className={`p-2 rounded-lg border transition-all ${user.isFrozen ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'text-orange-500 border-orange-100 hover:bg-orange-50'}`}
+                                                                    className={`p-2 rounded-lg border transition-all ${user.isFrozen ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'text-orange-500 border-orange-100 '}`}
                                                                     title={user.isFrozen ? 'Unfreeze User' : 'Freeze User'}
                                                                 >
                                                                     <FiPause className="w-4 h-4" />
@@ -608,7 +608,7 @@ const AdminDashboard = () => {
                             </div>
                             <div className="lg:col-span-4 flex flex-col gap-6">
                                 <div className="card-modern !bg-brand-500 text-white p-8 relative overflow-hidden group">
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-110 transition-transform duration-500"></div>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group- transition-transform duration-500"></div>
                                     <FiActivity className="w-10 h-10 mb-6 text-brand-100 relative z-10" />
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-100 mb-3 relative z-10 opacity-90">Campus-Wide Load</p>
                                     <h4 className="text-6xl font-black tracking-tighter mb-4 relative z-10">
@@ -668,7 +668,7 @@ const AdminDashboard = () => {
                                     {orderSearch && (
                                         <button
                                             onClick={() => setOrderSearch('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300  transition-colors"
                                         >
                                             <FiX className="w-3.5 h-3.5" />
                                         </button>
@@ -695,7 +695,7 @@ const AdminDashboard = () => {
                                                 o.outlets?.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
                                                 o.user?.name?.toLowerCase().includes(orderSearch.toLowerCase())
                                             ).map(order => (
-                                                <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <tr key={order.id} className=" transition-colors">
                                                     <td className="px-6 py-4 text-sm font-bold text-brand-600">#{order.id.toString().slice(-4)}</td>
                                                     <td className="px-6 py-4 text-sm font-semibold text-[var(--text-primary)]">{order.outlets?.name}</td>
                                                     <td className="px-6 py-4 text-sm font-medium text-[var(--text-muted)]">{order.user?.name}</td>
@@ -715,7 +715,7 @@ const AdminDashboard = () => {
                                                                 disabled={order.status === 'completed'}
                                                                 className={`p-2 rounded-lg transition-colors border ${order.status === 'completed'
                                                                     ? 'text-slate-300 bg-slate-50 border-slate-100 cursor-not-allowed'
-                                                                    : 'text-green-500 hover:bg-green-50 border-green-100'}`}
+                                                                    : 'text-green-500  border-green-100'}`}
                                                                 title="Force Complete Override"
                                                             >
                                                                 <FiCheckCircle className="w-4 h-4" />
@@ -725,7 +725,7 @@ const AdminDashboard = () => {
                                                                 disabled={order.status === 'cancelled'}
                                                                 className={`p-2 rounded-lg transition-colors border ${order.status === 'cancelled'
                                                                     ? 'text-slate-300 bg-slate-50 border-slate-100 cursor-not-allowed'
-                                                                    : 'text-red-500 hover:bg-red-50 border-red-100'}`}
+                                                                    : 'text-red-500  border-red-100'}`}
                                                                 title="Force Cancel Override"
                                                             >
                                                                 <FiX className="w-4 h-4" />
@@ -787,7 +787,7 @@ const AdminDashboard = () => {
                                         </select>
                                     </div>
                                     <button type="submit" className="btn-primary w-full py-4 text-sm font-bold group">
-                                        Deploy Update <FiZap className="ml-2 group-hover:fill-current" />
+                                        Deploy Update <FiZap className="ml-2 group-" />
                                     </button>
                                 </form>
                             </div>
@@ -816,7 +816,7 @@ const AdminDashboard = () => {
                                         </div>
                                         <button
                                             onClick={() => handleDeleteAnnouncement(anno.id)}
-                                            className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            className="p-2 text-slate-300  transition-colors opacity-0 group-"
                                         >
                                             <FiX className="w-5 h-5" />
                                         </button>
@@ -887,8 +887,8 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => handleToggleReviewVisibility(review.id, !review.is_hidden)}
                                         className={`w-full py-3 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${review.is_hidden
-                                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                            : 'bg-red-50 text-red-600 hover:bg-red-100'
+                                            ? 'bg-green-100 text-green-700 '
+                                            : 'bg-red-50 text-red-600 '
                                             }`}
                                     >
                                         {review.is_hidden ? 'Restore Review' : 'Flag & Moderate'}
@@ -932,8 +932,8 @@ const AdminDashboard = () => {
                                 <p className="text-xs font-semibold text-[var(--text-muted)] mb-2 uppercase tracking-wider">Total Orders</p>
                                 <p className="text-4xl font-bold text-[var(--text-primary)]">{Object.values(outletStats).reduce((s, o) => s + o.totalOrders, 0)}</p>
                             </div>
-                            <div className="card-modern bg-brand-50/50 border-brand-100 group relative overflow-hidden flex flex-col items-center text-center justify-center hover:bg-brand-50 cursor-pointer" onClick={() => setIsSettingsModalOpen(true)}>
-                                <FiSettings className="w-8 h-8 mb-3 text-brand-500 group-hover:rotate-90 transition-all duration-150" />
+                            <div className="card-modern bg-brand-50/50 border-brand-100 group relative overflow-hidden flex flex-col items-center text-center justify-center  cursor-pointer" onClick={() => setIsSettingsModalOpen(true)}>
+                                <FiSettings className="w-8 h-8 mb-3 text-brand-500 group- transition-all duration-150" />
                                 <span className="font-semibold text-brand-700 uppercase tracking-widest text-xs">System Settings</span>
                             </div>
                         </div>
@@ -961,7 +961,7 @@ const AdminDashboard = () => {
                                         <h3 className="text-xl font-bold flex items-center text-[var(--text-primary)]">
                                             <FiPlus className="mr-3 text-brand-500" /> Register Outlet
                                         </h3>
-                                        <button onClick={() => setIsAdding(false)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-2 transition-colors">
+                                        <button onClick={() => setIsAdding(false)} className="text-[var(--text-muted)]  p-2 transition-colors">
                                             <FiX className="w-6 h-6" />
                                         </button>
                                     </div>
@@ -1013,7 +1013,7 @@ const AdminDashboard = () => {
                                         const stats = outletStats[outlet.id] || { menuItems: 0, totalOrders: 0, totalRevenue: 0, activeOrders: 0 };
                                         const isTopEarner = outlet.id === topOutletId && (outletStats[outlet.id]?.totalRevenue || 0) > 0;
                                         return (
-                                            <div key={outlet.id} className={`card-modern group hover:shadow-lg transition-all border relative overflow-hidden cursor-pointer ${isTopEarner ? 'border-amber-300 dark:border-amber-500/30 ring-1 ring-amber-300/60' : 'border-[var(--border-color)]'}`} onClick={() => setSelectedOutlet(outlet)}>
+                                            <div key={outlet.id} className={`card-modern group  transition-all border relative overflow-hidden cursor-pointer ${isTopEarner ? 'border-amber-300 dark:border-amber-500/30 ring-1 ring-amber-300/60' : 'border-[var(--border-color)]'}`} onClick={() => setSelectedOutlet(outlet)}>
                                                 {isTopEarner && (
                                                     <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-1 bg-amber-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider shadow-lg">
                                                         <FiTrendingUp className="w-3 h-3" /> Top Earner
@@ -1035,7 +1035,7 @@ const AdminDashboard = () => {
                                                             </div>
                                                             <button
                                                                 onClick={(e) => { e.stopPropagation(); openSettings(outlet); }}
-                                                                className="p-2 text-[var(--text-muted)] hover:text-brand-500 transition-colors"
+                                                                className="p-2 text-[var(--text-muted)]  transition-colors"
                                                             >
                                                                 <FiSettings className="w-5 h-5" />
                                                             </button>
@@ -1161,31 +1161,31 @@ const AdminDashboard = () => {
             <div className="flex flex-wrap items-center gap-4 mb-20 p-2 bg-slate-50 rounded-2xl border border-slate-100">
                 <button
                     onClick={() => setActiveTab('outlets')}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'outlets' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'hover:bg-brand-50 text-[var(--text-muted)]'}`}
+                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'outlets' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
                 >
                     <FiDatabase className="mr-2" /> Outlets
                 </button>
                 <button
                     onClick={() => setActiveTab('users')}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'hover:bg-brand-50 text-[var(--text-muted)]'}`}
+                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'users' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
                 >
                     <FiUsers className="mr-2" /> User Directory
                 </button>
                 <button
                     onClick={() => setActiveTab('orders')}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'hover:bg-brand-50 text-[var(--text-muted)]'}`}
+                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'orders' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
                 >
                     <FiZap className="mr-2" /> Command Center
                 </button>
                 <button
                     onClick={() => setActiveTab('announcements')}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'announcements' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'hover:bg-brand-50 text-[var(--text-muted)]'}`}
+                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'announcements' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
                 >
                     <FiBell className="mr-2" /> Global Alerts
                 </button>
                 <button
                     onClick={() => setActiveTab('reviews')}
-                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'reviews' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : 'hover:bg-brand-50 text-[var(--text-muted)]'}`}
+                    className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'reviews' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
                 >
                     <FiStar className="mr-2" /> Review Audit
                 </button>
@@ -1210,7 +1210,7 @@ const AdminDashboard = () => {
                                 <span className="text-xs font-semibold text-brand-600 dark:text-brand-400 uppercase tracking-wider mb-1 block">Outlet Configuration</span>
                                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">{selectedOutlet.name}</h3>
                             </div>
-                            <button onClick={() => setSelectedOutlet(null)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                            <button onClick={() => setSelectedOutlet(null)} className="p-2 text-slate-400  dark:  dark: rounded-full transition-colors">
                                 <FiX className="w-5 h-5" />
                             </button>
                         </div>
@@ -1218,7 +1218,7 @@ const AdminDashboard = () => {
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <h4 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Outlet Details</h4>
-                                    <button onClick={() => setIsEditingOutlet(!isEditingOutlet)} className="text-brand-500 hover:text-brand-600 transition-colors">
+                                    <button onClick={() => setIsEditingOutlet(!isEditingOutlet)} className="text-brand-500  transition-colors">
                                         <FiEdit3 className="w-5 h-5" />
                                     </button>
                                 </div>
@@ -1256,7 +1256,7 @@ const AdminDashboard = () => {
                                         <div className="relative z-10 flex items-center space-x-5">
                                             <div className="w-14 h-14 rounded-lg bg-brand-100 text-brand-600 flex items-center justify-center font-bold shrink-0 overflow-hidden shadow-sm">
                                                 {selectedOutlet.owner.profilePic ? (
-                                                    <img src={selectedOutlet.owner.profilePic} alt="" className="w-full h-full object-cover" />
+                                                    <img loading="lazy" decoding="async" src={selectedOutlet.owner.profilePic} alt="" className="w-full h-full object-cover" />
                                                 ) : (
                                                     <FiUser className="w-6 h-6" />
                                                 )}
@@ -1288,7 +1288,7 @@ const AdminDashboard = () => {
 
                             <div className="pt-8 border-t border-[var(--border-color)]">
                                 <h4 className="text-xs font-semibold text-red-500 uppercase tracking-wider mb-4">Danger zone</h4>
-                                <button onClick={handleDeleteOutlet} className="w-full py-3 rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-red-500/30 text-red-500 font-semibold text-sm hover:bg-red-500 hover:text-white transition-all">Delete outlet</button>
+                                <button onClick={handleDeleteOutlet} className="w-full py-3 rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-red-500/30 text-red-500 font-semibold text-sm   transition-all">Delete outlet</button>
                             </div>
                         </div>
                     </div>
@@ -1304,7 +1304,7 @@ const AdminDashboard = () => {
                             <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center">
                                 <FiSettings className="mr-3 text-brand-500" /> System Settings
                             </h3>
-                            <button onClick={() => setIsSettingsModalOpen(false)} className="w-8 h-8 rounded-full bg-[var(--bg-input)] flex items-center justify-center text-[var(--text-muted)] hover:bg-[var(--border-color)] hover:text-[var(--text-primary)] transition-colors">
+                            <button onClick={() => setIsSettingsModalOpen(false)} className="w-8 h-8 rounded-full bg-[var(--bg-input)] flex items-center justify-center text-[var(--text-muted)]   transition-colors">
                                 <FiX className="w-4 h-4" />
                             </button>
                         </div>
@@ -1320,17 +1320,17 @@ const AdminDashboard = () => {
                             </div>
 
                             <div className="space-y-3">
-                                <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)] hover:border-brand-500 border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => { localStorage.clear(); showToast('Local cache wiped. Reloading UI.', 'success'); setTimeout(() => window.location.reload(), 1000); setIsSettingsModalOpen(false); }}>
+                                <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)]  border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => { localStorage.clear(); showToast('Local cache wiped. Reloading UI.', 'success'); setTimeout(() => window.location.reload(), 1000); setIsSettingsModalOpen(false); }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group-hover:text-brand-500 transition-colors bg-[var(--bg-primary)]">
+                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-primary)]">
                                             <FiHardDrive className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-semibold text-[var(--text-primary)]">Reset local cache</span>
                                     </div>
-                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-brand-500 transition-colors" />
+                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group- transition-colors" />
                                 </button>
 
-                                <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)] hover:border-green-500 border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => {
+                                <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)]  border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => {
                                     const csvHeader = 'Outlet Name,Location,Total Orders,Total Revenue\n';
                                     const csvData = outlets.map(o => `"${o.name}","${o.location}",${outletStats[o.id]?.totalOrders || 0},${outletStats[o.id]?.totalRevenue || 0}`).join('\n');
                                     const blob = new Blob([csvHeader + csvData], { type: 'text/csv' });
@@ -1339,17 +1339,17 @@ const AdminDashboard = () => {
                                     showToast('System report generated & downloaded.', 'success'); setIsSettingsModalOpen(false);
                                 }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group-hover:text-green-500 transition-colors bg-[var(--bg-primary)]">
+                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-primary)]">
                                             <FiDownload className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-semibold text-[var(--text-primary)]">Export system report (CSV)</span>
                                     </div>
-                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:text-green-500 transition-colors" />
+                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group- transition-colors" />
                                 </button>
 
-                                <button className="w-full flex items-center justify-between p-4 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 border border-red-100 dark:border-red-500/20 rounded-xl transition-colors text-red-600 dark:text-red-400 group" onClick={() => { showToast('Emergency refresh initiated - reloading.', 'error'); handleRefresh(); setIsSettingsModalOpen(false); }}>
+                                <button className="w-full flex items-center justify-between p-4 bg-red-50  dark:bg-red-500/10 dark: border border-red-100 dark:border-red-500/20 rounded-xl transition-colors text-red-600 dark:text-red-400 group" onClick={() => { showToast('Emergency refresh initiated - reloading.', 'error'); handleRefresh(); setIsSettingsModalOpen(false); }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-red-200 dark:border-red-500/30 rounded-lg group-hover:bg-red-200 dark:group-hover:bg-red-500/30 transition-colors bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+                                        <div className="p-2 border border-red-200 dark:border-red-500/30 rounded-lg group- dark:group- transition-colors bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
                                             <FiRefreshCw className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-bold">Restart connection links</span>

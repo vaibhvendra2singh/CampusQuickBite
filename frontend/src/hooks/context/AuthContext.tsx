@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import api from '../../services/api';
 
 export type Role = 'STUDENT' | 'SHOP_OWNER' | 'ADMIN';
@@ -78,35 +78,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
     }, []);
 
-    const login = (userData: User, newToken: string) => {
+    const login = useCallback((userData: User, newToken: string) => {
         setUser(userData);
         setToken(newToken);
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('token', newToken);
-    };
+    }, []);
 
-    const logout = () => {
+    const logout = useCallback(() => {
         setUser(null);
         setToken(null);
         localStorage.removeItem('user');
         localStorage.removeItem('token');
-    };
+    }, []);
 
-    const updateUser = (userData: User) => {
+    const updateUser = useCallback((userData: User) => {
         setUser(userData);
         localStorage.setItem('user', JSON.stringify(userData));
-    };
+    }, []);
+
+    const value = useMemo(() => ({
+        user,
+        token,
+        login,
+        logout,
+        updateUser,
+        isAuthenticated: !!token,
+        isLoading
+    }), [user, token, login, logout, updateUser, isLoading]);
 
     return (
-        <AuthContext.Provider value={{
-            user,
-            token,
-            login,
-            logout,
-            updateUser,
-            isAuthenticated: !!token,
-            isLoading
-        }}>
+        <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );

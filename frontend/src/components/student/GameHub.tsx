@@ -111,7 +111,7 @@ const GameHub: React.FC = () => {
                                     }}
                                 >
                                     <div
-                                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-gradient-to-br ${game.color} flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform`}
+                                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-gradient-to-br ${game.color} flex-shrink-0 shadow-lg group- transition-transform`}
                                     >
                                         {game.emoji}
                                     </div>

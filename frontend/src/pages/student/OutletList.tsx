@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { FiMapPin, FiArrowRight, FiStar, FiSearch } from 'react-icons/fi';
+import { FadeIn } from '../../components/animations/FadeIn';
 
 interface TopFoodItem {
     id: number;
@@ -66,7 +67,7 @@ const CategoryPill = ({ category, isSelected, onClick, index }: { category: { na
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] text-[var(--text-primary)] hover:-rotate-1'} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-3 px-6' : 'rounded-[2rem] rounded-bl-lg py-2.5 px-5'}`}
+            className={`flex items-center gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)]  text-[var(--text-primary)] '} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-3 px-6' : 'rounded-[2rem] rounded-bl-lg py-2.5 px-5'}`}
         >
             <span className={`flex items-center justify-center w-10 h-10 rounded-full ${isSelected ? 'bg-[var(--bg-primary)]/20' : category.color} text-xl transition-all group-hover/cat:scale-110`}>
                 {category.icon}
@@ -99,7 +100,7 @@ const CategoryGallery = ({ selectedCategory, onSelectCategory }: { selectedCateg
     );
 };
 
-const CompactRestaurantListItem = ({ outlet }: { outlet: Outlet }) => {
+const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) => {
     const image = getVendorImage(outlet.name, outlet.id);
     const waitTime = outlet.current_status === 'BUSY' ? 'Usually 30-45m' : outlet.current_status === 'MODERATE' ? 'About 15-20m' : 'Ready in 10-15m';
 
@@ -109,10 +110,10 @@ const CompactRestaurantListItem = ({ outlet }: { outlet: Outlet }) => {
     const brandColor = nameStr.includes('southern') ? 'bg-[#053d18]' : nameStr.includes('maggi') ? 'bg-[#bd0f22]' : 'bg-[var(--bg-card)]';
 
     return (
-        <Link to={`/outlets/${outlet.id}/menu`} className="group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-brand-500/40 rounded-[2rem] transition-all duration-150 hover:shadow-xl hover:shadow-[var(--shadow-color)] relative overflow-hidden">
+        <Link to={`/outlets/${outlet.id}/menu`} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden">
 
             <div className={`w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-[var(--border-color)] ${isLogo ? brandColor : 'bg-[var(--bg-card)]'}`}>
-                <img src={image} loading="lazy" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.65] p-2' : ''}`} />
+                <img src={image} loading="lazy" decoding="async" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.65] p-2' : ''}`} />
                 {!outlet.is_open && (
                     <div className="absolute inset-0 bg-[var(--bg-primary)]/70 backdrop-blur-sm z-10 flex items-center justify-center p-3 text-center">
                         <div className="bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
@@ -124,7 +125,7 @@ const CompactRestaurantListItem = ({ outlet }: { outlet: Outlet }) => {
 
             <div className="flex-1 min-w-0 pr-0 md:pr-6">
                 <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight group-hover:text-brand-500 transition-colors truncate">
+                    <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight group- transition-colors truncate">
                         {outlet.name}
                     </h3>
                     {outlet.average_rating && outlet.average_rating > 4.5 && (
@@ -151,7 +152,7 @@ const CompactRestaurantListItem = ({ outlet }: { outlet: Outlet }) => {
                     {outlet.average_rating && <span className="text-[var(--text-muted)] opacity-50">•</span>}
                     <span className="text-slate-600 dark:text-slate-400 font-bold">{waitTime}</span>
                     <span className="text-[var(--text-muted)] opacity-50">•</span>
-                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] group-hover:text-brand-500 transition-colors">
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] group- transition-colors">
                         <FiMapPin className="w-4 h-4" />
                         <span className="truncate">{outlet.location}</span>
                     </div>
@@ -159,13 +160,13 @@ const CompactRestaurantListItem = ({ outlet }: { outlet: Outlet }) => {
             </div>
 
             <div className="hidden md:flex flex-shrink-0 items-center justify-center">
-                <div className="w-12 h-12 rounded-full border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group-hover:bg-brand-500 group-hover:border-brand-500 group-hover:text-white transition-all shadow-sm">
+                <div className="w-12 h-12 rounded-full border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group- group- group- transition-all shadow-sm">
                     <FiArrowRight className="w-5 h-5" />
                 </div>
             </div>
         </Link>
     );
-};
+});
 
 const CompactRestaurantList = ({ outlets, title, description }: { outlets: Outlet[], title: string, description?: string }) => {
     return (
@@ -184,9 +185,9 @@ const CompactRestaurantList = ({ outlets, title, description }: { outlets: Outle
     );
 };
 
-const GridFoodListItem = ({ item }: { item: TopFoodItem }) => {
+const GridFoodListItem = React.memo(({ item }: { item: TopFoodItem }) => {
     return (
-        <Link to={`/outlets/${item.outlet_id}/menu`} className="group flex flex-col justify-between w-[220px] md:w-[260px] flex-shrink-0 p-5 p bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-amber-500/40 rounded-[2rem] transition-all duration-150 hover:shadow-xl hover:shadow-[var(--shadow-color)] relative overflow-hidden snap-start">
+        <Link to={`/outlets/${item.outlet_id}/menu`} className="contain-content group flex flex-col justify-between w-[220px] md:w-[260px] flex-shrink-0 p-5 p bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden snap-start">
 
             <div className="flex justify-between items-start mb-4">
                 <div className="w-16 h-16 flex-shrink-0 rounded-2xl flex items-center justify-center bg-amber-50 dark:bg-amber-900/20 text-3xl shadow-inner border border-amber-100 dark:border-amber-800/50">
@@ -200,12 +201,12 @@ const GridFoodListItem = ({ item }: { item: TopFoodItem }) => {
             </div>
 
             <div className="flex-1">
-                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight group-hover:text-amber-500 transition-colors line-clamp-2 leading-tight mb-2">
+                <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight group- transition-colors line-clamp-2 leading-tight mb-2">
                     {item.name}
                 </h3>
 
                 <p className="text-[var(--text-secondary)] text-xs mb-4 font-medium line-clamp-1">
-                    From <span className="font-bold text-[var(--text-primary)] group-hover:underline">{item.outlet_name}</span>
+                    From <span className="font-bold text-[var(--text-primary)] group-">{item.outlet_name}</span>
                 </p>
             </div>
 
@@ -230,27 +231,28 @@ const GridFoodListItem = ({ item }: { item: TopFoodItem }) => {
                 </div>
             </div>
 
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-150 hidden md:block">
+            <div className="absolute top-4 right-4 opacity-0 group- transition-opacity duration-150 hidden md:block">
                 <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg">
                     <FiArrowRight className="w-3 h-3" />
                 </div>
             </div>
         </Link>
     );
-};
+});
 
 const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [quickFilter, setQuickFilter] = useState<string | null>(null); // NEW: quick filter pill state
 
-    const topFoodItems = outlets
+    const topFoodItems = useMemo(() => outlets
         .flatMap(outlet => (outlet.menu_items || []).map(item => ({ ...item, outlet_id: outlet.id, outlet_name: outlet.name })))
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
-        .slice(0, 10);
+        .slice(0, 10), [outlets]);
     // Removed listRef and scroll function as per instruction
 
-    const gridOutlets = outlets.filter(o => {
+    const gridOutlets = useMemo(() => {
+        return outlets.filter(o => {
         const name = o.name.toLowerCase();
         const menuString = o.menu_items?.map(m => m.name.toLowerCase()).join(' ') || '';
 
@@ -302,63 +304,55 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
         return true;
     });
+    }, [outlets, searchTerm, quickFilter, selectedCategory]);
 
     return (
         <>
-            {/* Expressive, Humanized Hero Section with Glass Box */}
-            <div className="relative mt-12 mb-20 px-8 py-12 md:p-16 max-w-4xl mx-auto flex flex-col bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl rounded-[3.5rem] border border-[var(--border-color)] shadow-sm overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -translate-y-32 translate-x-32 blur-3xl opacity-50"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl opacity-30"></div>
-
-                <div className="relative z-10 max-w-3xl">
-                    <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-medium mb-6 shadow-sm border border-emerald-100 dark:border-emerald-800/50">
-                        <span className="relative flex h-2 w-2">
-                            <span className=" absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span>
-                        <span>Kitchens are active</span>
-                    </div>
-
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-5 leading-tight text-[var(--text-primary)] font-heading">
-                        Order ahead. Skip the line.
+            <div className="relative min-h-[85vh] flex flex-col justify-center px-4 md:px-8 max-w-7xl mx-auto z-10 overscroll-none">
+                <FadeIn delay={0.1}>
+                    <h1 className="text-massive text-[var(--text-primary)] mb-6 drop-shadow-lg">
+                        Bigger<br/>than hunger.
+                        <span className="block text-brand-500 opacity-100 mt-2 drop-shadow-md">Closer than a line.</span>
                     </h1>
-                    <p className="text-[var(--text-secondary)] text-lg mb-10 max-w-xl leading-relaxed">
-                        Connect with campus vendors so your food is ready when you are. Simple, honest, and built for you.
+                </FadeIn>
+                
+                <FadeIn delay={0.3}>
+                    <p className="text-fluid-large text-[var(--text-primary)] mb-12 max-w-3xl font-bold drop-shadow-md">
+                        Connect with campus vendors so your food is ready when you are.
                     </p>
+                </FadeIn>
 
-                    <div className="relative max-w-2xl group mb-8">
-                        <div className="relative flex items-center bg-[var(--bg-card)] border-2 border-[var(--border-color)] rounded-[2.5rem] rounded-tl-xl p-2 shadow-sm focus-within:ring-4 focus-within:ring-brand-500/10 focus-within:border-brand-500 transition-all duration-150 hover:shadow-md">
-                            <div className="w-12 h-12 flex items-center justify-center rounded-full bg-[var(--bg-input)] ml-2 text-[var(--text-muted)]">
-                                <FiSearch className="w-5 h-5" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Craving a burger? Feeling like tea?"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] px-5 py-4 text-lg font-medium"
-                            />
-                            {searchTerm && (
-                                <button onClick={() => setSearchTerm('')} className="pr-4 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-                                    Clear
-                                </button>
-                            )}
+                <FadeIn delay={0.5} className="w-full max-w-2xl relative z-20">
+                    <div className="relative flex items-center bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-[2.5rem] p-2 shadow-2xl focus-within:ring-4 focus-within:ring-brand-500/20 transition-all duration-300 transform ">
+                        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-brand-500 text-white ml-2 shadow-lg">
+                            <FiSearch className="w-6 h-6" />
                         </div>
+                        <input
+                            type="text"
+                            placeholder="Craving a burger? Feeling like tea?"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] px-6 py-5 text-xl font-bold"
+                        />
+                        {searchTerm && (
+                            <button onClick={() => setSearchTerm('')} className="pr-6 text-[var(--text-muted)]  transition-colors font-bold uppercase tracking-widest text-sm">
+                                Clear
+                            </button>
+                        )}
                     </div>
 
-                    {/* Conversational Filter Chips */}
-                    <div className="flex flex-wrap items-center gap-3">
-                        {['Only the fastest ⚡', 'Highly rated ⭐', 'Pure veg 🥬'].map(filter => {
-                            const internalFilter = filter === 'Only the fastest ⚡' ? 'Fast Delivery' : filter === 'Highly rated ⭐' ? 'Top Rated' : 'Veg Only';
+                    <div className="flex flex-wrap items-center gap-3 mt-6 ml-2">
+                        {['Fast Delivery ⚡', 'Top Rated ⭐', 'Veg Only 🥬'].map(filter => {
+                            const internalFilter = filter.replace(/ ⭐| ⚡| 🥬/, '');
                             const isActive = quickFilter === internalFilter;
 
                             return (
                                 <button
                                     key={filter}
                                     onClick={() => setQuickFilter(isActive ? null : internalFilter)}
-                                    className={`px-5 py-2.5 rounded-[2rem] text-base font-medium transition-all duration-150 ease-out ${isActive
-                                        ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-md rotate-[-2deg]'
-                                        : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-card-hover)] hover:text-[var(--text-primary)] border border-[var(--border-color)] '
+                                    className={`px-6 py-3 rounded-[2rem] text-sm font-bold tracking-wide transition-all duration-300 ${isActive
+                                        ? 'bg-brand-500 text-white shadow-lg rotate-[-2deg] scale-105'
+                                        : 'bg-[var(--glass-bg)] backdrop-blur-md text-[var(--text-primary)] border border-[var(--glass-border)]  dark: '
                                         }`}
                                 >
                                     {filter} {isActive && <span className="ml-1 opacity-70">×</span>}
@@ -366,48 +360,52 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
                             );
                         })}
                     </div>
+                </FadeIn>
+            </div>
+
+            <FadeIn delay={0.2} direction="up" fullWidth>
+                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm rounded-t-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+                    <CategoryGallery
+                        selectedCategory={selectedCategory}
+                        onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
+                    />
                 </div>
-            </div>
+            </FadeIn>
 
-            <div className="max-w-4xl mx-auto px-4 md:px-0">
-                <CategoryGallery
-                    selectedCategory={selectedCategory}
-                    onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
-                />
-            </div>
-
-            <div className="my-12 h-px w-full max-w-4xl mx-auto bg-slate-300 dark:bg-slate-700"></div>
-
-            {/* A warm intro to the top places using the new narrative layout */}
             {topFoodItems.length > 0 && (
-                <div className="mb-20 mt-16 max-w-4xl mx-auto px-4 md:px-0">
-                    <div className="mb-10">
-                        <h2 className="text-3xl font-black text-[var(--text-primary)] tracking-tight mb-2">Campus Favorites</h2>
-                        <p className="text-lg text-[var(--text-secondary)] font-medium">The highest-rated items everyone is ordering right now.</p>
-                    </div>
+                <FadeIn delay={0.1} fullWidth>
+                    <div className="max-w-7xl mx-auto px-4 md:px-8 mb-24 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm py-10">
+                        <div className="mb-12">
+                            <h2 className="text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
+                        </div>
 
-                    <div className="flex gap-4 w-full overflow-x-auto pb-8 pt-2 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {topFoodItems.map((item) => (
-                            <GridFoodListItem key={`${item.outlet_id}-${item.id}`} item={item as TopFoodItem} />
-                        ))}
+                        <div className="flex gap-6 w-full overflow-x-auto pb-12 pt-4 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 -mx-4">
+                            {topFoodItems.map((item) => (
+                                <div key={`${item.outlet_id}-${item.id}`} className="snap-center drop-shadow-2xl">
+                                    <GridFoodListItem item={item as TopFoodItem} />
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </FadeIn>
             )}
 
-            <div className="my-12 h-px w-full max-w-4xl mx-auto bg-slate-300 dark:bg-slate-700"></div>
+            <FadeIn delay={0.1} fullWidth>
+                <div className="max-w-7xl mx-auto px-4 md:px-8 pb-32 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm rounded-b-[4rem]">
+                    <CompactRestaurantList
+                        outlets={gridOutlets}
+                        title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}
+                        description={selectedCategory ? "Filtered down to match your craving." : "A curated list of all available kitchens, just for you."}
+                    />
 
-            <CompactRestaurantList
-                outlets={gridOutlets}
-                title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}
-                description={selectedCategory ? "Filtered down to match your craving." : "A curated list of all available kitchens, just for you."}
-            />
-
-            {gridOutlets.length === 0 && (
-                <div className="text-center py-12">
-                    <p className="text-lg text-[var(--text-muted)]">No vendors found for this category.</p>
-                    <button onClick={() => setSelectedCategory(null)} className="mt-4 text-brand-500 font-semibold hover:underline">Clear Filter</button>
+                    {gridOutlets.length === 0 && (
+                        <div className="text-center py-24">
+                            <p className="text-2xl font-bold text-[var(--text-muted)]">No vendors found in this orbit.</p>
+                            <button onClick={() => { setSelectedCategory(null); setQuickFilter(null); setSearchTerm(''); }} className="mt-8 px-8 py-4 bg-brand-500 rounded-full text-white font-black  transition-transform shadow-xl">Reset Scanners</button>
+                        </div>
+                    )}
                 </div>
-            )}
+            </FadeIn>
         </>
     );
 };

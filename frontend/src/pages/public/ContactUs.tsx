@@ -12,10 +12,10 @@ const ContactUs = () => {
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-8 rounded-2xl shadow-sm">
  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 text-brand-500 uppercase tracking-wide text-sm">Support Email</h3>
- <p className="text-[var(--text-primary)] font-medium text-lg mb-6"><a href="mailto:support@campusbite.com" className="hover:text-brand-600 transition-colors">support@campusbite.com</a></p>
+ <p className="text-[var(--text-primary)] font-medium text-lg mb-6"><a href="mailto:support@campusbite.com" className=" transition-colors">support@campusbite.com</a></p>
 
  <h3 className="text-lg font-bold text-[var(--text-primary)] mb-3 text-brand-500 uppercase tracking-wide text-sm">General Inquiries</h3>
- <p className="text-[var(--text-primary)] font-medium text-lg"><a href="mailto:info@campusbite.com" className="hover:text-brand-600 transition-colors">info@campusbite.com</a></p>
+ <p className="text-[var(--text-primary)] font-medium text-lg"><a href="mailto:info@campusbite.com" className=" transition-colors">info@campusbite.com</a></p>
  </div>
 
  <div className="bg-[var(--bg-card)] border border-[var(--border-color)] p-8 rounded-2xl shadow-sm">

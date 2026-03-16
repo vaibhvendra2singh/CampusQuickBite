@@ -7,6 +7,7 @@ import api from '../../services/api';
 import { FiClock, FiCheckCircle, FiPackage, FiHome, FiCoffee, FiShoppingBag, FiBell } from 'react-icons/fi';
 import { QRCodeSVG } from 'qrcode.react';
 import { useToast } from '../../hooks/context/ToastContext';
+import { FadeIn } from '../../components/animations/FadeIn';
 
 interface OrderItem {
  id: number;
@@ -138,9 +139,10 @@ const OrderLiveStatus = () => {
  const qrData = qrToken || '';
 
  return (
- <div className="max-w-5xl mx-auto py-8 animate-none px-6 pb-24">
- <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)] overflow-hidden shadow-sm">
- <div className="p-6 md:p-10">
+ <FadeIn delay={0.1}>
+ <div className="max-w-5xl mx-auto py-8 px-6 pb-24 relative z-10">
+ <div className="bg-[var(--glass-bg)] backdrop-blur-2xl rounded-[3rem] border border-[var(--glass-border)] overflow-hidden shadow-2xl">
+ <div className="p-8 md:p-14">
  <div className="flex flex-col lg:flex-row justify-between gap-12">
  {/* Tracker Section */}
  <div className="flex-1 space-y-8">
@@ -197,9 +199,9 @@ const OrderLiveStatus = () => {
  </div>
 
  {/* Sidebar Section */}
- <div className="lg:w-72 space-y-5 pt-6 lg:pt-0">
- <div className="bg-[var(--text-primary)] text-[var(--bg-primary)] p-6 rounded-2xl">
- <div className="flex justify-between items-start mb-5">
+ <div className="lg:w-72 space-y-6 pt-6 lg:pt-0">
+ <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] p-8 rounded-3xl shadow-xl">
+ <div className="flex justify-between items-start mb-5 text-[var(--text-primary)]">
  <div>
  <p className="text-xs opacity-60 mb-1">Order</p>
  <p className="text-2xl font-bold">#{order.id}</p>
@@ -207,7 +209,7 @@ const OrderLiveStatus = () => {
  {order.status.toUpperCase() === 'READY' && qrToken && (
  <button
  onClick={() => setShowQR(!showQR)}
- className={`px-3 py-1.5 font-semibold text-xs rounded-lg border transition-all ${showQR ? 'bg-brand-500 text-white border-brand-500' : 'bg-transparent text-[var(--bg-primary)] border-white/20 hover:border-brand-500'}`}
+ className={`px-4 py-2 font-bold text-xs rounded-xl border transition-all shadow-sm ${showQR ? 'bg-brand-500 text-white border-brand-500 shadow-brand-500/20' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)]   '}`}
  >
  {showQR ? 'Hide QR' : 'Show QR'}
  </button>
@@ -217,7 +219,7 @@ const OrderLiveStatus = () => {
  {showQR && (
  <div className="mb-5 animate-none flex flex-col items-center w-full">
  <div className="bg-white p-4 rounded-2xl shadow-xl inline-block relative overflow-hidden group">
- <div className="absolute inset-0 bg-brand-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+ <div className="absolute inset-0 bg-brand-500/5 opacity-0 group- transition-opacity"></div>
  <QRCodeSVG
  value={qrData}
  size={220}
@@ -242,8 +244,8 @@ const OrderLiveStatus = () => {
  </div>
  </div>
 
- <div className="bg-[var(--bg-input)] rounded-2xl p-5 border border-[var(--border-color)]">
- <div className="flex items-center mb-4 text-[var(--text-muted)]">
+ <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-3xl p-6 shadow-xl">
+ <div className="flex items-center mb-4 text-[var(--text-secondary)]">
  <FiShoppingBag className="mr-2 w-4 h-4" />
  <h4 className="font-semibold text-sm">Order summary</h4>
  </div>
@@ -265,7 +267,7 @@ const OrderLiveStatus = () => {
  </div>
 
  <div className="text-center pt-2">
- <Link to="/" className="group inline-flex items-center text-[var(--text-muted)] hover:text-brand-500 transition-all font-medium text-sm">
+ <Link to="/" className="group inline-flex items-center text-[var(--text-muted)]  transition-all font-medium text-sm">
  <FiHome className="mr-2 transition-" />
  Back to outlets
  </Link>
@@ -275,6 +277,7 @@ const OrderLiveStatus = () => {
  </div>
  </div>
  </div>
+ </FadeIn>
  );
 };
 

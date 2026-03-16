@@ -3,7 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../hooks/context/AuthContext';
 import { useToast } from '../hooks/context/ToastContext';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || `http://${window.location.hostname}:5001`;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || `http://${window.location.host}`;
 
 export const useSocket = () => {
     const { user, isAuthenticated, updateUser } = useAuth();
