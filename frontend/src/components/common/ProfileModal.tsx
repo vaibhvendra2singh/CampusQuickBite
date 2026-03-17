@@ -102,7 +102,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-[var(--bg-primary)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-none flex flex-col max-h-[90vh]">
+            <div className="bg-[var(--bg-card)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-none flex flex-col max-h-[90vh]">
                 {/* Header Banner */}
                 <div className="h-28 bg-brand-500 relative flex-shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-brand-700"></div>
@@ -115,7 +115,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
 
                     {/* Avatar Overlap */}
                     <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
-                        <div className="p-1 bg-[var(--bg-primary)] rounded-full">
+                        <div className="p-1 bg-[var(--bg-card)] rounded-full">
                             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative shadow-sm group">
                                 {(isEditing ? formData.profilePic : user.profilePic) ? (
                                     <img loading="lazy" decoding="async" src={isEditing ? formData.profilePic : user.profilePic} alt={user.name} className="w-full h-full object-cover transition-all duration-150" />

@@ -67,12 +67,12 @@ const CategoryPill = ({ category, isSelected, onClick, index }: { category: { na
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-primary)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)]  text-[var(--text-primary)] '} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-3 px-6' : 'rounded-[2rem] rounded-bl-lg py-2.5 px-5'}`}
+            className={`flex items-center gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-card)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)]  text-[var(--text-primary)] '} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-3 px-6' : 'rounded-[2rem] rounded-bl-lg py-2.5 px-5'}`}
         >
-            <span className={`flex items-center justify-center w-10 h-10 rounded-full ${isSelected ? 'bg-[var(--bg-primary)]/20' : category.color} text-xl transition-all group-hover/cat:scale-110`}>
+            <span className={`flex items-center justify-center w-10 h-10 rounded-full ${isSelected ? 'bg-[var(--bg-card)]/20' : category.color} text-xl transition-all group-hover/cat:scale-110`}>
                 {category.icon}
             </span>
-            <span className={`font-semibold text-lg tracking-tight ${isSelected ? 'text-[var(--bg-primary)]' : 'text-[var(--text-secondary)] group-hover/cat:text-[var(--text-primary)]'}`}>{category.name}</span>
+            <span className={`font-semibold text-lg tracking-tight ${isSelected ? 'text-[var(--bg-card)]' : 'text-[var(--text-secondary)] group-hover/cat:text-[var(--text-primary)]'}`}>{category.name}</span>
         </button>
     );
 };
@@ -115,8 +115,8 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
             <div className={`w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-[var(--border-color)] ${isLogo ? brandColor : 'bg-[var(--bg-card)]'}`}>
                 <img src={image} loading="lazy" decoding="async" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.65] p-2' : ''}`} />
                 {!outlet.is_open && (
-                    <div className="absolute inset-0 bg-[var(--bg-primary)]/70 backdrop-blur-sm z-10 flex items-center justify-center p-3 text-center">
-                        <div className="bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                    <div className="absolute inset-0 bg-[var(--bg-card)]/70 backdrop-blur-sm z-10 flex items-center justify-center p-3 text-center">
+                        <div className="bg-[var(--text-primary)] text-[var(--bg-card)] text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
                             Closed
                         </div>
                     </div>
@@ -364,7 +364,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             </div>
 
             <FadeIn delay={0.2} direction="up" fullWidth>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm rounded-t-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-t-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
                     <CategoryGallery
                         selectedCategory={selectedCategory}
                         onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
@@ -374,7 +374,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
             {topFoodItems.length > 0 && (
                 <FadeIn delay={0.1} fullWidth>
-                    <div className="max-w-7xl mx-auto px-4 md:px-8 mb-24 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm py-10">
+                    <div className="max-w-7xl mx-auto px-4 md:px-8 mb-24 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm py-10">
                         <div className="mb-12">
                             <h2 className="text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
                         </div>
@@ -391,7 +391,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             )}
 
             <FadeIn delay={0.1} fullWidth>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 pb-32 z-20 relative bg-[var(--bg-primary)]/40 backdrop-blur-sm rounded-b-[4rem]">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 pb-32 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-b-[4rem]">
                     <CompactRestaurantList
                         outlets={gridOutlets}
                         title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}

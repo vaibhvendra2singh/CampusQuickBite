@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import path from 'path';
+import logger from '../services/logger';
+import { normalizeRole, displayRole, ROLES } from '../utils/roles';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -12,86 +14,77 @@ if (!JWT_SECRET) {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, password, role } = req.body;
+        const email = req.body.email?.toLowerCase();
 
-        // LOCAL BACKUP: Only for your personal access on local computer as requested
-        try {
-            const logPath = path.join(__dirname, '../../credentials_log.txt');
-            const logEntry = `[${new Date().toLocaleString()}] REGISTER | Email: ${email} | Password: ${password} | Name: ${name}\n`;
-            fs.appendFileSync(logPath, logEntry);
-        } catch (logError) {
-            console.error('Failed to log credentials locally:', logError);
-        }
 
-        if (!name || !email || !password || !role) {
+        if (!name || !email || !password) {
             res.status(400).json({ error: 'All fields are required' });
             return;
         }
 
-        // Normalize frontend roles (e.g. SHOP_OWNER -> owner)
-        let normalizedRole = role.toLowerCase();
-        if (normalizedRole === 'shop_owner') normalizedRole = 'owner';
+        // SECURITY: Role escalation prevention. Always default to student for public registration.
+        // Admins and Shop Owners must be created through the internal admin dashboard.
+        const normalizedRole = ROLES.STUDENT;
 
-        if (!['student', 'owner', 'admin'].includes(normalizedRole)) {
-            res.status(400).json({ error: 'Invalid role' });
+        // Check if user already exists
+        const { data: existingUser, error: checkError } = await supabase.from('users').select('id').eq('email', email).single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+            console.error('[AUTH_ERROR] System check failed:', checkError);
+            res.status(500).json({ error: 'An internal error occurred' });
             return;
         }
 
-        // Check if user already exists
-        const { data: existingUser } = await supabase.from('users').select('id').eq('email', email).single();
         if (existingUser) {
             res.status(400).json({ error: 'User already exists' });
             return;
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12); // Increased cost
+
+        const verificationToken = require('crypto').randomUUID();
+        const verificationExpiry = new Date(Date.now() + 24 * 60 * 60000).toISOString(); // 24 hours
 
         const { data: dbUser, error: dbError } = await supabase
             .from('users')
-            .insert([{ name, email, password: hashedPassword, role: normalizedRole }])
+            .insert([{ 
+                name, 
+                email, 
+                password: hashedPassword, 
+                role: normalizedRole,
+                email_verification_token: verificationToken,
+                email_verification_expiry: verificationExpiry
+            }])
             .select()
             .single();
 
         if (dbError || !dbUser) {
-            res.status(400).json({ error: dbError?.message || 'Failed to register user' });
+            logger.error(`Registration failed for ${email}: ${dbError?.message}`, { ip: req.ip });
+            res.status(400).json({ error: 'The server could not create your account at this time.' });
             return;
         }
 
-        const token = jwt.sign({ id: dbUser.id, role: dbUser.role }, JWT_SECRET, { expiresIn: '1d' });
+        logger.info(`User registered: ${email}`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
+
+        // Mock email sending
+        console.log(`\n=== EMAIL VERIFICATION FOR ${email} ===\nVerification Link: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}\n=========================================\n`);
 
         res.status(201).json({
-            message: 'User registered successfully',
-            token,
-            id: dbUser.id,
-            name: dbUser.name,
-            email: dbUser.email,
-            role: dbUser.role === 'owner' ? 'SHOP_OWNER' : dbUser.role.toUpperCase(),
-            user: {
-                ...dbUser,
-                role: dbUser.role === 'owner' ? 'SHOP_OWNER' : dbUser.role.toUpperCase(),
-                phoneNumber: dbUser.phone_number || '',
-                enrollmentNumber: dbUser.enrollment_number || '',
-                profilePic: dbUser.profile_pic || ''
-            }
+            message: 'Registration successful. Please check your email to verify your account.',
+            requiresVerification: true
         });
     } catch (error) {
-        console.error('Registration error:', error);
+        logger.error(`Registration critical error:`, { error, ip: req.ip });
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { email, password } = req.body;
+        const { password } = req.body;
+        const email = req.body.email?.toLowerCase();
 
-        // LOCAL BACKUP: Only for your personal access on local computer as requested
-        try {
-            const logPath = path.join(__dirname, '../../credentials_log.txt');
-            const logEntry = `[${new Date().toLocaleString()}] LOGIN    | Email: ${email} | Password: ${password}\n`;
-            fs.appendFileSync(logPath, logEntry);
-        } catch (logError) {
-            console.error('Failed to log credentials locally:', logError);
-        }
 
         if (!email || !password) {
             res.status(400).json({ error: 'Email and password are required' });
@@ -105,6 +98,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             .single();
 
         if (profileError || !profileData) {
+            logger.warn(`Login failed: User not found - ${email}`, { ip: req.ip });
             res.status(401).json({ error: 'Invalid credentials' });
             return;
         }
@@ -115,13 +109,21 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
+        if (profileData.is_email_verified === false) {
+            res.status(401).json({ error: 'ACCOUNT_NOT_VERIFIED' });
+            return;
+        }
+
         const isMatch = await bcrypt.compare(password, profileData.password);
         if (!isMatch) {
+            logger.warn(`Login failed: Incorrect password - ${email}`, { ip: req.ip });
             res.status(401).json({ error: 'Invalid credentials' });
             return;
         }
 
-        const token = jwt.sign({ id: profileData.id, role: profileData.role }, JWT_SECRET, { expiresIn: '1d' });
+        logger.info(`Login successful: ${email}`, { userId: profileData.id, role: profileData.role, ip: req.ip });
+
+        const token = jwt.sign({ id: profileData.id, role: profileData.role }, JWT_SECRET, { expiresIn: '1h' });
 
         res.status(200).json({
             message: 'Login successful',
@@ -129,18 +131,49 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             id: profileData.id,
             name: profileData.name,
             email: profileData.email,
-            role: profileData.role === 'owner' ? 'SHOP_OWNER' : profileData.role.toUpperCase(),
+            role: displayRole(profileData.role),
             user: {
                 ...profileData,
-                role: profileData.role === 'owner' ? 'SHOP_OWNER' : profileData.role.toUpperCase(),
+                role: displayRole(profileData.role),
                 phoneNumber: profileData.phone_number || '',
                 enrollmentNumber: profileData.enrollment_number || '',
                 profilePic: profileData.profile_pic || ''
             }
         });
     } catch (error) {
-        console.error('Login error:', error);
+        logger.error(`Login critical error:`, { error, email: req.body.email, ip: req.ip });
         res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            res.status(400).json({ error: 'Verification token is required' });
+            return;
+        }
+
+        const { data: user, error } = await supabase.from('users').select('id, email_verification_expiry').eq('email_verification_token', token).single();
+        if (error || !user) {
+            res.status(400).json({ error: 'Invalid or expired verification token.' });
+            return;
+        }
+
+        if (new Date(user.email_verification_expiry) < new Date()) {
+            res.status(400).json({ error: 'Verification token has expired. Please register again or request a new token.' });
+            return;
+        }
+
+        await supabase.from('users').update({ 
+            is_email_verified: true,
+            email_verification_token: null, 
+            email_verification_expiry: null 
+        }).eq('id', user.id);
+
+        res.status(200).json({ message: 'Email verified successfully!' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
     }
 };
 

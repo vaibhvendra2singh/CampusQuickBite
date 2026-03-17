@@ -56,14 +56,14 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        // 1. Validate item exists and is available, and get its outlet_id
-        const { data: menuItem, error: menuError } = await supabase
-            .from('menu_items')
-            .select('outlet_id, availability')
-            .eq('id', menuItemId)
-            .single();
+        // 1. Fetch item and current cart in one trip (or close to it)
+        // We validate item availability and check for outlet conflicts simultaneously
+        const [{ data: menuItem, error: menuErr }, currentCart] = await Promise.all([
+            supabase.from('menu_items').select('id, outlet_id, availability').eq('id', menuItemId).single(),
+            fetchFullCart(userId)
+        ]);
 
-        if (menuError || !menuItem) {
+        if (menuErr || !menuItem) {
             res.status(404).json({ error: 'Menu item not found' });
             return;
         }
@@ -73,44 +73,33 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        // 2. Check if the user's cart already has items from a distinct outlet
-        const currentCart = await fetchFullCart(userId);
-
+        // 2. Multi-outlet order prevention
         if (currentCart && currentCart.length > 0) {
-            // Because Supabase joins return objects or arrays based on the relation,
-            // menu_items is a single object since it's a many-to-one relation.
-            const existingOutletId = (currentCart[0].menu_items as any).outlet_id;
-
-            if (existingOutletId !== menuItem.outlet_id) {
+            const existingOutletId = (currentCart[0].menu_items as any)?.outlet_id;
+            if (existingOutletId && existingOutletId !== menuItem.outlet_id) {
                 res.status(400).json({
-                    error: 'Cart contains items from a different outlet. Please clear your cart to order from here.'
+                    error: 'Your cart contains items from a different outlet. Please clear it first.'
                 });
                 return;
             }
         }
 
-        // 3. Check if the item already exists in the cart to increment quantity
-        const requestedQty = parseInt(quantity?.toString()) || 1;
-        const existingItem = currentCart?.find(item => (item.menu_items as any).id === menuItemId);
+        const requestedQty = Math.max(1, parseInt(quantity?.toString()) || 1);
+        const existingItem = currentCart?.find(item => (item.menu_items as any)?.id === menuItemId);
 
-        if (existingItem) {
-            // Increment
-            const { error: updateError } = await supabase
-                .from('cart_items')
-                .update({ quantity: existingItem.quantity + requestedQty })
-                .eq('id', existingItem.id);
+        // 3. Perform Upsert for better concurrency handling
+        // This assumes a unique constraint on [user_id, menu_item_id] exists in Postgres
+        const { error: mutationError } = await supabase
+            .from('cart_items')
+            .upsert({
+                user_id: userId,
+                menu_item_id: menuItemId,
+                quantity: existingItem ? existingItem.quantity + requestedQty : requestedQty
+            }, { onConflict: 'user_id, menu_item_id' });
 
-            if (updateError) throw updateError;
-        } else {
-            // Insert new
-            const { error: insertError } = await supabase
-                .from('cart_items')
-                .insert([{ user_id: userId, menu_item_id: menuItemId, quantity: requestedQty }]);
+        if (mutationError) throw mutationError;
 
-            if (insertError) throw insertError;
-        }
-
-        // 4. Return updated cart
+        // 4. Return fresh state
         const updatedCart = await fetchFullCart(userId);
         res.status(200).json(updatedCart);
 
@@ -158,7 +147,8 @@ export const updateCartItem = async (req: AuthRequest, res: Response): Promise<v
             const { error: deleteError } = await supabase
                 .from('cart_items')
                 .delete()
-                .eq('id', cartItemId);
+                .eq('id', cartItemId)
+                .eq('user_id', userId);
 
             if (deleteError) throw deleteError;
         } else {
@@ -166,7 +156,8 @@ export const updateCartItem = async (req: AuthRequest, res: Response): Promise<v
             const { error: updateError } = await supabase
                 .from('cart_items')
                 .update({ quantity: newQuantity })
-                .eq('id', cartItemId);
+                .eq('id', cartItemId)
+                .eq('user_id', userId);
 
             if (updateError) throw updateError;
         }

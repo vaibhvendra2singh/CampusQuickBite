@@ -14,7 +14,6 @@ const Login = () => {
     const [error, setError] = useState('');
     const [banNotice, setBanNotice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [showSplash, setShowSplash] = useState(true);
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -39,7 +38,11 @@ const Login = () => {
             login(user, token);
             navigate('/');
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Sign in failed. Please check your credentials.');
+            if (err.response?.data?.error === 'ACCOUNT_NOT_VERIFIED') {
+                setError('Your email is not verified. Please check your inbox for the verification link.');
+            } else {
+                setError(err.response?.data?.error || 'Sign in failed. Please check your credentials.');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -52,7 +55,7 @@ const Login = () => {
                 <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden">
 
                     <div className="relative z-10 flex flex-col h-full">
-                        <FadeIn delay={0.1} direction="up" startAnimation={!showSplash}>
+                        <FadeIn delay={0.1} direction="up">
                             <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center mb-10 shadow-lg">
                                 <span className="text-xl font-bold text-white">CB</span>
                             </div>
@@ -70,7 +73,7 @@ const Login = () => {
                         </FadeIn>
 
                         <div className="mt-auto">
-                            <FadeIn delay={0.2} direction="right" startAnimation={!showSplash}>
+                            <FadeIn delay={0.2} direction="right">
                                 <div className="space-y-1 border-l-4 border-brand-500 pl-5">
                                 <p className="text-slate-800 dark:text-white font-black text-3xl tracking-tight drop-shadow-sm">Zero wait time.</p>
                                 <p className="text-brand-600 dark:text-brand-400 font-black text-3xl tracking-tight drop-shadow-sm">More eating.</p>
@@ -83,7 +86,7 @@ const Login = () => {
 
                 {/* Right Panel — Form */}
                 <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 relative">
-                    <FadeIn delay={0.3} direction="up" startAnimation={!showSplash} className="w-full max-w-md">
+                    <FadeIn delay={0.3} direction="up" className="w-full max-w-md">
                     <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
                         <div className="mb-10">
                             <div className="lg:hidden w-10 h-10 bg-brand-500 rounded-lg flex items-center justify-center mb-6 mx-auto">
@@ -180,50 +183,6 @@ const Login = () => {
                         </form>
                     </div>
                     </FadeIn>
-                </div>
-            </div>
-
-            {/* Planetoño-style Splash Screen */}
-            <div 
-                className={`absolute inset-0 z-50 flex flex-col items-center justify-center bg-white transition-transform duration-[1200ms] ease-[cubic-bezier(0.85,0,0.15,1)] origin-top ${
-                    showSplash 
-                        ? 'translate-y-0 pointer-events-auto' 
-                        : '-translate-y-full pointer-events-none'
-                }`}
-            >
-                <div className="flex-1 flex items-center justify-center pt-32">
-                    <img loading="lazy" decoding="async" 
-                        src="/logo.png" 
-                        alt="CampusBite Logo" 
-                        className={`w-64 h-auto drop-shadow-2xl transition-all duration-700 delay-300 ${showSplash ? 'scale-100' : 'scale-75'}`}
-                        onError={(e) => {
-                            // Fallback if no logo.png exists
-                            e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                    />
-                    <div className="hidden flex-col items-center justify-center relative">
-                        {/* Text Fallback highly stylized like Planetoño */}
-                        <h1 className="text-6xl md:text-8xl font-black text-white px-8 py-2 tracking-tighter" style={{
-                            WebkitTextStroke: '6px black',
-                            textShadow: '8px 8px 0px black'
-                        }}>
-                            CAMPUS<br/>BITE
-                        </h1>
-                        <span className="absolute -bottom-6 -right-6 text-xl md:text-3xl font-black text-brand-500 transform -rotate-12" style={{
-                            WebkitTextStroke: '2px black'
-                        }}>キャンパス</span>
-                    </div>
-                </div>
-
-                <div className="pb-12 md:pb-24 flex flex-col items-center space-y-8 mt-auto">
-                    <button 
-                        onClick={() => setShowSplash(false)}
-                        className={`bg-white text-black font-black text-3xl md:text-5xl px-8 py-3 md:px-12 md:py-4 rounded-3xl border-4 md:border-8 border-black  active:scale-95 transition-transform duration-150 relative shadow-[0_8px_0_0_black]   active:translate-y-[8px] active:shadow-none `}
-                        style={{ fontFamily: "'Outfit', sans-serif" }}
-                    >
-                        START
-                    </button>
                 </div>
             </div>
         </div>

@@ -21,7 +21,28 @@ import announcementRoutes from './routes/announcementRoutes';
 
 const app = express();
 
-app.use(helmet());
+app.set('trust proxy', 1); // For rate-limiting behind proxies
+
+// Enforce HTTPS in production
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            res.redirect(`https://${req.header('host')}${req.url}`);
+        } else {
+            next();
+        }
+    });
+}
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "https:", "http:"],
+        },
+    },
+    referrerPolicy: { policy: 'same-origin' }
+}));
 
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Allow requests with no origin (mobile apps, curl, etc)
@@ -57,12 +78,46 @@ const globalLimiter = rateLimit({
 });
 app.use(globalLimiter);
 
+// General auth limiter (verification, tokens, etc.)
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 50,
+    max: 50, // Relaxed for dev
     message: { error: 'Too many authentication attempts, please try again later.' },
 });
 app.use('/api/auth', authLimiter);
+
+// Strictest limit for login to prevent brute force
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20, // Relaxed from 5 to prevent developer lockout
+    message: { error: 'Too many login attempts. Please try again after 15 minutes.' },
+});
+app.use('/api/auth/login', loginLimiter);
+
+// Specific limiter for registration to prevent bot account creation
+const registerLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour window
+    max: 3, // Only 3 registrations per hour per IP
+    message: { error: 'Account creation limit reached. Please try again later.' },
+});
+app.use('/api/auth/register', registerLimiter);
+
+// Specific limiter for password resets
+const passwordResetLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 3,
+    message: { error: 'Too many password reset requests. Please check your email or try again later.' },
+});
+app.use('/api/auth/forgot-password', passwordResetLimiter);
+
+// Heavy API limiter for resource-intensive operations (Receipts, Analytics)
+const heavyApiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'Resource usage limit reached. Please try again in 15 minutes.' },
+});
+app.use('/api/orders/:id/receipt-image', heavyApiLimiter);
+app.use('/api/analytics', heavyApiLimiter);
 
 app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok' });

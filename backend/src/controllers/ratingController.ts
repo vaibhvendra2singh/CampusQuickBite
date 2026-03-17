@@ -172,12 +172,55 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
     try {
         const { id } = req.params;
         const { is_hidden } = req.body;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
 
-        // 1. Update visibility
+        // 1. Fetch current review details to cross-reference with outlet ownership
+        const { data: review, error: fetchError } = await supabase
+            .from('ratings')
+            .select('*, outlets(owner_id), menu_items(outlet_id)')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !review) {
+            res.status(404).json({ error: 'Review not found' });
+            return;
+        }
+
+        // Security Check: Only Admin or the Outlet Owner can toggle visibility
+        if (userRole !== 'admin') {
+            let authorized = false;
+            
+            // If it's an outlet rating
+            if (review.outlet_id && (review.outlets as any)?.owner_id === userId) {
+                authorized = true;
+            }
+            
+            // If it's a menu item rating, we need to check the outlet's owner
+            if (review.menu_item_id) {
+                const outletId = (review.menu_items as any)?.outlet_id;
+                const { data: outlet } = await supabase
+                    .from('outlets')
+                    .select('owner_id')
+                    .eq('id', outletId)
+                    .single();
+                
+                if (outlet?.owner_id === userId) {
+                    authorized = true;
+                }
+            }
+
+            if (!authorized) {
+                res.status(403).json({ error: 'Unauthorized: You do not own the outlet for this review' });
+                return;
+            }
+        }
+
+        // 2. Update visibility
         const { data: updatedReview, error: updateError } = await supabase
             .from('ratings')
             .update({ is_hidden })
-            .eq('id', id)   // id is a UUID string — do NOT cast to Number()
+            .eq('id', id)
             .select()
             .single();
 

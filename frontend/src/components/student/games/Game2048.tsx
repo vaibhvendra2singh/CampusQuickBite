@@ -140,7 +140,7 @@ const Game2048: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-between h-full p-4 gap-3" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex flex-col items-center justify-between h-full p-4 gap-3" style={{ background: 'var(--bg-card)' }}>
             {/* Header */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex gap-3">

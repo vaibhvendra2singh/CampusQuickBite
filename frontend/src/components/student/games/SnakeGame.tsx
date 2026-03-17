@@ -189,7 +189,7 @@ const SnakeGame: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col items-center justify-between h-full p-3 gap-2" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex flex-col items-center justify-between h-full p-3 gap-2" style={{ background: 'var(--bg-card)' }}>
             <div className="flex items-center justify-between w-full">
                 <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>WASD or Arrow Keys</span>
                 <div className="flex items-center gap-2">

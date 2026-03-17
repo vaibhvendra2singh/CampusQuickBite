@@ -243,7 +243,7 @@ const FlappyGame: React.FC = () => {
     }, [doJump]);
 
     return (
-        <div className="flex flex-col items-center justify-between h-full p-3" style={{ background: 'var(--bg-primary)' }}>
+        <div className="flex flex-col items-center justify-between h-full p-3" style={{ background: 'var(--bg-card)' }}>
             <div className="flex items-center justify-between w-full mb-2">
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Space / Tap to flap!</span>
                 <div className="flex items-center gap-2">

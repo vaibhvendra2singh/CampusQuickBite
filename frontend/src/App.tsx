@@ -4,6 +4,7 @@ import { useAuth } from './hooks/context/AuthContext';
 import { CartProvider } from './hooks/context/CartContext';
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
 const OutletList = React.lazy(() => import('./pages/student/OutletList'));
 const OutletMenu = React.lazy(() => import('./pages/student/OutletMenu'));
 const Cart = React.lazy(() => import('./pages/student/Cart'));
@@ -11,6 +12,7 @@ const OrderLiveStatus = React.lazy(() => import('./pages/student/OrderLiveStatus
 const OrderHistory = React.lazy(() => import('./pages/student/OrderHistory'));
 const Leaderboard = React.lazy(() => import('./pages/student/Leaderboard'));
 const RestaurantsPage = React.lazy(() => import('./pages/student/RestaurantsPage'));
+const Landing = React.lazy(() => import('./pages/public/Landing'));
 
 const OwnerDashboard = React.lazy(() => import('./pages/owner/OwnerDashboard'));
 const MenuManagement = React.lazy(() => import('./pages/owner/MenuManagement'));
@@ -44,72 +46,62 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     return (
-        <header className="sticky top-0 z-[60] w-full nav-immersive py-4 px-6 transition-all duration-150">
-            <nav className="max-w-7xl mx-auto flex items-center justify-between">
-                <Link to="/" className="group flex items-center space-x-4">
-                    <div className="w-11 h-11 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center font-black text-white shadow-xl shadow-brand-500/20 group- transition-all duration-150">
-                        <span className="text-xl tracking-tighter">CB</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter leading-none group- transition-colors">CampusBite</span>
-                        <span className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mt-1 opacity-80 group- transition-all">Freshly Served</span>
-                    </div>
-                </Link>
+        <header className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] shadow-2xl transition-all duration-300 flex items-center justify-between gap-4 md:gap-8">
+            <Link to="/" className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full font-black text-white shadow-xl shadow-brand-500/20 flex-shrink-0 transition-transform">
+                <span className="text-xl md:text-2xl tracking-tighter">CB</span>
+            </Link>
 
-                <div className="flex items-center space-x-4">
-                    {user?.role === 'STUDENT' && (
-                        <div className="hidden lg:flex items-center space-x-1.5 p-1.5 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50">
-                            <Link to="/" className="flex items-center space-x-2 px-5 py-2.5  dark: rounded-xl text-slate-600 dark:text-slate-400  transition-all font-bold text-sm">
-                                <FiServer className="w-4 h-4 opacity-70" /><span>Board</span>
-                            </Link>
-                            <Link to="/restaurants" className="flex items-center space-x-2 px-5 py-2.5  dark: rounded-xl text-slate-600 dark:text-slate-400  transition-all font-bold text-sm">
-                                <FiCompass className="w-4 h-4 opacity-70" /><span>Explore</span>
-                            </Link>
-                            <Link to="/orders/history" className="flex items-center space-x-2 px-5 py-2.5  dark: rounded-xl text-slate-600 dark:text-slate-400  transition-all font-bold text-sm">
-                                <FiShoppingBag className="w-4 h-4 opacity-70" /><span>History</span>
-                            </Link>
-                            <Link to="/leaderboard" className="flex items-center space-x-2 px-5 py-2.5  dark: rounded-xl text-amber-500  transition-all font-bold text-sm">
-                                <FiAward className="w-4 h-4" /><span>Elite</span>
-                            </Link>
-                            <Link to="/cart" className="flex items-center space-x-2 px-6 py-2.5 bg-brand-500  rounded-xl text-white transition-all font-black text-sm shadow-xl shadow-brand-500/25 ml-2 relative">
-                                <FiShoppingCart className="w-4 h-4" /><span>Checkout</span>
-                                {items.length > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-600 border-4 border-white dark:border-slate-950 text-white text-[10px] font-black flex items-center justify-center rounded-full">
-                                        {items.length}
-                                    </span>
-                                )}
-                            </Link>
-                        </div>
-                    )}
-
-                    <div className="flex items-center space-x-2 bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 p-1.5 rounded-2xl shadow-sm">
-                        <button onClick={() => setDarkMode(!darkMode)} className="p-3 text-slate-500   dark: rounded-xl transition-all" title="Shift View">
-                            {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
-                        </button>
-
-                        {user ? (
-                            <div className="flex items-center space-x-2 pl-2 border-l border-slate-200/50 dark:border-slate-800/50">
-                                <button onClick={() => setIsProfileOpen(true)} className="flex items-center space-x-3 px-3 py-2  dark: transition-all rounded-xl">
-                                    <div className="w-9 h-9 rounded-2xl overflow-hidden bg-brand-100 dark:bg-brand-900/30 border-2 border-brand-200 dark:border-brand-800 flex items-center justify-center shadow-inner group">
-                                        {user?.profilePic ? (
-                                            <img loading="lazy" decoding="async" src={user.profilePic} alt={user?.name || ''} className="w-full h-full object-cover transition-all duration-150" />
-                                        ) : (
-                                            <FiUser className="text-brand-600 dark:text-brand-400 w-4 h-4" />
-                                        )}
-                                    </div>
-                                    <span className="text-sm font-black text-slate-800 dark:text-slate-100 hidden sm:inline">{user?.name?.split(' ')[0]}</span>
-                                </button>
-                                <button onClick={logout} className="p-3 text-red-500   rounded-xl transition-all" title="Exit">
-                                    <FiLogOut className="w-5 h-5" />
-                                </button>
-                            </div>
-                        ) : (
-                            <Link to="/login" className="bg-slate-950 dark:bg-white text-white dark:text-slate-950  dark:  dark: px-7 py-3 rounded-2xl font-black text-sm transition-all shadow-xl shadow-slate-900/10 ml-2">Join In</Link>
+            {user?.role === 'STUDENT' && (
+                <div className="flex items-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar flex-1 justify-center">
+                    <Link to="/" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="Board">
+                        <FiServer className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    </Link>
+                    <Link to="/restaurants" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="Explore">
+                        <FiCompass className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    </Link>
+                    <Link to="/orders/history" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="History">
+                        <FiShoppingBag className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    </Link>
+                    <Link to="/leaderboard" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-amber-500 font-bold text-sm shadow-inner transition-colors relative" title="Elite">
+                        <FiAward className="w-5 h-5 md:w-6 md:h-6" />
+                        <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse-subtle"></div>
+                    </Link>
+                    <Link to="/cart" className="flex items-center gap-3 px-6 py-3.5 md:py-4 bg-brand-500 rounded-full text-white font-black text-sm shadow-xl shadow-brand-500/30 mx-2 relative transition-transform flex-shrink-0">
+                        <FiShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
+                        <span className="hidden md:inline uppercase tracking-widest text-xs">Checkout</span>
+                        {items.length > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 md:w-7 md:h-7 bg-red-600 border-2 border-[var(--bg-card)] text-white text-[10px] md:text-xs font-black flex items-center justify-center rounded-full shadow-lg">
+                                {items.length}
+                            </span>
                         )}
-                    </div>
+                    </Link>
                 </div>
-                <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-            </nav>
+            )}
+
+            <div className="flex items-center gap-2 bg-[var(--bg-input)] p-1.5 md:p-2 rounded-[2rem] shadow-inner flex-shrink-0 mr-1">
+                <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 md:p-3 rounded-full text-[var(--text-secondary)] bg-[var(--bg-card)] shadow-sm transition-transform" title="Shift View">
+                    {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
+                </button>
+
+                {user ? (
+                    <div className="flex items-center gap-1.5">
+                        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-brand-500/10 border-2 border-[var(--bg-card)] shadow-sm flex items-center justify-center transition-transform">
+                            {user?.profilePic ? (
+                                <img src={user.profilePic} alt={user?.name || ''} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                            ) : (
+                                <FiUser className="text-brand-600 dark:text-brand-400 w-5 h-5" />
+                            )}
+                        </button>
+                        <button onClick={logout} className="p-2.5 md:p-3 text-red-500 rounded-full bg-[var(--bg-card)] shadow-sm transition-transform pr-3 bg-red-50 dark:bg-red-500/10" title="Exit">
+                            <FiLogOut className="w-5 h-5" />
+                        </button>
+                    </div>
+                ) : (
+                    <Link to="/login" className="px-6 py-2.5 md:py-3 bg-slate-950 dark:bg-white text-white dark:text-slate-950 rounded-full font-black text-sm uppercase tracking-widest shadow-lg ml-2">Join In</Link>
+                )}
+            </div>
+            
+            <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
         </header>
     );
 });
@@ -123,7 +115,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
             <Header darkMode={isDark} setDarkMode={toggleTheme} />
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 pt-16 pb-20 relative z-10 transition-all duration-150">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 pt-8 pb-40 relative z-10 transition-all duration-150">
                 {children}
             </main>
 
@@ -135,7 +127,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             )}
 
             {/* Footer */}
-            <footer className="py-24 bg-slate-950 border-t-[12px] border-brand-500">
+            <footer className="py-24 pb-48 lg:pb-24 bg-slate-950 border-t-[12px] border-brand-500">
                 <div className="max-w-7xl mx-auto px-8">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
                         {/* Brand Column */}
@@ -242,6 +234,7 @@ function App() {
                                     <Routes>
                                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
                             <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
+                            <Route path="/verify-email" element={<VerifyEmail />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />
                             <Route path="/change-password" element={
                                 <ProtectedRoute>
@@ -256,13 +249,15 @@ function App() {
                             <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
 
                             <Route path="/" element={
-                                <ProtectedRoute>
+                                isAuthenticated ? (
                                     <Layout>
                                         {user?.role === 'STUDENT' ? <OutletList /> :
                                             user?.role === 'SHOP_OWNER' ? <Navigate to="/owner/dashboard" replace /> :
                                                 <Navigate to="/admin/dashboard" replace />}
                                     </Layout>
-                                </ProtectedRoute>
+                                ) : (
+                                    <Landing />
+                                )
                             } />
 
                             {/* Student Routes */}

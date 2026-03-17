@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { notifyMenuUpdate } from '../services/socketService';
+import { AuthRequest } from '../middleware/auth';
 
 export const getAllMenu = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -48,13 +49,40 @@ export const getMenuByOutlet = async (req: Request, res: Response): Promise<void
     }
 };
 
-export const addMenuItem = async (req: Request, res: Response): Promise<void> => {
+export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { outletId } = req.query;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        if (!outletId) {
+            res.status(400).json({ error: 'outletId is required' });
+            return;
+        }
+
+        // Security Check: Verify ownership in a single join query if item exists
+        if (userRole !== 'admin') {
+            const { data: outlet, error: outletError } = await supabase
+                .from('outlets')
+                .select('owner_id')
+                .eq('id', outletId)
+                .single();
+
+            if (outletError || !outlet) {
+                res.status(404).json({ error: 'Outlet not found' });
+                return;
+            }
+
+            if (outlet.owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own this outlet' });
+                return;
+            }
+        }
+
         const { name, price, availability, isVeg, description, image_url } = req.body;
 
-        if (!outletId || !name || price === undefined) {
-            res.status(400).json({ error: 'outletId, name, and price are required' });
+        if (!name || price === undefined) {
+            res.status(400).json({ error: 'name and price are required' });
             return;
         }
 
@@ -102,9 +130,31 @@ export const addMenuItem = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
-export const updateMenuItem = async (req: Request, res: Response): Promise<void> => {
+export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Security Check: Fetch item and its outlet's owner in ONE combined query
+        const { data: menuItem, error: fetchError } = await supabase
+            .from('menu_items')
+            .select('id, outlet_id, outlets!inner(owner_id)')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !menuItem) {
+            res.status(404).json({ error: 'Menu item not found' });
+            return;
+        }
+
+        if (userRole !== 'admin') {
+            if ((menuItem.outlets as any).owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own the outlet for this menu item' });
+                return;
+            }
+        }
+
         const { name, price, availability, isVeg, description, image_url } = req.body;
         console.log(`Updating menu item ${id}:`, req.body);
 
@@ -153,9 +203,31 @@ export const updateMenuItem = async (req: Request, res: Response): Promise<void>
     }
 };
 
-export const deleteMenuItem = async (req: Request, res: Response): Promise<void> => {
+export const deleteMenuItem = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Security Check: Fetch item and its outlet's owner in ONE combined query
+        const { data: menuItem, error: fetchError } = await supabase
+            .from('menu_items')
+            .select('id, outlet_id, outlets!inner(owner_id)')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !menuItem) {
+            res.status(404).json({ error: 'Menu item not found' });
+            return;
+        }
+
+        if (userRole !== 'admin') {
+            if ((menuItem.outlets as any).owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own the outlet for this menu item' });
+                return;
+            }
+        }
+
         const { error } = await supabase.from('menu_items').delete().eq('id', id);
 
         if (error) {

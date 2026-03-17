@@ -5,7 +5,10 @@ import jwt from 'jsonwebtoken';
 import { createCanvas } from 'canvas';
 import { notifyOrderUpdate } from '../services/socketService';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_campus_key_2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined in environment variables');
+}
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -17,15 +20,20 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Check if user is frozen
+        // Check if user is frozen or banned
         const { data: user, error: userError } = await supabase
             .from('users')
-            .select('is_frozen')
+            .select('is_frozen, is_banned')
             .eq('id', userId)
             .single();
 
         if (userError || !user) {
             res.status(401).json({ error: 'User verification failed' });
+            return;
+        }
+
+        if (user.is_banned) {
+            res.status(403).json({ error: 'ACCOUNT_BANNED' });
             return;
         }
 
@@ -136,7 +144,7 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
                     ${ORDER_ITEMS_SELECT}
                 )
             `)
-            .eq('id', Number(id))
+            .eq('id', id)
             .single();
 
         if (error || !data) {
@@ -262,11 +270,12 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             .from('orders')
             .select(`
                 status, 
+                payment_status,
                 user_id, 
                 outlet_id, 
                 outlets!outlet_id (owner_id)
             `)
-            .eq('id', Number(id))
+            .eq('id', id)
             .single();
 
         if (fetchError || !currentOrder) {
@@ -307,11 +316,17 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         if (!allowedTransitions[currentStatus]?.includes(requestedStatus)) {
             console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
-            res.status(400).json({
-                error: 'Invalid state transition',
-                details: `Cannot change order status from '${currentStatus}' to '${requestedStatus}'`
-            });
+            res.status(400).json({ error: 'Invalid state transition' });
             return;
+        }
+
+        // 3. SECURITY: Payment Verification
+        // Do not allow preparing or completing orders that haven't been paid
+        if (['preparing', 'ready', 'completed'].includes(requestedStatus)) {
+            if (currentOrder.payment_status !== 'paid') {
+                res.status(400).json({ error: 'Cannot process unpaid orders' });
+                return;
+            }
         }
 
         // 3. Perform the update
@@ -323,7 +338,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         const { error: updateError } = await supabase
             .from('orders')
             .update(updatePayload)
-            .eq('id', Number(id));
+            .eq('id', id);
 
         if (updateError) {
             console.error('[OrderUpdate] Database update failed:', updateError);
@@ -342,7 +357,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
                     ${ORDER_ITEMS_SELECT}
                 )
             `)
-            .eq('id', Number(id))
+            .eq('id', id)
             .single();
 
         if (reFetchError || !updatedOrder) {
@@ -371,7 +386,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('id, status, payment_status, outlets!inner(owner_id)')
-            .eq('id', Number(id))
+            .eq('id', id)
             .single();
 
         if (orderError || !order) {
@@ -401,7 +416,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
         const { error: updateError } = await supabase
             .from('orders')
             .update(updateData)
-            .eq('id', Number(id));
+            .eq('id', id);
 
         if (updateError) {
             // Fallback if `cancelled_at` column does not exist natively yet
@@ -409,7 +424,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
                 const { error: fallbackError } = await supabase
                     .from('orders')
                     .update({ status: 'cancelled' })
-                    .eq('id', Number(id));
+                    .eq('id', id);
 
                 if (fallbackError) {
                     console.error('Failed to cancel order:', fallbackError);
@@ -441,7 +456,7 @@ export const generateOrderToken = async (req: AuthRequest, res: Response): Promi
         const { data: order, error } = await supabase
             .from('orders')
             .select('*')
-            .eq('id', Number(id))
+            .eq('id', id)
             .eq('user_id', userId)
             .single();
 
@@ -457,7 +472,7 @@ export const generateOrderToken = async (req: AuthRequest, res: Response): Promi
 
         const token = jwt.sign(
             { orderId: order.id },
-            JWT_SECRET,
+            JWT_SECRET!,
             { expiresIn: '30m' } // Increased to 30m for better UX
         );
 
@@ -483,7 +498,7 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
 
         let decoded: any;
         try {
-            decoded = jwt.verify(token, JWT_SECRET);
+            decoded = jwt.verify(token, JWT_SECRET!);
             console.log('Token successfully decoded:', decoded);
         } catch (err) {
             console.error('Token verification failed:', err);
@@ -509,12 +524,10 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
         console.log('Order found. Current status:', order.status);
 
         if (order.status.toLowerCase() !== 'ready') {
-            console.log('Verification failed: Order status is not ready');
             res.status(400).json({ error: 'Order is not ready or already completed' });
             return;
         }
 
-        console.log('Verifying owner authorization for outlet:', order.outlet_id);
         const { data: outlet, error: outletError } = await supabase
             .from('outlets')
             .select('id')
@@ -523,16 +536,46 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
             .single();
 
         if (outletError || !outlet) {
-            console.warn('Owner not authorized for this outlet. Owner:', ownerId, 'Outlet:', order.outlet_id);
-            res.status(403).json({ error: 'You are not authorized to verify orders for this outlet' });
+            res.status(403).json({ error: 'Unauthorized: Verification failed for this outlet' });
             return;
         }
 
-        console.log('Order successfully verified for viewing:', orderId);
+        // AUTO-COMPLETE: After successful token verification, COMPLETE the order
+        const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+                status: 'completed',
+                delivered_at: new Date().toISOString(),
+                verified_by: ownerId
+            })
+            .eq('id', orderId);
+
+        if (updateError) {
+            console.error('[DATABASE_ERROR] Order completion failed:', updateError);
+            res.status(500).json({ error: 'Token valid but failed to update status. Please try again or contact support.' });
+            return;
+        }
+
+        // Grant XP for verified delivery
+        try {
+            const { data: user } = await supabase.from('users').select('xp, tier').eq('id', order.user_id).single();
+            if (user) {
+                const newXp = (user.xp || 0) + 15;
+                let newTier = user.tier || 'BRONZE';
+                if (newXp >= 200) newTier = 'ELECTRIC_BLUE';
+                else if (newXp >= 100) newTier = 'GOLD';
+                else if (newXp >= 40) newTier = 'SILVER';
+                await supabase.from('users').update({ xp: newXp, tier: newTier }).eq('id', order.user_id);
+            }
+        } catch (e) {
+            console.warn('XP Grant failed', e);
+        }
+
+        console.log('Order verified and completed:', orderId);
         res.status(200).json({ message: 'Order verified and completed successfully', orderId });
     } catch (error: any) {
         console.error('Critical verification error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        res.status(500).json({ error: 'Verification system error' });
     }
 };
 
@@ -540,21 +583,23 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
 export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { orderId } = req.params;
-        const ownerId = req.user?.id;
+        const operatorId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // EMERGENCY OVERRIDE ONLY: Restrict to Admins to prevent owner-level verification bypass
+        if (userRole !== 'admin') {
+            res.status(403).json({ error: 'Security: Manual completion is restricted to administrators' });
+            return;
+        }
 
         const { data: order, error: orderError } = await supabase
             .from('orders')
-            .select('id, outlet_id, status, user_id, outlets(owner_id)')
-            .eq('id', Number(orderId))
+            .select('id, user_id')
+            .eq('id', orderId)
             .single();
 
         if (orderError || !order) {
             res.status(404).json({ error: 'Order not found' });
-            return;
-        }
-
-        if ((order.outlets as any)?.owner_id !== ownerId) {
-            res.status(403).json({ error: 'Unauthorized' });
             return;
         }
 
@@ -563,12 +608,14 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
             .update({
                 status: 'completed',
                 delivered_at: new Date().toISOString(),
-                verified_by: ownerId
+                verified_by: operatorId
             })
-            .eq('id', Number(orderId));
+            .eq('id', orderId);
 
         if (updateError) {
-            throw updateError;
+            console.error('[DATABASE_ERROR] Manual completion failed:', updateError);
+            res.status(500).json({ error: 'Manual completion failed' });
+            return;
         }
 
         // Grant XP & Update Tier
@@ -582,16 +629,15 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
                 else if (newXp >= 40) newTier = 'SILVER';
 
                 await supabase.from('users').update({ xp: newXp, tier: newTier }).eq('id', order.user_id);
-                console.log(`Granted 15 XP to user ${order.user_id} on delivery. New tier: ${newTier}`);
             }
         } catch (e) {
-            console.warn('Failed to grant XP on delivery', e);
+            console.warn('Manual XP Grant failed', e);
         }
 
-        res.status(200).json({ message: 'Order marked as delivered' });
+        res.status(200).json({ message: 'Order marked as delivered by Administrator' });
     } catch (error) {
         console.error('Mark as delivered error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'An internal error occurred' });
     }
 };
 export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -760,7 +806,7 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
                 ),
                 user:users!user_id (name, email, phone_number)
             `)
-            .eq('id', Number(id))
+            .eq('id', id)
             .single();
 
         if (error || !order) {

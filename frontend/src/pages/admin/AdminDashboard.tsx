@@ -423,7 +423,7 @@ const AdminDashboard = () => {
                         <div className="card-modern overflow-hidden p-0 border border-[var(--border-color)]">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse">
-                                    <thead className="bg-[var(--bg-primary)] border-b border-[var(--border-color)]">
+                                    <thead className="bg-[var(--bg-card)] border-b border-[var(--border-color)]">
                                         <tr>
                                             <th className="px-4 py-4">
                                                 <input type="checkbox"
@@ -576,7 +576,7 @@ const AdminDashboard = () => {
                                         <h3 className="text-lg font-bold flex items-center">
                                             <FiZap className="mr-3 text-orange-500" /> Active Load Heatmap
                                         </h3>
-                                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-primary)] px-2 py-1 rounded">Real-time</span>
+                                        <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest bg-[var(--bg-card)] px-2 py-1 rounded">Real-time</span>
                                     </div>
                                     <div className="space-y-6">
                                         {orderHeatmap.map(stat => (
@@ -863,7 +863,7 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
 
-                                    <p className="text-sm font-medium text-[var(--text-primary)] italic bg-[var(--bg-primary)] p-4 rounded-xl border border-[var(--border-color)] mb-6">
+                                    <p className="text-sm font-medium text-[var(--text-primary)] italic bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-color)] mb-6">
                                         "{review.comment || 'No comment provided'}"
                                     </p>
 
@@ -1298,9 +1298,9 @@ const AdminDashboard = () => {
             {/* System Settings Modal */}
             {isSettingsModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-[var(--bg-primary)]/80 backdrop-blur-sm" onClick={() => setIsSettingsModalOpen(false)}></div>
-                    <div className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-2xl shadow-xl overflow-hidden animate-none border border-[var(--border-color)]">
-                        <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--bg-primary)]">
+                    <div className="absolute inset-0 bg-[var(--bg-card)]/80 backdrop-blur-sm" onClick={() => setIsSettingsModalOpen(false)}></div>
+                    <div className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-2xl shadow-xl overflow-hidden animate-none border border-[var(--border-color)]" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-center bg-[var(--bg-card)]">
                             <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center">
                                 <FiSettings className="mr-3 text-brand-500" /> System Settings
                             </h3>
@@ -1322,7 +1322,7 @@ const AdminDashboard = () => {
                             <div className="space-y-3">
                                 <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)]  border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => { localStorage.clear(); showToast('Local cache wiped. Reloading UI.', 'success'); setTimeout(() => window.location.reload(), 1000); setIsSettingsModalOpen(false); }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-primary)]">
+                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-card)]">
                                             <FiHardDrive className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-semibold text-[var(--text-primary)]">Reset local cache</span>

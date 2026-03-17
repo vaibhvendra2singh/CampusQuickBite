@@ -317,7 +317,7 @@ const OutletMenu = () => {
                 <div className="flex items-center justify-between mb-4">
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all border ${isFilterOpen || hasActiveFilters ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)] '}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all border ${isFilterOpen || hasActiveFilters ? 'bg-[var(--text-primary)] text-[var(--bg-card)] border-[var(--text-primary)]' : 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--border-color)] '}`}
                     >
                         <FiFilter className="w-4 h-4" />
                         {hasActiveFilters ? 'Filters Applied' : 'Filters'}
@@ -335,9 +335,9 @@ const OutletMenu = () => {
                         <div>
                             <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Sort by Price</h4>
                             <div className="flex gap-3">
-                                <button onClick={() => setPriceSort('none')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'none' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Default</button>
-                                <button onClick={() => setPriceSort('low')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'low' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Low to High</button>
-                                <button onClick={() => setPriceSort('high')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'high' ? 'bg-[var(--text-primary)] text-[var(--bg-primary)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>High to Low</button>
+                                <button onClick={() => setPriceSort('none')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'none' ? 'bg-[var(--text-primary)] text-[var(--bg-card)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Default</button>
+                                <button onClick={() => setPriceSort('low')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'low' ? 'bg-[var(--text-primary)] text-[var(--bg-card)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>Low to High</button>
+                                <button onClick={() => setPriceSort('high')} className={`px-4 py-2 text-xs font-semibold border rounded-lg transition-all ${priceSort === 'high' ? 'bg-[var(--text-primary)] text-[var(--bg-card)] border-[var(--text-primary)]' : 'bg-transparent text-[var(--text-secondary)] border-[var(--border-color)] '}`}>High to Low</button>
                             </div>
                         </div>
 

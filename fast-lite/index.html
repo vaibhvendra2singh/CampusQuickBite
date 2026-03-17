@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusBite | Skip the Line. Eat Smart.</title>
+    <meta name="description" content="Ultra-fast campus food ordering platform. Pre-order, skip queues, and eat smarter.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Performance Tracking -->
+    <script>performance.mark('head-end');</script>
+
+    <!-- Header / Nav -->
+    <header class="navbar">
+        <a href="/" class="logo">CAMPUS<span>BITE</span></a>
+        <nav class="nav-links">
+            <a href="/login" class="nav-item">Sign In</a>
+            <a href="/register" class="cta-btn">Join Now</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="video-container">
+            <div class="hero-overlay"></div>
+            <!-- Fallback Image -->
+            <img src="fallback.png" alt="Fallback" class="hero-fallback" id="heroFallback">
+            <!-- Lazy Video -->
+            <video id="heroVideo" muted loop playsinline class="hero-video" preload="none">
+                <source src="https://player.vimeo.com/external/494191065.sd.mp4?s=7b0b691122a632002570146033488880d859a9ff&profile_id=165&oauth2_token_id=57447761" type="video/mp4">
+            </video>
+        </div>
+        <div class="hero-content">
+            <h1 class="headline">Skip the Line.<br><span>Eat Smart.</span></h1>
+            <div class="search-container">
+                <div class="search-bar">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="aiSearch" placeholder="I'm craving..." autocomplete="off">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vendors Section -->
+    <section class="section" id="vendors">
+        <h2 class="section-title">Featured Vendors</h2>
+        <div class="grid" id="vendorGrid">
+            <!-- Skeleton items -->
+            <div class="card skeleton"></div>
+            <div class="card skeleton"></div>
+            <div class="card skeleton"></div>
+        </div>
+    </section>
+
+    <!-- Dishes Section -->
+    <section class="section" id="dishes">
+        <h2 class="section-title">Popular Dishes</h2>
+        <div class="grid" id="dishGrid">
+             <div class="card skeleton"></div>
+             <div class="card skeleton"></div>
+             <div class="card skeleton"></div>
+        </div>
+    </section>
+
+    <!-- Floating Tracking -->
+    <div id="trackingChip" class="floating-chip hidden">
+        <div class="chip-content">
+            <span class="pulse"></span>
+            <p>Order Preparing...</p>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: 45%;"></div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="orderModal" class="modal hidden">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <div class="modal-content">
+            <button class="close-btn" id="closeModal">&times;</button>
+            <div id="modalBody">
+                <!-- Content loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>

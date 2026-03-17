@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import { notifyAccountStatus } from '../services/socketService';
+import { normalizeRole, displayRole, ROLES } from '../utils/roles';
 
 export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -63,7 +64,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             id: data.id,
             name: data.name,
             email: data.email,
-            role: data.role === 'owner' ? 'SHOP_OWNER' : data.role.toUpperCase(),
+            role: displayRole(data.role),
             phoneNumber: data.phone_number,
             enrollmentNumber: data.enrollment_number,
             profilePic: data.profile_pic
@@ -192,6 +193,25 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
             return;
         }
 
+        // SECURITY: Self-lockout prevention & admin-on-admin action prevention
+        const currentUserId = req.user?.id;
+        if (id === currentUserId) {
+            res.status(400).json({ error: 'You cannot ban or freeze your own administrator account' });
+            return;
+        }
+
+        const { data: targetUser, error: fetchError } = await supabase.from('users').select('role').eq('id', id).single();
+        if (fetchError || !targetUser) {
+            res.status(404).json({ error: 'User does not exist' });
+            return;
+        }
+
+        if (targetUser.role === ROLES.ADMIN) {
+            // Admins can't ban other admins; only super admins (system level) should do this.
+            res.status(403).json({ error: 'Illegal Action: Administrators cannot modify the status of other administrators' });
+            return;
+        }
+
         const { data, error } = await supabase
             .from('users')
             .update(updatePayload)
@@ -200,7 +220,8 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
             .single();
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            console.error('[DATABASE_ERROR] Could not update user status:', error);
+            res.status(500).json({ error: 'Failed to update account status. Database error occurred.' });
             return;
         }
 
@@ -221,6 +242,14 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
 export const getUserById = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const authenticatedUserId = req.user?.id;
+        const authenticatedUserRole = req.user?.role;
+
+        // Security check: Only allow users to view their own profile, or admins
+        if (authenticatedUserRole !== 'admin' && String(id) !== String(authenticatedUserId)) {
+            res.status(403).json({ error: 'Forbidden: You can only view your own profile' });
+            return;
+        }
 
         const { data, error } = await supabase
             .from('users')

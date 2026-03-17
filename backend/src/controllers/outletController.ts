@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
+import { AuthRequest } from '../middleware/auth';
 
 export const getAllOutlets = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -100,9 +101,31 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-export const updateOutlet = async (req: Request, res: Response): Promise<void> => {
+export const updateOutlet = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Security Check: Verify ownership
+        if (userRole !== 'admin') {
+            const { data: outlet, error: outletError } = await supabase
+                .from('outlets')
+                .select('owner_id')
+                .eq('id', id)
+                .single();
+
+            if (outletError || !outlet) {
+                res.status(404).json({ error: 'Outlet not found' });
+                return;
+            }
+
+            if (outlet.owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own this outlet' });
+                return;
+            }
+        }
+
         const { name, location, latitude, longitude, is_open } = req.body;
         const { data, error } = await supabase.from('outlets').update({ name, location, latitude, longitude, is_open }).eq('id', id).select();
         if (error) {
@@ -116,9 +139,31 @@ export const updateOutlet = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-export const deleteOutlet = async (req: Request, res: Response): Promise<void> => {
+export const deleteOutlet = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Security Check: Verify ownership
+        if (userRole !== 'admin') {
+            const { data: outlet, error: outletError } = await supabase
+                .from('outlets')
+                .select('owner_id')
+                .eq('id', id)
+                .single();
+
+            if (outletError || !outlet) {
+                res.status(404).json({ error: 'Outlet not found' });
+                return;
+            }
+
+            if (outlet.owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own this outlet' });
+                return;
+            }
+        }
+
         const { error } = await supabase.from('outlets').delete().eq('id', id);
         if (error) {
             res.status(500).json({ error: error.message });
@@ -131,10 +176,31 @@ export const deleteOutlet = async (req: Request, res: Response): Promise<void> =
     }
 };
 
-export const updateOutletStatus = async (req: Request, res: Response): Promise<void> => {
+export const updateOutletStatus = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
         const { status } = req.body;
+        const userId = req.user?.id;
+        const userRole = req.user?.role;
+
+        // Security Check: Verify ownership
+        if (userRole !== 'admin') {
+            const { data: outlet, error: outletError } = await supabase
+                .from('outlets')
+                .select('owner_id')
+                .eq('id', id)
+                .single();
+
+            if (outletError || !outlet) {
+                res.status(404).json({ error: 'Outlet not found' });
+                return;
+            }
+
+            if (outlet.owner_id !== userId) {
+                res.status(403).json({ error: 'Unauthorized: You do not own this outlet' });
+                return;
+            }
+        }
 
         if (!['FAST', 'MODERATE', 'BUSY'].includes(status)) {
             res.status(400).json({ error: 'Invalid status. Must be FAST, MODERATE, or BUSY.' });
