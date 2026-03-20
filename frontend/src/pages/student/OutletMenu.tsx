@@ -7,7 +7,6 @@ import api from '../../services/api';
 import { useCart } from '../../hooks/context/CartContext';
 import { FiMapPin, FiArrowLeft, FiShoppingBag, FiSearch, FiHeart, FiFilter, FiX, FiStar, FiPhone } from 'react-icons/fi';
 import { FadeIn } from '../../components/animations/FadeIn';
-import { motion } from 'framer-motion';
 import { useToast } from '../../hooks/context/ToastContext';
 import { useAuth } from '../../hooks/context/AuthContext';
 import RatingModal from '../../components/common/RatingModal';
@@ -434,8 +433,8 @@ const OutletMenu = () => {
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {items.map((item, index) => (
-                                <FadeIn key={item.id} delay={0.1 + (index % 5) * 0.05} direction="up" className="h-full contain-paint">
-                                <motion.div className={`contain-content group h-full bg-[var(--glass-bg)] backdrop-blur-md rounded-[2rem] border border-[var(--glass-border)] overflow-hidden flex flex-col transition-all duration-300   ${!item.availability ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
+                                <FadeIn key={item.id} delay={index < 6 ? 0.05 * (index % 3) : 0} direction="up" className="h-full contain-paint">
+                                <div className={`contain-content group h-full bg-[var(--glass-bg)] backdrop-blur-md rounded-[2rem] border border-[var(--glass-border)] overflow-hidden flex flex-col transition-colors duration-200 ${!item.availability ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                                     <div className="p-7 flex-1 flex flex-col">
                                         <div className="flex justify-between items-start mb-4">
                                             <div className="flex-1 pr-4">
@@ -465,7 +464,7 @@ const OutletMenu = () => {
                                             </button>
                                         </div>
                                     </div>
-                                </motion.div>
+                                </div>
                                 </FadeIn>
                             ))}
                         </div>

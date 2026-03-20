@@ -16,9 +16,9 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-motion': ['framer-motion', 'gsap'],
+          'vendor-motion': ['framer-motion'],
           'vendor-charts': ['recharts'],
-          'vendor-utils': ['axios', 'socket.io-client', 'lenis'],
+          'vendor-utils': ['axios', 'socket.io-client'],
         }
       }
     }
@@ -28,11 +28,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5001',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
         ws: true,
       }

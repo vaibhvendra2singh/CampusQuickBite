@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { FiMapPin, FiArrowRight, FiStar, FiSearch } from 'react-icons/fi';
@@ -107,13 +107,13 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
     const nameStr = outlet.name.toLowerCase();
     const isLogo = nameStr.includes('maggi') || nameStr.includes('chow') || nameStr.includes('snap') || nameStr.includes('southern');
 
-    const brandColor = nameStr.includes('southern') ? 'bg-[#053d18]' : nameStr.includes('maggi') ? 'bg-[#bd0f22]' : 'bg-[var(--bg-card)]';
+    const brandColor = nameStr.includes('southern') ? 'bg-[#053d18]' : (nameStr.includes('maggi') || nameStr.includes('chow') || nameStr.includes('snap')) ? 'bg-white' : 'bg-[var(--bg-card)]';
 
     return (
         <Link to={`/outlets/${outlet.id}/menu`} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden">
 
             <div className={`w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-[var(--border-color)] ${isLogo ? brandColor : 'bg-[var(--bg-card)]'}`}>
-                <img src={image} loading="lazy" decoding="async" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.65] p-2' : ''}`} />
+                <img src={image} loading="lazy" decoding="async" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.85]' : ''}`} />
                 {!outlet.is_open && (
                     <div className="absolute inset-0 bg-[var(--bg-card)]/70 backdrop-blur-sm z-10 flex items-center justify-center p-3 text-center">
                         <div className="bg-[var(--text-primary)] text-[var(--bg-card)] text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
@@ -244,6 +244,14 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [quickFilter, setQuickFilter] = useState<string | null>(null); // NEW: quick filter pill state
+    const resultsRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to results when user types in the search bar
+    useEffect(() => {
+        if (searchTerm && resultsRef.current) {
+            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, [searchTerm]);
 
     const topFoodItems = useMemo(() => outlets
         .flatMap(outlet => (outlet.menu_items || []).map(item => ({ ...item, outlet_id: outlet.id, outlet_name: outlet.name })))
@@ -364,7 +372,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             </div>
 
             <FadeIn delay={0.2} direction="up" fullWidth>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-t-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
                     <CategoryGallery
                         selectedCategory={selectedCategory}
                         onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
@@ -374,7 +382,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
             {topFoodItems.length > 0 && (
                 <FadeIn delay={0.1} fullWidth>
-                    <div className="max-w-7xl mx-auto px-4 md:px-8 mb-24 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm py-10">
+                    <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6 mb-6 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem] py-10">
                         <div className="mb-12">
                             <h2 className="text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
                         </div>
@@ -391,7 +399,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             )}
 
             <FadeIn delay={0.1} fullWidth>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 pb-32 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-b-[4rem]">
+                <div ref={resultsRef} className="max-w-7xl mx-auto px-4 md:px-8 mt-6 pb-32 pt-16 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem]">
                     <CompactRestaurantList
                         outlets={gridOutlets}
                         title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}
@@ -466,9 +474,9 @@ const OutletList = () => {
     }
 
     return (
-        <div className="animate-none space-y-4 pb-20 mt-4 max-w-[1240px] mx-auto px-2">
+        <div className="animate-none space-y-4 pb-10 mt-4 max-w-[1240px] mx-auto px-2">
             <HomepageSections outlets={outlets} />
-            <div className="text-center pt-10 pb-20">
+            <div className="text-center pt-4 pb-10">
                 <p className="text-[var(--text-muted)] font-medium">You've reached the end of the list</p>
             </div>
         </div>

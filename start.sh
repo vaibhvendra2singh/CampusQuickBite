@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# ==============================================
-#  CampusQuickBite — One-Click Startup Script
-# ==============================================
+# ============================================================
+# CampusQuickBite — One-Click Startup Script (v5.1)
+# ============================================================
 
+# Colors for terminal output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -11,79 +12,66 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
-# Get the directory of this script so it works from anywhere
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Get the ROOT directory (where the script is located)
+PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-echo ""
-echo -e "${BLUE}${BOLD}╔═══════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║       🚀 CampusQuickBite Launcher v4.0        ║${NC}"
-echo -e "${BLUE}${BOLD}╚═══════════════════════════════════════════════╝${NC}"
-echo ""
-
-# ---------------------------
-# Step 1: Kill any old processes on ports 5001 / 5173
-# ---------------------------
-echo -e "${YELLOW}[1/3]${NC} Cleaning up old processes..."
-lsof -ti:5001 | xargs kill -9 2>/dev/null || true
-lsof -ti:5173 | xargs kill -9 2>/dev/null || true
-echo -e "${GREEN}✓ Ports 5001 & 5173 are free${NC}"
-
-# ---------------------------
-# Step 2: Start Backend (Node.js)
-# ---------------------------
-echo -e "${YELLOW}[2/3]${NC} Starting Node.js Backend..."
-
-cd "$SCRIPT_DIR/backend"
-npm install --silent > /dev/null 2>&1
-
-# Start backend in background
-npm run dev &
-BACKEND_PID=$!
-echo -e "${GREEN}✓ Backend starting (PID: $BACKEND_PID)${NC}"
-
-# Wait for backend to be ready
-echo -ne "        ⏳ Waiting for backend"
-MAX_WAIT=30
-ELAPSED=0
-while [ $ELAPSED -lt $MAX_WAIT ]; do
-    if curl -s http://localhost:5001/health > /dev/null 2>&1; then
-        break
-    fi
-    sleep 2
-    ELAPSED=$((ELAPSED + 2))
-    echo -ne "."
-done
+clear
+echo -e "${BLUE}${BOLD}╔══════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}${BOLD}║           🚀 CampusQuickBite Instant Starter             ║${NC}"
+echo -e "${BLUE}${BOLD}╚══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-if [ $ELAPSED -ge $MAX_WAIT ]; then
-    echo -e "${RED}✗ Backend did not start in time. Check backend logs.${NC}"
-    kill $BACKEND_PID 2>/dev/null || true
-    exit 1
+# 🛠️ Step 1: Cleanup Ports
+# ------------------------------------------------------------
+echo -ne "${YELLOW}[1/3]${NC} Cleaning up existing processes... "
+lsof -ti:5001,3000,5173 | xargs kill -9 2>/dev/null || true
+echo -e "${GREEN}✓ Done${NC}"
+
+# 🛠️ Step 2: Environment Setup
+# ------------------------------------------------------------
+echo -ne "${YELLOW}[2/3]${NC} checking configuration... "
+cd "$PROJECT_ROOT"
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    cp .env.example .env
 fi
-echo -e "${GREEN}✓ Backend ready at http://localhost:5001${NC}"
+if [ ! -f "backend/.env" ]; then
+    cp .env backend/.env 2>/dev/null || true
+fi
+echo -e "${GREEN}✓ Ready${NC}"
 
-# ---------------------------
-# Step 3: Start Frontend
-# ---------------------------
-echo -e "${YELLOW}[3/3]${NC} Starting Frontend..."
-cd "$SCRIPT_DIR/frontend"
-npm install --silent > /dev/null 2>&1
+# 🛠️ Step 3: Run (Auto-detect Mode)
+# ------------------------------------------------------------
+echo -e "${YELLOW}[3/3]${NC} Starting Services..."
 
-echo ""
-echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════${NC}"
-echo -e "${GREEN}${BOLD}  ✅ CampusQuickBite is LIVE!${NC}"
-echo -e "${GREEN}${BOLD}═══════════════════════════════════════════════${NC}"
-echo ""
-echo -e "  🌐 Frontend  →  ${BOLD}http://localhost:5173${NC}"
-echo -e "  🔧 Backend   →  ${BOLD}http://localhost:5001/api${NC}"
-echo -e "  ☁️  Database  →  ${BOLD}Supabase via Cloudflare Proxy ✅${NC}"
-echo -e "  🔗 Proxy     →  ${BOLD}https://supabase-proxy.campusquickbite.workers.dev${NC}"
-echo ""
-echo -e "  ⚠️  ${YELLOW}If you were logged in before, please log out and log back in.${NC}"
-echo -e "  Press ${RED}Ctrl+C${NC} to stop everything."
-echo ""
+# Check if Docker is available and running
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo -e "${BLUE}🐳 Docker detected! Launching containerized environment...${NC}"
+    echo ""
+    cd "$PROJECT_ROOT"
+    docker compose up --build --remove-orphans
+else
+    echo -e "${YELLOW}⚠️ Docker not detected or not running.${NC}"
+    echo -e "${BLUE}💻 Falling back to Local Node.js servers...${NC}"
+    echo ""
 
-# Trap Ctrl+C to also kill the backend
-trap "echo ''; echo -e '${RED}Shutting down...${NC}'; kill $BACKEND_PID 2>/dev/null || true; exit" INT
+    # Start Backend in background (using a subshell so we don't lose our place)
+    echo -e "   → Starting Backend..."
+    (cd "$PROJECT_ROOT/backend" && npm install --silent && npm run dev) &
+    BACKEND_PID=$!
 
-npm run dev -- --host 0.0.0.0 "$@"
+    # Start Frontend in foreground
+    echo -e "   → Starting Frontend..."
+    cd "$PROJECT_ROOT/frontend"
+    npm install --silent
+    
+    # Final info message
+    echo ""
+    echo -e "${GREEN}${BOLD}✅ Project is launching!${NC}"
+    echo -e "   🏠 http://localhost:5173"
+    echo ""
+
+    # Trap Ctrl+C to kill the backend too
+    trap "echo ''; echo -e '${RED}Stopping...${NC}'; kill $BACKEND_PID 2>/dev/null; exit" INT
+    
+    npm run dev -- --host 0.0.0.0
+fi

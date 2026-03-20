@@ -1,0 +1,107 @@
+# ============================================================
+# CampusBite — Docker Compose
+# ============================================================
+# Usage:
+#   1. cp .env.example .env && fill in SUPABASE_URL, etc.
+#   2. docker compose up --build
+#
+# Services:
+#   - backend  → Node.js/Express API  (port 5001)
+#   - frontend → React SPA via Nginx  (port 3000)
+#   - redis    → In-memory cache      (port 6379, internal only)
+# ============================================================
+
+
+# ── Named volumes ─────────────────────────────────────────────────────────────
+volumes:
+  redis_data:
+
+# ── Internal network ──────────────────────────────────────────────────────────
+networks:
+  campusbite_net:
+    driver: bridge
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+  # ── Redis (Cache) ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: campusbite_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    networks:
+      - campusbite_net
+    # Redis is NOT exposed to the host for security — only the backend can reach it
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Node.js/Express) ─────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campusbite_backend
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      # Supabase — set these in your .env file
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Auth
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      # Email
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASS: ${EMAIL_PASS}
+      # Redis — service name resolves inside the Docker network
+      REDIS_URL: redis://redis:6379
+      # Frontend URL for CORS
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # Sentry (optional)
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "5001:5001"
+    networks:
+      - campusbite_net
+    volumes:
+      - ./backend/logs:/app/logs  # Persist logs outside the container
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:5001/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
+
+  # ── Frontend (React + Nginx) ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Inject the backend API URL at build time
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+    container_name: campusbite_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    networks:
+      - campusbite_net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/index.html"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

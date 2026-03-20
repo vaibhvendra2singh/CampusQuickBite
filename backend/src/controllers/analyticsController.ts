@@ -7,27 +7,29 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
         const { outletId } = req.params;
         const userId = req.user?.id;
 
-        // 1. Security Check: verify that the user is the owner of this outlet (or an admin)
-        if (req.user?.role !== 'admin') {
-            const { data: outlet, error: outletError } = await supabase
-                .from('outlets')
-                .select('owner_id')
-                .eq('id', outletId)
-                .single();
+        // 1. Security Check & get reset timestamp
+        let resetTimestamp: string | null = null;
+        
+        const { data: outlet, error: outletError } = await supabase
+            .from('outlets')
+            .select('owner_id, insights_reset_at')
+            .eq('id', outletId)
+            .single();
 
-            if (outletError || !outlet) {
-                res.status(404).json({ error: 'Outlet not found' });
-                return;
-            }
-
-            if (outlet.owner_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized access to analytics' });
-                return;
-            }
+        if (outletError || !outlet) {
+            res.status(404).json({ error: 'Outlet not found' });
+            return;
         }
 
+        if (req.user?.role !== 'admin' && outlet.owner_id !== userId) {
+            res.status(403).json({ error: 'Unauthorized access to analytics' });
+            return;
+        }
+        
+        resetTimestamp = outlet.insights_reset_at;
+
         // 2. Fetch all completed orders for this outlet
-        const { data: orders, error: ordersError } = await supabase
+        let query = supabase
             .from('orders')
             .select(`
                 id,
@@ -42,8 +44,14 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
                 )
             `)
             .eq('outlet_id', outletId)
-            .eq('status', 'completed')
-            .order('created_at', { ascending: true });
+            .eq('status', 'completed');
+            
+        // Apply reset filter
+        if (resetTimestamp) {
+            query = query.gt('created_at', resetTimestamp);
+        }
+
+        const { data: orders, error: ordersError } = await query.order('created_at', { ascending: true });
 
         if (ordersError) throw ordersError;
 
@@ -83,6 +91,7 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
         });
 
         const analytics = {
+            isReset: !!resetTimestamp,
             summary: {
                 totalRevenue,
                 totalOrders: orders?.length || 0,

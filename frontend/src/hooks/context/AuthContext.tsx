@@ -78,6 +78,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
     }, []);
 
+    // Also sync if localStorage changes in other tabs or background clearings
+    useEffect(() => {
+        const syncAuth = (e: StorageEvent) => {
+            if (e.key === 'token' && !e.newValue) {
+                setUser(null);
+                setToken(null);
+            }
+            if (e.key === 'user' && e.newValue) {
+                setUser(JSON.parse(e.newValue));
+            }
+        };
+        window.addEventListener('storage', syncAuth);
+        return () => window.removeEventListener('storage', syncAuth);
+    }, []);
+
     const login = useCallback((userData: User, newToken: string) => {
         setUser(userData);
         setToken(newToken);

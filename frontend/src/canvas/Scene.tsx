@@ -11,10 +11,11 @@ export function Scene() {
 
     return (
         <div className="canvas-container fixed inset-0 w-full h-full -z-10 pointer-events-none">
-            <Canvas 
+            <Canvas
                 camera={{ position: [0, 0, 5], fov: 45 }}
-                dpr={[1, 2]} // Support high dpi displays
-                gl={{ antialias: true, alpha: true }}
+                dpr={[1, 1.5]}
+                gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }}
+                performance={{ min: 0.5 }}
             >
                 <Suspense fallback={null}>
                     <Background isDark={isDark} />
@@ -24,3 +25,4 @@ export function Scene() {
         </div>
     );
 }
+

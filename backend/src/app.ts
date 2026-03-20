@@ -6,20 +6,38 @@ import logger from './services/logger';
 import { errorHandler } from './middleware/errorHandler';
 
 // Route modules
-import authRoutes from './routes/authRoutes';
-import menuRoutes from './routes/menuRoutes';
-import cartRoutes from './routes/cartRoutes';
-import orderRoutes from './routes/orderRoutes';
-import outletRoutes from './routes/outletRoutes';
-import paymentRoutes from './routes/paymentRoutes';
-import ratingRoutes from './routes/ratingRoutes';
-import analyticsRoutes from './routes/analyticsRoutes';
-import usersRoutes from './routes/usersRoutes';
+import authRoutes from './routes/v1/authRoutes';
+import menuRoutes from './routes/v1/menuRoutes';
+import cartRoutes from './routes/v1/cartRoutes';
+import orderRoutes from './routes/v1/orderRoutes';
+import outletRoutes from './routes/v1/outletRoutes';
+import paymentRoutes from './routes/v1/paymentRoutes';
+import ratingRoutes from './routes/v1/ratingRoutes';
+import analyticsRoutes from './routes/v1/analyticsRoutes';
+import usersRoutes from './routes/v1/usersRoutes';
+import ownerRoutes from './routes/v1/ownerRoutes';
+import announcementRoutes from './routes/v1/announcementRoutes';
 
-import ownerRoutes from './routes/ownerRoutes';
-import announcementRoutes from './routes/announcementRoutes';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger';
+import cookieParser from 'cookie-parser';
+import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 
 const app = express();
+
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        integrations: [
+            new ProfilingIntegration(),
+        ],
+        tracesSampleRate: 1.0,
+        profilesSampleRate: 1.0,
+    });
+    // Sentry request handler must be the first middleware
+    app.use(Sentry.Handlers.requestHandler() as any);
+}
 
 app.set('trust proxy', 1); // For rate-limiting behind proxies
 
@@ -48,10 +66,9 @@ const allowedOrigins = (origin: string | undefined, callback: (err: Error | null
     // Allow requests with no origin (mobile apps, curl, etc)
     if (!origin) return callback(null, true);
     // Allow localhost and local network IPs (10.x.x.x, 192.168.x.x, 172.x.x.x)
-    if (
-        origin.includes('localhost') ||
-        origin.match(/^https?:\/\/(10|192\.168|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+/)
-    ) {
+    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
+    
+    if (isLocalIP) {
         return callback(null, true);
     }
     // Allow explicitly set FRONTEND_URL
@@ -64,10 +81,12 @@ const allowedOrigins = (origin: string | undefined, callback: (err: Error | null
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true // allow cookies
 }));
 
 app.use(express.json({ limit: '10kb' }));
+app.use(cookieParser());
 
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -123,18 +142,33 @@ app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-// Mount API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/outlets', outletRoutes);
-app.use('/api/menu', menuRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/ratings', ratingRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/owner', ownerRoutes);
-app.use('/api/announcements', announcementRoutes);
+// Swagger Docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Mount API routes (Versioned v1)
+const v1Router = express.Router();
+
+v1Router.use('/auth', authRoutes);
+v1Router.use('/outlets', outletRoutes);
+v1Router.use('/menu', menuRoutes);
+v1Router.use('/cart', cartRoutes);
+v1Router.use('/orders', orderRoutes);
+v1Router.use('/payments', paymentRoutes);
+v1Router.use('/ratings', ratingRoutes);
+v1Router.use('/analytics', analyticsRoutes);
+v1Router.use('/users', usersRoutes);
+v1Router.use('/owner', ownerRoutes);
+v1Router.use('/announcements', announcementRoutes);
+
+app.use('/api/v1', v1Router);
+
+// Fallback for v0 (to avoid breaking old clients immediately)
+app.use('/api', v1Router);
+
+// Sentry error handler must be before any other error middleware
+if (process.env.SENTRY_DSN) {
+    app.use(Sentry.Handlers.errorHandler() as any);
+}
 
 app.use(errorHandler);
 

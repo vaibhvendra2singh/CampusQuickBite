@@ -4,6 +4,8 @@ import { AuthRequest } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { createCanvas } from 'canvas';
 import { notifyOrderUpdate } from '../services/socketService';
+import { sendSuccess, sendError, sendPaginated } from '../utils/response';
+import { auditLog } from '../utils/auditLog';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -13,10 +15,10 @@ if (!JWT_SECRET) {
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.user?.id;
-        const { outletId, items } = req.body;
+        const { outletId, items, notes, scheduledTime } = req.body;
 
         if (!userId || !outletId) {
-            res.status(400).json({ error: 'User ID and Outlet ID are required' });
+            sendError(res, 'User ID and Outlet ID are required', 400);
             return;
         }
 
@@ -28,22 +30,22 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             .single();
 
         if (userError || !user) {
-            res.status(401).json({ error: 'User verification failed' });
+            sendError(res, 'User verification failed', 401);
             return;
         }
 
         if (user.is_banned) {
-            res.status(403).json({ error: 'ACCOUNT_BANNED' });
+            sendError(res, 'ACCOUNT_BANNED', 403);
             return;
         }
 
         if (user.is_frozen) {
-            res.status(403).json({ error: 'ACCOUNT_FROZEN' });
+            sendError(res, 'ACCOUNT_FROZEN', 403);
             return;
         }
 
         if (!items || !Array.isArray(items) || items.length === 0) {
-            res.status(400).json({ error: 'Order must contain at least one item' });
+            sendError(res, 'Order must contain at least one item', 400);
             return;
         }
 
@@ -52,13 +54,15 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         const { data: orderData, error: rpcError } = await supabase.rpc('create_order_v2', {
             p_user_id: userId,
             p_outlet_id: outletId,
-            p_items: items.map(i => ({ menu_item_id: i.menuItemId, quantity: parseInt(i.quantity as any) }))
+            p_items: items.map(i => ({ menu_item_id: i.menuItemId, quantity: parseInt(i.quantity as any) })),
+            p_notes: notes || null,
+            p_scheduled_at: scheduledTime || null
         });
 
         if (rpcError) {
             console.error('RPC Order Error:', rpcError);
             const status = rpcError.message.includes('Insufficient stock') ? 400 : 500;
-            res.status(status).json({ error: rpcError.message });
+            sendError(res, rpcError.message, status);
             return;
         }
 
@@ -80,11 +84,11 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             throw fetchError || new Error('Order verification failed after creation');
         }
 
-        res.status(201).json(formatOrderWithItems(order));
+        sendSuccess(res, formatOrderWithItems(order), 'Order created successfully', 201);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Create order error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, error?.message || 'Internal Server Error');
     }
 };
 
@@ -114,6 +118,8 @@ const formatOrderWithItems = (orderData: any) => {
         ...orderData,
         items: formattedItems,
         totalAmount: parseFloat(orderData.total_amount),
+        notes: orderData.notes,
+        scheduledAt: orderData.scheduled_at,
         createdAt: orderData.created_at,
         status: orderData.status,
         payment_status: orderData.payment_status,
@@ -148,7 +154,7 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
             .single();
 
         if (error || !data) {
-            res.status(404).json({ error: 'Order not found' });
+            sendError(res, 'Order not found', 404);
             return;
         }
 
@@ -161,27 +167,32 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
         // 3. Admin: access all
         if (userRole === 'student') {
             if (data.user_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized to view this order' });
+                sendError(res, 'Unauthorized to view this order', 403);
                 return;
             }
         } else if (userRole === 'owner') {
             if ((data.outlets as any)?.owner_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized: This order belongs to a different outlet' });
+                sendError(res, 'Unauthorized: This order belongs to a different outlet', 403);
                 return;
             }
         }
 
-        res.status(200).json(formatOrderWithItems(data));
+        sendSuccess(res, formatOrderWithItems(data), 'Order fetched successfully');
     } catch (error) {
         console.error('Get order by id error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 
 export const getOrdersByUser = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.user?.id;
-        const { data, error } = await supabase
+        const page = parseInt(req.query.page as string) || 0;
+        const size = parseInt(req.query.size as string) || 10;
+        const from = page * size;
+        const to = from + size - 1;
+
+        const { data, error, count } = await supabase
             .from('orders')
             .select(`
                 *,
@@ -190,19 +201,21 @@ export const getOrdersByUser = async (req: AuthRequest, res: Response): Promise<
                 order_items (
                     ${ORDER_ITEMS_SELECT}
                 )
-            `)
+            `, { count: 'exact' })
             .eq('user_id', userId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json((data || []).map(formatOrderWithItems));
+        const formattedOrders = (data || []).map(formatOrderWithItems);
+        sendPaginated(res, formattedOrders, count || 0, page, size, 'User orders fetched successfully');
     } catch (error) {
         console.error('Get orders by user error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 
@@ -211,6 +224,10 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
         const { outletId } = req.params;
         const userId = req.user?.id;
         const userRole = req.user?.role;
+        const page = parseInt(req.query.page as string) || 0;
+        const size = parseInt(req.query.size as string) || 20;
+        const from = page * size;
+        const to = from + size - 1;
 
         // Verify the owner/admin is authorized for this outlet
         if (userRole !== 'admin') {
@@ -222,12 +239,12 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
                 .single();
 
             if (outletError || !outlet) {
-                res.status(403).json({ error: 'You are not authorized to view orders for this outlet' });
+                sendError(res, 'You are not authorized to view orders for this outlet', 403);
                 return;
             }
         }
 
-        const { data, error } = await supabase
+        const { data, error, count } = await supabase
             .from('orders')
             .select(`
                 *,
@@ -236,19 +253,21 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
                 order_items (
                     ${ORDER_ITEMS_SELECT}
                 )
-            `)
+            `, { count: 'exact' })
             .eq('outlet_id', outletId)
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .range(from, to);
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json((data || []).map(formatOrderWithItems));
+        const formattedOrders = (data || []).map(formatOrderWithItems);
+        sendPaginated(res, formattedOrders, count || 0, page, size, 'Outlet orders fetched successfully');
     } catch (error) {
         console.error('Get orders by outlet error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 
@@ -261,7 +280,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         console.log(`[OrderUpdate] Attempting to update order #${id} to ${requestedStatus} by user ${req.user?.id}`);
 
         if (!requestedStatus) {
-            res.status(400).json({ error: 'Status is required' });
+            sendError(res, 'Status is required', 400);
             return;
         }
 
@@ -280,7 +299,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         if (fetchError || !currentOrder) {
             console.error('[OrderUpdate] Order not found or fetch error:', fetchError);
-            res.status(404).json({ error: 'Order not found' });
+            sendError(res, 'Order not found', 404);
             return;
         }
 
@@ -295,7 +314,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         if (req.user.role === 'owner' && String(outletOwnerId).toLowerCase() !== String(req.user.id).toLowerCase()) {
             console.warn(`[OrderUpdate] Unauthorized attempt! User ${req.user.id} tried to update order owned by ${outletOwnerId}`);
-            res.status(403).json({ error: 'Unauthorized: This order belongs to a different outlet' });
+            sendError(res, 'Unauthorized: This order belongs to a different outlet', 403);
             return;
         }
 
@@ -310,27 +329,34 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         };
 
         if (currentStatus === requestedStatus) {
-            res.status(200).json(currentOrder);
+            sendSuccess(res, formatOrderWithItems(currentOrder), 'Status is already ' + requestedStatus);
             return;
         }
 
         if (!allowedTransitions[currentStatus]?.includes(requestedStatus)) {
-            console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
-            res.status(400).json({ error: 'Invalid state transition' });
-            return;
+            // Admin bypass for emergency overrides
+            if (req.user?.role !== 'admin') {
+                console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
+                sendError(res, 'Invalid state transition', 400);
+                return;
+            }
         }
 
         // 3. SECURITY: Payment Verification
         // Do not allow preparing or completing orders that haven't been paid
         if (['preparing', 'ready', 'completed'].includes(requestedStatus)) {
-            if (currentOrder.payment_status !== 'paid') {
-                res.status(400).json({ error: 'Cannot process unpaid orders' });
+            // Admin can override payment check for emergency handling
+            if (currentOrder.payment_status !== 'paid' && req.user?.role !== 'admin') {
+                sendError(res, 'Cannot process unpaid orders', 400);
                 return;
             }
         }
 
         // 3. Perform the update
-        const updatePayload: any = { status: requestedStatus };
+        const updatePayload: any = { 
+            status: requestedStatus,
+            verified_by: req.user?.id 
+        };
         if (requestedStatus === 'completed') {
             updatePayload.delivered_at = new Date().toISOString();
         }
@@ -342,7 +368,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         if (updateError) {
             console.error('[OrderUpdate] Database update failed:', updateError);
-            res.status(500).json({ error: 'Failed to update order status' });
+            sendError(res, 'Failed to update order status');
             return;
         }
 
@@ -362,25 +388,36 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         if (reFetchError || !updatedOrder) {
             console.warn('[OrderUpdate] Success but re-fetch failed:', reFetchError);
-            res.status(200).json({ message: 'Status updated', status: requestedStatus }); // Minimal success response
+            sendSuccess(res, { id, status: requestedStatus }, 'Status updated (refresh for full details)');
             return;
         }
 
         // Notify user via Socket.io
         notifyOrderUpdate(updatedOrder.user_id, updatedOrder.id, updatedOrder.status);
 
+        // Audit Log
+        await auditLog({
+            action: 'ORDER_STATUS_CHANGED',
+            actorId: req.user.id,
+            actorRole: req.user.role,
+            targetId: id as string,
+            targetType: 'order',
+            details: { from: currentStatus, to: requestedStatus }
+        });
+
         console.log(`[OrderUpdate] Successfully updated order #${id}`);
-        res.status(200).json(formatOrderWithItems(updatedOrder));
+        sendSuccess(res, formatOrderWithItems(updatedOrder), `Order marked as ${requestedStatus}`);
     } catch (error) {
-        console.error('[OrderUpdate] Critical error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Update order status error:', error);
+        sendError(res, 'Internal Server Error');
     }
 };
 
 export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const ownerId = req.user?.id;
+        const actorId = req.user?.id;
+        const userRole = req.user?.role;
 
         // Fetch order and ownership details
         const { data: order, error: orderError } = await supabase
@@ -390,27 +427,29 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
             .single();
 
         if (orderError || !order) {
-            res.status(404).json({ error: 'Order not found' });
+            sendError(res, 'Order not found', 404);
             return;
         }
 
-        // Only owner of that outlet can cancel
-        if ((order.outlets as any)?.owner_id !== ownerId) {
-            res.status(403).json({ error: 'Unauthorized: You can only cancel orders for your own outlet' });
+        // Only owner of that outlet or admin can cancel
+        const outletOwnerId = (order.outlets as any)?.owner_id;
+        if (userRole !== 'admin' && outletOwnerId !== actorId) {
+            sendError(res, 'Unauthorized: You can only cancel orders for your own outlet', 403);
             return;
         }
 
-        // Only allow cancel if status is pending or preparing
+        // Only allow cancel if status is pending, preparing, or placed
         const currentStatus = order.status?.toLowerCase();
         if (currentStatus !== 'pending' && currentStatus !== 'preparing' && currentStatus !== 'placed') {
-            res.status(400).json({ error: `Cannot cancel an order that is already ${currentStatus}` });
+            sendError(res, `Cannot cancel an order that is already ${currentStatus}`, 400);
             return;
         }
 
         // Update the order status to cancelled
         const updateData: any = {
             status: 'cancelled',
-            cancelled_at: new Date().toISOString()
+            cancelled_at: new Date().toISOString(),
+            cancelled_by: actorId
         };
 
         const { error: updateError } = await supabase
@@ -419,32 +458,28 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
             .eq('id', id);
 
         if (updateError) {
-            // Fallback if `cancelled_at` column does not exist natively yet
-            if (updateError.message?.includes('cancelled_at') || updateError.code === 'PGRST204' || updateError.code === '42703') {
-                const { error: fallbackError } = await supabase
-                    .from('orders')
-                    .update({ status: 'cancelled' })
-                    .eq('id', id);
-
-                if (fallbackError) {
-                    console.error('Failed to cancel order:', fallbackError);
-                    res.status(500).json({ error: 'Database update failed' });
-                    return;
-                }
-            } else {
-                console.error('Failed to cancel order:', updateError);
-                res.status(500).json({ error: 'Database update failed' });
-                return;
-            }
+            console.error('Failed to cancel order:', updateError);
+            sendError(res, `Database update failed: ${updateError.message}`);
+            return;
         }
 
-        // Ideally add cancelled_at to the database schemas if not already
+        // Audit Log
+        if (req.user) {
+            await auditLog({
+                action: 'ORDER_CANCELLED',
+                actorId: req.user.id,
+                actorRole: req.user.role,
+                targetId: id as string,
+                targetType: 'order',
+                details: { from: currentStatus }
+            });
+        }
 
-        res.status(200).json({ message: 'Order cancelled successfully', orderId: id, previous_status: currentStatus });
+        sendSuccess(res, { orderId: id, previous_status: currentStatus }, 'Order cancelled successfully');
 
     } catch (error) {
         console.error('Cancel order error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 

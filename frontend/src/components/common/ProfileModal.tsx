@@ -41,9 +41,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
 
     const [formData, setFormData] = useState({
         name: user?.name || '',
-        phoneNumber: user?.phoneNumber || '',
-        enrollmentNumber: user?.enrollmentNumber || '',
-        profilePic: user?.profilePic || '',
+        phoneNumber: user?.phoneNumber || (user as any)?.phone_number || '',
+        enrollmentNumber: user?.enrollmentNumber || (user as any)?.enrollment_number || '',
+        profilePic: user?.profilePic || (user as any)?.profile_pic || '',
     });
 
     useEffect(() => {
@@ -80,9 +80,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     const handleCancel = () => {
         setFormData({
             name: user.name,
-            phoneNumber: user.phoneNumber || '',
-            enrollmentNumber: user.enrollmentNumber || '',
-            profilePic: user.profilePic || '',
+            phoneNumber: user.phoneNumber || (user as any).phone_number || '',
+            enrollmentNumber: user.enrollmentNumber || (user as any).enrollment_number || '',
+            profilePic: user.profilePic || (user as any).profile_pic || '',
         });
         setIsEditing(false);
         setShowAvatarPicker(false);
@@ -182,7 +182,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                         />
                                     </div>
                                 ) : (
-                                    <InfoRow icon={FiHash} label="Enrollment ID" value={user.enrollmentNumber || 'Not Registered'} />
+                                    <InfoRow 
+                                        icon={FiHash} 
+                                        label="Enrollment ID" 
+                                        value={user.enrollmentNumber || (user as any).enrollment_number || 'Not Registered'} 
+                                    />
                                 )
                             )}
                             <InfoRow icon={FiMail} label="Contact Email" value={user.email} />
@@ -197,7 +201,11 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                     />
                                 </div>
                             ) : (
-                                <InfoRow icon={FiPhone} label="Mobile" value={user.phoneNumber || 'Add Phone'} />
+                                <InfoRow 
+                                    icon={FiPhone} 
+                                    label="Mobile" 
+                                    value={user.phoneNumber || (user as any).phone_number || 'Add Phone'} 
+                                />
                             )}
                         </div>
 

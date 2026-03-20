@@ -15,9 +15,10 @@ const Landing = () => {
                     muted
                     loop
                     playsInline
+                    preload="auto"
                     className="w-full h-full object-cover brightness-[0.4] saturate-[1.1] scale-105"
                 >
-                    <source src="https://www.pexels.com/download/video/3296572/" type="video/mp4" />
+                    <source src="/hero-bg-compressed.mp4" type="video/mp4" />
                 </video>
             </div>
 
@@ -47,12 +48,11 @@ const Landing = () => {
                     transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                     className="flex flex-col items-center"
                 >
-                    <h1 
-                        className="text-[clamp(4rem,15vw,10rem)] font-black tracking-[-0.05em] leading-[0.9] select-none text-transparent bg-clip-text bg-gradient-to-b from-white/40 to-white/0"
-                        style={{ 
-                            WebkitTextStroke: '1.5px rgba(255,255,255,0.4)',
-                            filter: 'drop-shadow(0 0 60px rgba(0,112,255,0.25))',
-                            WebkitBoxReflect: 'below -2vw linear-gradient(transparent, transparent, rgba(255, 255, 255, 0.15))'
+                    <h1
+                        className="text-[clamp(4rem,15vw,10rem)] font-black tracking-[-0.05em] leading-[0.9] select-none text-transparent bg-clip-text bg-gradient-to-b from-white/60 to-white/10"
+                        style={{
+                            WebkitTextStroke: '1px rgba(255,255,255,0.5)',
+                            textShadow: '0 0 40px rgba(0,112,255,0.2)'
                         }}
                     >
                         CAMPUSBITE
@@ -78,13 +78,13 @@ const Landing = () => {
                 className="fixed bottom-32 left-[5%] z-30 bg-white/5 backdrop-blur-2xl border border-white/10 p-4 rounded-2xl w-56 hidden md:block"
             >
                 <h4 className="text-[10px] uppercase tracking-[0.2em] text-[#0070FF] font-bold mb-1">Trending</h4>
-                <p className="font-extrabold text-lg text-[#F8F9FA]">North Block Bistro</p>
+                <p className="font-extrabold text-lg text-[#F8F9FA]">SnaEats<>  </>4.9⭐️</p>
             </motion.div>
 
 
             {/* Navigation CTA Button */}
             <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50">
-                <button 
+                <button
                     onClick={() => navigate('/login')}
                     className="bg-white/10 backdrop-blur-3xl border border-white/20 text-white px-16 py-4 rounded-full text-xl font-black tracking-widest hover:bg-[#0070FF] hover:border-[#0070FF] transition-all hover:scale-105 active:scale-95 shadow-2xl group"
                 >

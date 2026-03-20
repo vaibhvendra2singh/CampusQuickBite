@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { notifyMenuUpdate } from '../services/socketService';
 import { AuthRequest } from '../middleware/auth';
+import { sendSuccess, sendError } from '../utils/response';
+import { cacheGet, cacheSet, cacheDel, CacheKey, CACHE_TTL } from '../services/cacheService';
+import { auditLog } from '../utils/auditLog';
 
 export const getAllMenu = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -17,20 +20,27 @@ export const getAllMenu = async (req: Request, res: Response): Promise<void> => 
             `);
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json(data);
+        sendSuccess(res, data, 'All menu items fetched successfully');
     } catch (error) {
         console.error('Fetch all menu error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 
 export const getMenuByOutlet = async (req: Request, res: Response): Promise<void> => {
     try {
         const { outletId } = req.params;
+        const cacheKey = CacheKey.menu(outletId as string);
+
+        const cachedData = await cacheGet(cacheKey);
+        if (cachedData) {
+            sendSuccess(res, cachedData, 'Outlet menu fetched from cache');
+            return;
+        }
 
         const { data, error } = await supabase
             .from('menu_items')
@@ -38,14 +48,15 @@ export const getMenuByOutlet = async (req: Request, res: Response): Promise<void
             .eq('outlet_id', outletId);
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json(data);
+        await cacheSet(cacheKey, data, CACHE_TTL.MENU);
+        sendSuccess(res, data, 'Outlet menu fetched successfully');
     } catch (error) {
         console.error('Fetch outlet menu error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };
 
@@ -56,11 +67,11 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
         const userRole = req.user?.role;
 
         if (!outletId) {
-            res.status(400).json({ error: 'outletId is required' });
+            sendError(res, 'outletId is required', 400);
             return;
         }
 
-        // Security Check: Verify ownership in a single join query if item exists
+        // Security Check: Verify ownership
         if (userRole !== 'admin') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
@@ -69,12 +80,12 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
                 .single();
 
             if (outletError || !outlet) {
-                res.status(404).json({ error: 'Outlet not found' });
+                sendError(res, 'Outlet not found', 404);
                 return;
             }
 
             if (outlet.owner_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized: You do not own this outlet' });
+                sendError(res, 'Unauthorized: You do not own this outlet', 403);
                 return;
             }
         }
@@ -82,8 +93,8 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
         const { name, price, availability, isVeg, description, image_url } = req.body;
 
         if (!name || price === undefined) {
-            res.status(400).json({ error: 'name and price are required' });
-            return;
+             sendError(res, 'name and price are required', 400);
+             return;
         }
 
         const insertData: any = {
@@ -103,9 +114,8 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
             .single();
 
         if (error) {
-            // If the error is specifically about the missing is_veg column, try without it
+            // Fallback
             if (error.message.includes('is_veg')) {
-                console.warn('DB: is_veg column missing. Retrying insert without it.');
                 const { data: retryData, error: retryError } = await supabase
                     .from('menu_items')
                     .insert([insertData])
@@ -113,22 +123,42 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
                     .single();
 
                 if (retryError) {
-                    res.status(500).json({ error: retryError.message });
+                    sendError(res, retryError.message, 500);
                     return;
                 }
-                res.status(201).json(retryData);
+                
+                await cacheDel(CacheKey.menu(outletId as string));
+                await auditLog({
+                    action: 'MENU_ITEM_CREATED',
+                    actorId: userId as string,
+                    actorRole: userRole as string,
+                    targetId: retryData.id,
+                    targetType: 'menu_item',
+                    details: { outletId, name: retryData.name }
+                });
+                sendSuccess(res, retryData, 'Menu item added', 201);
                 return;
             }
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(201).json(data);
+        await cacheDel(CacheKey.menu(outletId as string));
+        await auditLog({
+            action: 'MENU_ITEM_CREATED',
+            actorId: userId as string,
+            actorRole: userRole as string,
+            targetId: data.id,
+            targetType: 'menu_item',
+            details: { outletId, name: data.name }
+        });
+        sendSuccess(res, data, 'Menu item added', 201);
     } catch (error: any) {
         console.error('Add menu item error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        sendError(res, error.message || 'Internal Server Error');
     }
 };
+
 
 export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -144,13 +174,13 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
             .single();
 
         if (fetchError || !menuItem) {
-            res.status(404).json({ error: 'Menu item not found' });
+            sendError(res, 'Menu item not found', 404);
             return;
         }
 
         if (userRole !== 'admin') {
             if ((menuItem.outlets as any).owner_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized: You do not own the outlet for this menu item' });
+                sendError(res, 'Unauthorized: You do not own the outlet for this menu item', 403);
                 return;
             }
         }
@@ -179,7 +209,6 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
         if (error) {
             // Fallback for is_veg column missing
             if (error.message.includes('is_veg')) {
-                console.warn('DB: is_veg column missing. Retrying update without it.');
                 const { data: retryData, error: retryError } = await supabase
                     .from('menu_items')
                     .update(updateData)
@@ -187,19 +216,50 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
                     .select()
                     .single();
 
-                if (retryData?.outlet_id) notifyMenuUpdate(retryData.outlet_id);
-                res.status(200).json(retryData);
+                if (retryError) {
+                    sendError(res, retryError.message, 500);
+                    return;
+                }
+                
+                if (retryData?.outlet_id) {
+                    notifyMenuUpdate(retryData.outlet_id);
+                    await cacheDel(CacheKey.menu(retryData.outlet_id));
+                }
+
+                await auditLog({
+                    action: 'MENU_ITEM_UPDATED',
+                    actorId: userId as string,
+                    actorRole: userRole as string,
+                    targetId: id as string,
+                    targetType: 'menu_item',
+                    details: { name: retryData.name }
+                });
+
+                sendSuccess(res, retryData, 'Menu item updated');
                 return;
             }
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        if (data?.outlet_id) notifyMenuUpdate(data.outlet_id);
-        res.status(200).json(data);
+        if (data?.outlet_id) {
+            notifyMenuUpdate(data.outlet_id);
+             await cacheDel(CacheKey.menu(data.outlet_id));
+        }
+
+        await auditLog({
+            action: 'MENU_ITEM_UPDATED',
+            actorId: userId as string,
+            actorRole: userRole as string,
+            targetId: id as string,
+            targetType: 'menu_item',
+            details: { name: data.name }
+        });
+
+        sendSuccess(res, data, 'Menu item updated');
     } catch (error: any) {
         console.error('Update menu item error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        sendError(res, error.message || 'Internal Server Error');
     }
 };
 
@@ -217,27 +277,42 @@ export const deleteMenuItem = async (req: AuthRequest, res: Response): Promise<v
             .single();
 
         if (fetchError || !menuItem) {
-            res.status(404).json({ error: 'Menu item not found' });
+            sendError(res, 'Menu item not found', 404);
             return;
         }
 
         if (userRole !== 'admin') {
             if ((menuItem.outlets as any).owner_id !== userId) {
-                res.status(403).json({ error: 'Unauthorized: You do not own the outlet for this menu item' });
+                sendError(res, 'Unauthorized: You do not own the outlet for this menu item', 403);
                 return;
             }
         }
 
+        const outletId = menuItem.outlet_id;
+
         const { error } = await supabase.from('menu_items').delete().eq('id', id);
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json({ message: 'Menu item deleted successfully' });
+        if (outletId) {
+             notifyMenuUpdate(outletId);
+             await cacheDel(CacheKey.menu(outletId));
+        }
+
+        await auditLog({
+            action: 'MENU_ITEM_DELETED',
+            actorId: userId as string,
+            actorRole: userRole as string,
+            targetId: id as string,
+            targetType: 'menu_item'
+        });
+
+        sendSuccess(res, null, 'Menu item deleted successfully');
     } catch (error) {
         console.error('Delete menu item error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
     }
 };

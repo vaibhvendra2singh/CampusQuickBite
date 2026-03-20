@@ -2,19 +2,21 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import fs from 'fs';
-import path from 'path';
 import logger from '../services/logger';
-import { normalizeRole, displayRole, ROLES } from '../utils/roles';
+import { displayRole, ROLES } from '../utils/roles';
+import { sendPasswordResetEmail, sendSignupOTPEmail } from '../services/emailService';
+import { sendSuccess, sendError } from '../utils/response';
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+
 if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in environment variables');
 }
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, password, role } = req.body;
+        const { name, password, role, enrollmentNumber } = req.body;
         const email = req.body.email?.toLowerCase();
 
 
@@ -37,14 +39,15 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         }
 
         if (existingUser) {
-            res.status(400).json({ error: 'User already exists' });
+            sendError(res, 'User already exists', 400);
             return;
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12); // Increased cost
+        const hashedPassword = await bcrypt.hash(password, 12); 
 
-        const verificationToken = require('crypto').randomUUID();
-        const verificationExpiry = new Date(Date.now() + 24 * 60 * 60000).toISOString(); // 24 hours
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
 
         const { data: dbUser, error: dbError } = await supabase
             .from('users')
@@ -53,26 +56,31 @@ export const register = async (req: Request, res: Response): Promise<void> => {
                 email, 
                 password: hashedPassword, 
                 role: normalizedRole,
-                email_verification_token: verificationToken,
-                email_verification_expiry: verificationExpiry
+                enrollment_number: enrollmentNumber,
+                email_verification_token: otp,
+                email_verification_expiry: otpExpiry,
+                is_email_verified: false 
             }])
             .select()
             .single();
 
         if (dbError || !dbUser) {
             logger.error(`Registration failed for ${email}: ${dbError?.message}`, { ip: req.ip });
-            res.status(400).json({ error: 'The server could not create your account at this time.' });
+            sendError(res, dbError?.message || 'The server could not create your account at this time.');
             return;
         }
 
-        logger.info(`User registered: ${email}`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
+        logger.info(`User registered, awaiting verification: ${email}`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
 
-        // Mock email sending
-        console.log(`\n=== EMAIL VERIFICATION FOR ${email} ===\nVerification Link: ${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}\n=========================================\n`);
+        // Send OTP email asynchronously
+        sendSignupOTPEmail(email, otp).catch(err => {
+            logger.error(`Failed to send signup OTP to ${email}:`, err);
+        });
 
         res.status(201).json({
-            message: 'Registration successful. Please check your email to verify your account.',
-            requiresVerification: true
+            message: 'Registration successful! Please check your email for the verification code.',
+            requiresVerification: true,
+            email: email
         });
     } catch (error) {
         logger.error(`Registration critical error:`, { error, ip: req.ip });
@@ -82,7 +90,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { password } = req.body;
+        const { password, enrollmentNumber } = req.body;
         const email = req.body.email?.toLowerCase();
 
 
@@ -99,34 +107,70 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         if (profileError || !profileData) {
             logger.warn(`Login failed: User not found - ${email}`, { ip: req.ip });
-            res.status(401).json({ error: 'Invalid credentials' });
+            sendError(res, 'Invalid credentials', 401);
             return;
         }
 
         // Resilient check for ban status
         if ((profileData as any).is_banned === true) {
-            res.status(401).json({ error: 'ACCOUNT_BANNED' });
+            logger.error(`Login failed: User banned - ${email}`, { ip: req.ip });
+            sendError(res, 'ACCOUNT_BANNED', 401);
             return;
         }
 
         if (profileData.is_email_verified === false) {
-            res.status(401).json({ error: 'ACCOUNT_NOT_VERIFIED' });
+             logger.warn(`Login failed: Email not verified - ${email}`, { ip: req.ip });
+            sendError(res, 'ACCOUNT_NOT_VERIFIED', 401);
             return;
         }
 
         const isMatch = await bcrypt.compare(password, profileData.password);
         if (!isMatch) {
             logger.warn(`Login failed: Incorrect password - ${email}`, { ip: req.ip });
-            res.status(401).json({ error: 'Invalid credentials' });
+            sendError(res, 'Invalid credentials', 401);
             return;
+        }
+
+        // NEW: Sync and verify enrollment number
+        let finalEnrollment = profileData.enrollment_number;
+        
+        if (enrollmentNumber && finalEnrollment) {
+            // Strict check: If user provides an ID but it doesn't match the DB record
+            if (enrollmentNumber.trim().toUpperCase() !== finalEnrollment.trim().toUpperCase()) {
+                logger.warn(`Login failed: Enrollment ID mismatch - ${email}. Input: "${enrollmentNumber}", DB: "${finalEnrollment}"`, { ip: req.ip });
+                sendError(res, 'Enrollment ID does not match our records', 401);
+                return;
+            }
+        } else if (!finalEnrollment && enrollmentNumber) {
+            // Lazy sync: First time providing ID during login
+            console.log(`[AUTH] Syncing missing enrollment number for ${email}: ${enrollmentNumber}`);
+            const { error: syncError } = await supabase
+                .from('users')
+                .update({ enrollment_number: enrollmentNumber.trim() })
+                .eq('id', profileData.id);
+            
+            if (!syncError) finalEnrollment = enrollmentNumber.trim();
         }
 
         logger.info(`Login successful: ${email}`, { userId: profileData.id, role: profileData.role, ip: req.ip });
 
-        const token = jwt.sign({ id: profileData.id, role: profileData.role }, JWT_SECRET, { expiresIn: '1h' });
+        const payload = { id: profileData.id, role: profileData.role, name: profileData.name, email: profileData.email };
+        
+        // Short-lived access token (15 minutes)
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+        
+        // Long-lived refresh token (7 days)
+        const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
 
-        res.status(200).json({
-            message: 'Login successful',
+        // Set refresh token in HttpOnly cookie
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
+        sendSuccess(res, {
             token,
             id: profileData.id,
             name: profileData.name,
@@ -136,13 +180,145 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 ...profileData,
                 role: displayRole(profileData.role),
                 phoneNumber: profileData.phone_number || '',
-                enrollmentNumber: profileData.enrollment_number || '',
+                enrollmentNumber: finalEnrollment || '',
                 profilePic: profileData.profile_pic || ''
             }
-        });
+        }, 'Login successful');
+
     } catch (error) {
         logger.error(`Login critical error:`, { error, email: req.body.email, ip: req.ip });
-        res.status(500).json({ error: 'Internal Server Error' });
+        sendError(res, 'Internal Server Error');
+    }
+};
+
+export const refreshAccessToken = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const refreshToken = req.cookies?.refreshToken;
+
+        if (!refreshToken) {
+            sendError(res, 'Refresh token missing. Please log in again.', 401);
+            return;
+        }
+
+        jwt.verify(refreshToken, JWT_REFRESH_SECRET as string, async (err: any, decoded: any) => {
+            if (err) {
+                res.clearCookie('refreshToken');
+                sendError(res, 'Session expired. Please log in again.', 401);
+                return;
+            }
+
+            // Verify user still exists and is not banned
+            const { data: user, error } = await supabase.from('users').select('is_banned').eq('id', decoded.id).single();
+
+            if (error || !user) {
+                res.clearCookie('refreshToken');
+                sendError(res, 'User no longer exists', 401);
+                return;
+            }
+
+            if (user.is_banned) {
+                res.clearCookie('refreshToken');
+                sendError(res, 'ACCOUNT_BANNED', 403);
+                return;
+            }
+
+            // Generate new access token
+            const payload = { id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email };
+            const newToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+
+            sendSuccess(res, { token: newToken }, 'Token refreshed');
+        });
+    } catch (error) {
+        logger.error(`Refresh token error:`, { error, ip: req.ip });
+        sendError(res, 'Internal Server Error');
+    }
+};
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+    res.clearCookie('refreshToken', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
+    sendSuccess(res, null, 'Logged out successfully');
+};
+
+export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            sendError(res, 'Email and OTP are required', 400);
+            return;
+        }
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('id, email_verification_token, email_verification_expiry')
+            .eq('email', email.toLowerCase())
+            .single();
+
+        if (error || !user) {
+            sendError(res, 'User does not exist', 400);
+            return;
+        }
+
+        if (user.email_verification_token !== otp) {
+            sendError(res, 'Invalid verification code.', 400);
+            return;
+        }
+
+        if (new Date(user.email_verification_expiry) < new Date()) {
+            sendError(res, 'Verification code has expired. Please request a new one.', 400);
+            return;
+        }
+
+        const { error: updateError } = await supabase.from('users').update({ 
+            is_email_verified: true,
+            email_verification_token: null, 
+            email_verification_expiry: null 
+        }).eq('id', user.id);
+
+        if (updateError) {
+            sendError(res, 'Failed to verify account', 500);
+            return;
+        }
+
+        sendSuccess(res, null, 'Email verified successfully! You can now log in.');
+    } catch (err) {
+        sendError(res, 'Server error', 500);
+    }
+};
+
+export const resendOtp = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            sendError(res, 'Email is required', 400);
+            return;
+        }
+
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('id, name')
+            .eq('email', email.toLowerCase())
+            .single();
+
+        if (error || !user) {
+            sendError(res, 'User does not exist', 400);
+            return;
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60000).toISOString();
+
+        await supabase.from('users').update({ 
+            email_verification_token: otp, 
+            email_verification_expiry: otpExpiry 
+        }).eq('id', user.id);
+
+        sendSignupOTPEmail(email, otp).catch(err => {
+            logger.error(`Failed to resend signup OTP to ${email}:`, err);
+        });
+
+        sendSuccess(res, null, 'New verification code sent!');
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
     }
 };
 
@@ -150,18 +326,18 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
     try {
         const { token } = req.body;
         if (!token) {
-            res.status(400).json({ error: 'Verification token is required' });
+            sendError(res, 'Verification token is required', 400);
             return;
         }
 
         const { data: user, error } = await supabase.from('users').select('id, email_verification_expiry').eq('email_verification_token', token).single();
         if (error || !user) {
-            res.status(400).json({ error: 'Invalid or expired verification token.' });
+            sendError(res, 'Invalid or expired verification token.', 400);
             return;
         }
 
         if (new Date(user.email_verification_expiry) < new Date()) {
-            res.status(400).json({ error: 'Verification token has expired. Please register again or request a new token.' });
+            sendError(res, 'Verification token has expired. Please register again or request a new token.', 400);
             return;
         }
 
@@ -171,7 +347,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
             email_verification_expiry: null 
         }).eq('id', user.id);
 
-        res.status(200).json({ message: 'Email verified successfully!' });
+        sendSuccess(res, null, 'Email verified successfully!');
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -181,23 +357,34 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
     try {
         const { email } = req.body;
         if (!email) {
-            res.status(400).json({ error: 'Email is required' });
+            sendError(res, 'Email is required', 400);
             return;
         }
 
         const { data: user, error } = await supabase.from('users').select('id, email').eq('email', email).single();
         if (error || !user) {
-            res.status(400).json({ error: 'User does not exist' });
+            sendError(res, 'User does not exist', 400);
             return;
         }
 
         const token = require('crypto').randomUUID();
         const expiry = new Date(Date.now() + 30 * 60000).toISOString(); // 30 mins
 
-        await supabase.from('users').update({ reset_token: token, token_expiry: expiry }).eq('email', email);
+        const { error: updateError } = await supabase.from('users').update({ reset_token: token, token_expiry: expiry }).eq('email', email);
 
-        console.log(`Reset Token for ${email}: ${token}`);
-        res.status(200).json({ message: 'Reset link/token dispatched successfully if email exists.' });
+        if (updateError) {
+            logger.error(`[Auth] Failed to insert reset token into database for ${email}:`, updateError);
+            res.status(500).json({ error: 'Database error: Ensure reset_token and token_expiry columns exist in users table.' });
+            return;
+        }
+
+        // Send the real email asynchronously (don't block the request)
+        sendPasswordResetEmail(user.email, token).catch(e => {
+            logger.error(`[Email Service] Failed to send password reset to ${email}:`, e);
+        });
+
+        logger.info(`Password reset requested for ${email}`);
+        sendSuccess(res, null, 'Reset link/token dispatched successfully if email exists.');
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -207,13 +394,13 @@ export const verifyToken = async (req: Request, res: Response): Promise<void> =>
     try {
         const { token } = req.body;
         if (!token) {
-            res.status(400).json({ error: 'Token is required' });
+            sendError(res, 'Token is required', 400);
             return;
         }
 
         const { data: user, error } = await supabase.from('users').select('id, token_expiry').eq('reset_token', token).single();
         if (error || !user) {
-            res.status(400).json({ error: 'Invalid or expired reset token.' });
+            sendError(res, 'Invalid or expired reset token.', 400);
             return;
         }
 
@@ -223,7 +410,7 @@ export const verifyToken = async (req: Request, res: Response): Promise<void> =>
             return;
         }
 
-        res.status(200).json({ valid: true });
+        sendSuccess(res, { valid: true });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -233,18 +420,18 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     try {
         const { token, newPassword } = req.body;
         if (!token || !newPassword) {
-            res.status(400).json({ error: 'Token and new password required' });
+            sendError(res, 'Token and new password required', 400);
             return;
         }
 
         const { data: user, error } = await supabase.from('users').select('*').eq('reset_token', token).single();
         if (error || !user) {
-            res.status(400).json({ error: 'Invalid reset token.' });
+            sendError(res, 'Invalid reset token.', 400);
             return;
         }
 
         if (new Date(user.token_expiry) < new Date()) {
-            res.status(400).json({ error: 'Reset token has expired.' });
+            sendError(res, 'Reset token has expired.', 400);
             return;
         }
 
@@ -261,7 +448,7 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
             token_expiry: null
         }).eq('id', user.id);
 
-        res.status(200).json({ message: 'Password successfully reset!' });
+        sendSuccess(res, null, 'Password successfully reset!');
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -273,7 +460,7 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
         const userId = (req as any).user?.id; // Assuming auth middleware attaches user.id
 
         if (!userId) {
-            res.status(401).json({ error: 'Unauthorized' });
+            sendError(res, 'Unauthorized', 401);
             return;
         }
 
@@ -291,14 +478,14 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 
         const isSame = await bcrypt.compare(newPassword, user.password);
         if (isSame) {
-            res.status(400).json({ error: 'New password must be different from the old password.' });
+            sendError(res, 'New password must be different from the old password.', 400);
             return;
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await supabase.from('users').update({ password: hashedPassword }).eq('id', user.id);
 
-        res.status(200).json({ message: 'Password changed successfully!' });
+        sendSuccess(res, null, 'Password changed successfully!');
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }

@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/context/AuthContext';
-import { FiCheck, FiMenu, FiClock, FiDollarSign, FiBarChart2, FiMaximize, FiX, FiActivity, FiAlertCircle, FiRefreshCw, FiTrendingUp, FiBell, FiBellOff, FiPrinter } from 'react-icons/fi';
+import { FiCheck, FiMenu, FiClock, FiDollarSign, FiBarChart2, FiMaximize, FiX, FiActivity, FiAlertCircle, FiRefreshCw, FiTrendingUp, FiBell, FiBellOff, FiPrinter, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { useToast } from '../../hooks/context/ToastContext';
 import { Html5Qrcode } from 'html5-qrcode';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -36,6 +36,8 @@ interface Order {
     created_at?: string;
     items: OrderItem[];
     user?: { name: string };
+    notes?: string;
+    scheduledAt?: string;
 }
 
 const OwnerDashboard = () => {
@@ -49,6 +51,10 @@ const OwnerDashboard = () => {
     const [isSyncing, setIsSyncing] = useState(false);
     const [verificationOrder, setVerificationOrder] = useState<Order | null>(null);
     const [isDelivering, setIsDelivering] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
+    // Database-backed property: excludes everything before this timestamp
+    const [viewResetAt, setViewResetAt] = useState<Date | null>(null);
 
     // Ref-based lock for synchronous check (useState is async)
     const scanLockRef = useRef(false);
@@ -69,6 +75,13 @@ const OwnerDashboard = () => {
 
             if (myOutlet) {
                 setOutlet(myOutlet);
+                
+                if (myOutlet.insights_reset_at) {
+                    setViewResetAt(new Date(myOutlet.insights_reset_at));
+                } else {
+                    setViewResetAt(null);
+                }
+
                 const ordersRes = await api.get(`/orders/outlet/${myOutlet.id}`);
                 setOrders(ordersRes.data.sort((a: Order, b: Order) =>
                     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -89,11 +102,32 @@ const OwnerDashboard = () => {
             await fetchDashboardData();
             const duration = Date.now() - startTime;
             if (duration < 800) await new Promise(r => setTimeout(r, 800 - duration));
+            // No longer clearing the reset on refresh. Reset is permanent and DB-backed.
             showToast('Dashboard updated.', 'success');
         } catch (error) {
             showToast('Update failed.', 'error');
         } finally {
             setIsSyncing(false);
+        }
+    };
+
+    const handleResetInsights = async () => {
+        if (isResetting) return;
+        setIsResetting(true);
+        try {
+            const res = await api.post('/owner/reset-insights');
+            if (res.data.resetTime) {
+                setViewResetAt(new Date(res.data.resetTime));
+            }
+            setShowResetModal(false);
+            showToast('Insights data reset successfully', 'success');
+        } catch (error: any) {
+            showToast(
+                error.response?.data?.error || 'Failed to reset insights. Please try again.',
+                'error'
+            );
+        } finally {
+            setIsResetting(false);
         }
     };
 
@@ -186,11 +220,14 @@ const OwnerDashboard = () => {
     const handleMarkAsDelivered = async (orderId: number) => {
         setIsDelivering(true);
         try {
-            await api.put(`/orders/owner/mark-delivered/${orderId}`);
+            // Use the standard status update endpoint which Owners are authorized for,
+            // instead of the admin-only manual-delivered override.
+            await api.put(`/orders/${orderId}/status`, { status: 'COMPLETED' });
             showToast('Order completed!', 'success');
             setVerificationOrder(null);
             fetchDashboardData();
         } catch (error: any) {
+            console.error("Handover failed:", error);
             showToast(error.response?.data?.error || 'Failed to complete order', 'error');
         } finally {
             setIsDelivering(false);
@@ -273,7 +310,20 @@ const OwnerDashboard = () => {
         }
     };
 
-    const activeOrders = orders.filter(o => {
+    // ── Insight-reset filter ─────────────────────────────────────────────────
+    // When owner resets insights, viewResetAt is set to the current timestamp.
+    // displayOrders excludes everything before that point, so all metrics/charts
+    // zero out — even though the 15-second poll keeps refreshing `orders` from
+    // the server (backend data is never deleted).
+    const displayOrders = viewResetAt
+        ? orders.filter(o => {
+              const ts = new Date(o.createdAt || o.created_at || 0);
+              return ts > viewResetAt;
+          })
+        : orders;
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const activeOrders = displayOrders.filter(o => {
         const status = o.status?.toUpperCase();
         return status !== 'COMPLETED' && status !== 'CANCELLED';
     });
@@ -283,13 +333,13 @@ const OwnerDashboard = () => {
         return isNaN(amount) ? 0 : amount;
     };
 
-    const todaysOrders = orders.filter(o => isToday(o.createdAt || o.created_at));
+    const todaysOrders = displayOrders.filter(o => isToday(o.createdAt || o.created_at));
     const todaysRevenue = todaysOrders
-        .filter(o => o.status?.toUpperCase() === 'COMPLETED' || o.payment_status?.toLowerCase() === 'paid')
+        .filter(o => (o.status?.toUpperCase() === 'COMPLETED' || o.payment_status?.toLowerCase() === 'paid') && o.status?.toUpperCase() !== 'CANCELLED')
         .reduce((sum, o) => sum + calculateOrderRevenue(o), 0);
 
-    const lifetimeRevenue = orders
-        .filter(o => o.status?.toUpperCase() === 'COMPLETED' || o.payment_status?.toLowerCase() === 'paid')
+    const lifetimeRevenue = displayOrders
+        .filter(o => (o.status?.toUpperCase() === 'COMPLETED' || o.payment_status?.toLowerCase() === 'paid') && o.status?.toUpperCase() !== 'CANCELLED')
         .reduce((sum, o) => sum + calculateOrderRevenue(o), 0);
 
     const completedTodayCount = todaysOrders.filter(o => o.status?.toUpperCase() === 'COMPLETED').length;
@@ -302,7 +352,7 @@ const OwnerDashboard = () => {
         d.setDate(d.getDate() - i);
         dailyMap.set(d.toLocaleDateString('en-US', { weekday: 'short' }), 0);
     }
-    orders.forEach(o => {
+    displayOrders.filter(o => o.status?.toUpperCase() !== 'CANCELLED').forEach(o => {
         const rev = calculateOrderRevenue(o);
         const day = new Date(o.createdAt || o.created_at || '').toLocaleDateString('en-US', { weekday: 'short' });
         if (dailyMap.has(day)) dailyMap.set(day, (dailyMap.get(day) || 0) + rev);
@@ -310,7 +360,7 @@ const OwnerDashboard = () => {
     const dailyData = Array.from(dailyMap, ([day, revenue]) => ({ day, revenue }));
 
     const itemMap = new Map<string, number>();
-    orders.forEach(o => o.items?.forEach(i => {
+    displayOrders.filter(o => o.status?.toUpperCase() !== 'CANCELLED').forEach(o => o.items?.forEach(i => {
         const itemName = i.menuItem?.name || 'Unknown';
         itemMap.set(itemName, (itemMap.get(itemName) || 0) + i.quantity);
     }));
@@ -320,7 +370,7 @@ const OwnerDashboard = () => {
     })).sort((a, b) => b.count - a.count).slice(0, 5);
 
     const statusMap = new Map<string, number>();
-    orders.forEach(o => {
+    displayOrders.forEach(o => {
         const s = o.status?.toUpperCase() || 'UNKNOWN';
         statusMap.set(s, (statusMap.get(s) || 0) + 1);
     });
@@ -335,7 +385,7 @@ const OwnerDashboard = () => {
     };
 
     return (
-        <div className="animate-none pb-40">
+        <div className="animate-none pb-40 pt-12 md:pt-16">
             {/* Header Section */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-16 border-b border-slate-200 dark:border-slate-800 pb-10 gap-8">
                 <div className="space-y-3">
@@ -349,7 +399,7 @@ const OwnerDashboard = () => {
                     <p className="text-base text-slate-500 max-w-lg leading-relaxed">Good to see you again. Here's a snapshot of how things are moving today.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                <div className="flex flex-wrap gap-x-3 gap-y-5 lg:gap-x-4 lg:gap-y-5 w-full lg:w-auto">
                     <Link
                         to={`/owner/menu/${outlet.id}`}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold   transition-all shadow-sm"
@@ -401,6 +451,16 @@ const OwnerDashboard = () => {
                     >
                         {soundEnabled ? <FiBell className="mr-2 w-4 h-4" /> : <FiBellOff className="mr-2 w-4 h-4" />}
                         {soundEnabled ? 'Alerts On' : 'Alerts Off'}
+                    </button>
+                    {/* Reset Insights — danger action */}
+                    <button
+                        onClick={() => setShowResetModal(true)}
+                        disabled={isResetting}
+                        title="Clear analytics and dashboard view data"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <FiTrash2 className="mr-2 w-4 h-4" />
+                        Reset Insights
                     </button>
                 </div>
             </div>
@@ -511,19 +571,30 @@ const OwnerDashboard = () => {
                             <div key={order.id} className="p-8  dark: transition-all flex flex-col md:flex-row gap-8 md:items-center group/order">
                                 <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-3 mb-4">
-                                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider px-3 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                        <span className="text-[11px] font-black text-brand-700 dark:text-brand-300 uppercase tracking-[0.1em] px-3.5 py-1.5 bg-brand-50 dark:bg-brand-500/10 border-2 border-brand-100 dark:border-brand-500/30 rounded-full shadow-sm shadow-brand-500/10">
                                             Order #{order.id}
                                         </span>
-                                        <span className="text-xl font-bold text-[var(--text-primary)] tracking-tight">
+                                        <h4 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">
                                             {order.user?.name || 'Guest Customer'}
-                                        </span>
-                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${order.payment_status === 'paid' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' : 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-500/20'}`}>
-                                            {order.payment_status?.toUpperCase()}
-                                        </span>
-                                        <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5 ml-auto md:ml-0">
-                                            <FiClock className="w-3.5 h-3.5" />
-                                            {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                        </span>
+                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[11px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border-2 ${order.payment_status === 'paid'
+                                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/30 shadow-sm shadow-emerald-500/10'
+                                                    : 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-500/30 shadow-sm shadow-orange-500/10'
+                                                }`}>
+                                                {order.payment_status?.toUpperCase() === 'PAID' ? '✓ PAID' : 'PENDING'}
+                                            </span>
+                                            <span className="text-[11px] font-black text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
+                                                <FiClock className="w-3.5 h-3.5" />
+                                                {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        {order.scheduledAt && (
+                                            <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 rounded-lg flex items-center gap-1.5 animate-pulse-subtle">
+                                                <FiClock className="w-3 h-3" />
+                                                PICKUP: {new Date(order.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="text-[var(--text-primary)] text-xl mb-4 font-semibold tracking-tight leading-relaxed">
                                         {order.items?.map((item: any, idx) => (
@@ -533,6 +604,14 @@ const OwnerDashboard = () => {
                                             </span>
                                         ))}
                                     </div>
+                                    {order.notes && (
+                                        <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl flex items-start gap-2 max-w-lg">
+                                            <FiMessageSquare className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                                            <p className="text-sm font-medium text-amber-800 dark:text-amber-300 italic line-clamp-2">
+                                                “{order.notes}”
+                                            </p>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-4">
                                         <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                                             Value: <span className="text-[var(--text-primary)] font-bold">₹{order.totalAmount}</span>
@@ -769,7 +848,7 @@ const OwnerDashboard = () => {
                                 </ResponsiveContainer>
                                 <div className="absolute flex flex-col items-center justify-center text-center pointer-events-none">
                                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Volume</p>
-                                    <p className="text-5xl font-bold text-[var(--text-primary)] tracking-tight leading-none">{orders.length}</p>
+                                    <p className="text-5xl font-bold text-[var(--text-primary)] tracking-tight leading-none">{displayOrders.length}</p>
                                     <p className="text-[9px] font-bold text-brand-500 mt-2 tracking-widest uppercase">Total Orders</p>
                                 </div>
                             </div>
@@ -836,6 +915,69 @@ const OwnerDashboard = () => {
                                     </>
                                 )}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Reset Insights Confirmation Modal ── */}
+            {showResetModal && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
+                        onClick={() => !isResetting && setShowResetModal(false)}
+                    />
+                    {/* Dialog */}
+                    <div className="relative w-full max-w-md bg-[var(--bg-card)] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        {/* Top accent bar */}
+                        <div className="h-1 w-full bg-gradient-to-r from-rose-400 to-rose-600" />
+
+                        <div className="p-8">
+                            {/* Icon */}
+                            <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-6">
+                                <FiTrash2 className="w-7 h-7 text-rose-500" />
+                            </div>
+
+                            {/* Copy */}
+                            <h3 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-3">
+                                Reset Insights Data?
+                            </h3>
+                            <p className="text-sm text-slate-500 leading-relaxed mb-2">
+                                This will clear all analytics, charts, and live dashboard data from your current view.
+                            </p>
+                            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mb-8">
+                                <FiCheck className="w-4 h-4 flex-shrink-0" />
+                                Your menu and order history will remain completely untouched.
+                            </p>
+
+                            {/* Actions */}
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowResetModal(false)}
+                                    disabled={isResetting}
+                                    className="flex-1 py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleResetInsights}
+                                    disabled={isResetting}
+                                    className="flex-1 py-3 px-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20"
+                                >
+                                    {isResetting ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Resetting...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FiTrash2 className="w-4 h-4" />
+                                            Confirm Reset
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

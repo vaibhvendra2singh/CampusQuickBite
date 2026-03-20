@@ -8,7 +8,7 @@ import {
     FiPhone, FiMail, FiBarChart2, FiShield, FiRefreshCw, FiActivity,
     FiCheckCircle, FiDatabase, FiAlertCircle, FiArrowRight, FiDownload,
     FiHardDrive, FiUsers, FiBell, FiStar, FiZap, FiSearch, FiLock, FiUnlock,
-    FiPause, FiTrendingUp
+    FiPause, FiTrendingUp, FiTrash2
 } from 'react-icons/fi';
 import { useToast } from '../../hooks/context/ToastContext';
 import { useAuth } from '../../hooks/context/AuthContext';
@@ -395,14 +395,14 @@ const AdminDashboard = () => {
                                 )}
                             </div>
                             <div className="flex flex-wrap items-center gap-3">
-                                <div className="flex items-center space-x-4 text-sm font-semibold text-[var(--text-muted)] bg-brand-50/50 px-4 py-2 rounded-lg border border-brand-100">
-                                    <FiUsers className="text-brand-500" />
+                                <div className="flex items-center space-x-4 text-sm font-bold text-slate-700 dark:text-slate-200 bg-brand-50/80 dark:bg-brand-500/10 px-4 py-2.5 rounded-xl border border-brand-100 dark:border-brand-500/20 shadow-sm transition-all animate-none">
+                                    <FiUsers className="text-brand-600 dark:text-brand-400 w-4 h-4" />
                                     <span>{users.length} Total Registered Users</span>
                                 </div>
                                 {/* Export CSV */}
                                 <button
                                     onClick={exportUsersCSV}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white text-xs font-bold rounded-lg  transition-all shadow-sm"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-xs font-bold rounded-xl  transition-all shadow-md group-"
                                 >
                                     <FiDownload className="w-4 h-4" /> Export CSV
                                 </button>
@@ -618,7 +618,7 @@ const AdminDashboard = () => {
                                         Real-time dispatcher view shows active orders being processed across all campus nodes.
                                     </p>
                                 </div>
-                                <div className="card-modern bg-white p-6 border border-slate-200 shadow-sm flex-1 overflow-hidden">
+                                <div className="card-modern bg-[var(--bg-card)] p-6 border border-[var(--border-color)] shadow-sm flex-1 overflow-hidden">
                                     <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center">
                                         <FiUsers className="mr-2" /> Recent Community Members
                                     </h4>
@@ -641,7 +641,7 @@ const AdminDashboard = () => {
                                         ))}
                                     </div>
                                 </div>
-                                <div className="card-modern bg-white p-6 border border-slate-200 shadow-sm">
+                                <div className="card-modern bg-[var(--bg-card)] p-6 border border-[var(--border-color)] shadow-sm">
                                     <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-900 mb-2">Service Health Status</h4>
                                     <p className="text-xs font-semibold text-green-600 flex items-center">
                                         <span className="w-2.5 h-2.5 bg-green-500 rounded-full mr-2 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-heartbeat"></span> ALL SYSTEMS NOMINAL
@@ -678,7 +678,7 @@ const AdminDashboard = () => {
                             <div className="card-modern p-0 overflow-hidden border border-[var(--border-color)]">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
-                                        <thead className="bg-slate-50 border-b border-[var(--border-color)]">
+                                        <thead className="bg-[var(--bg-card)] border-b border-[var(--border-color)]">
                                             <tr>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Order ID</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Outlet</th>
@@ -713,9 +713,7 @@ const AdminDashboard = () => {
                                                             <button
                                                                 onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
                                                                 disabled={order.status === 'completed'}
-                                                                className={`p-2 rounded-lg transition-colors border ${order.status === 'completed'
-                                                                    ? 'text-slate-300 bg-slate-50 border-slate-100 cursor-not-allowed'
-                                                                    : 'text-green-500  border-green-100'}`}
+                                                                className={`p-2 rounded-lg transition-colors border ${order.status === 'completed' ? 'text-slate-500 bg-[var(--bg-body)] border-[var(--border-color)] cursor-not-allowed' : 'text-green-500 border-green-100'}`}
                                                                 title="Force Complete Override"
                                                             >
                                                                 <FiCheckCircle className="w-4 h-4" />
@@ -723,9 +721,7 @@ const AdminDashboard = () => {
                                                             <button
                                                                 onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
                                                                 disabled={order.status === 'cancelled'}
-                                                                className={`p-2 rounded-lg transition-colors border ${order.status === 'cancelled'
-                                                                    ? 'text-slate-300 bg-slate-50 border-slate-100 cursor-not-allowed'
-                                                                    : 'text-red-500  border-red-100'}`}
+                                                                className={`p-2 rounded-lg transition-colors border ${order.status === 'cancelled' ? 'text-slate-500 bg-[var(--bg-body)] border-[var(--border-color)] cursor-not-allowed' : 'text-red-500 border-red-100'}`}
                                                                 title="Force Cancel Override"
                                                             >
                                                                 <FiX className="w-4 h-4" />
@@ -787,7 +783,7 @@ const AdminDashboard = () => {
                                         </select>
                                     </div>
                                     <button type="submit" className="btn-primary w-full py-4 text-sm font-bold group">
-                                        Deploy Update <FiZap className="ml-2 group-" />
+                                        Deploy Update <FiZap className="ml-2 group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </form>
                             </div>
@@ -815,10 +811,15 @@ const AdminDashboard = () => {
                                             </p>
                                         </div>
                                         <button
-                                            onClick={() => handleDeleteAnnouncement(anno.id)}
-                                            className="p-2 text-slate-300  transition-colors opacity-0 group-"
+                                            onClick={() => {
+                                                if (window.confirm('Delete this announcement?')) {
+                                                    handleDeleteAnnouncement(anno.id);
+                                                }
+                                            }}
+                                            className="p-2 text-[var(--text-muted)] hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                                            title="Delete Announcement"
                                         >
-                                            <FiX className="w-5 h-5" />
+                                            <FiTrash2 className="w-5 h-5" />
                                         </button>
                                     </div>
                                 ))
@@ -840,7 +841,7 @@ const AdminDashboard = () => {
                             <h3 className="text-xl font-bold flex items-center">
                                 <FiStar className="mr-3 text-yellow-500" /> Review & Rating Audit
                             </h3>
-                            <div className="text-sm font-semibold text-[var(--text-muted)] bg-white px-4 py-2 rounded-lg border">
+                            <div className="text-sm font-semibold text-[var(--text-muted)] bg-[var(--bg-card)] px-4 py-2 rounded-lg border border-[var(--border-color)]">
                                 Total Reviews Analyzed: {reviews.length}
                             </div>
                         </div>
@@ -1131,7 +1132,7 @@ const AdminDashboard = () => {
     }
 
     return (
-        <div className="animate-none pb-32">
+        <div className="animate-none pb-32 pt-12 md:pt-16">
             {/* Header */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-12 border-b-8 border-brand-500 pb-12">
                 <div className="space-y-6">
@@ -1141,7 +1142,7 @@ const AdminDashboard = () => {
                     </div>
                     <h2 className="text-5xl md:text-6xl font-bold text-[var(--text-primary)] tracking-tight leading-tight">Admin Dashboard</h2>
                     <div className="flex items-center space-x-3">
-                        <span className="px-3 py-1 bg-brand-50/50 text-brand-600 rounded-full text-xs font-semibold flex items-center shadow-sm border border-brand-100">
+                        <span className="px-3 py-1 bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 rounded-full text-xs font-semibold flex items-center shadow-sm border border-brand-100 dark:border-brand-500/30">
                             <FiShield className="mr-1.5" /> System Administrator
                         </span>
                     </div>
@@ -1158,7 +1159,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex flex-wrap items-center gap-4 mb-20 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex flex-wrap items-center gap-4 mb-20 p-2 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)]">
                 <button
                     onClick={() => setActiveTab('outlets')}
                     className={`flex items-center px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeTab === 'outlets' ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/20' : ' text-[var(--text-muted)]'}`}
@@ -1322,12 +1323,12 @@ const AdminDashboard = () => {
                             <div className="space-y-3">
                                 <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)]  border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => { localStorage.clear(); showToast('Local cache wiped. Reloading UI.', 'success'); setTimeout(() => window.location.reload(), 1000); setIsSettingsModalOpen(false); }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-card)]">
+                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group-hover:bg-brand-500 group-hover:text-white transition-colors bg-[var(--bg-card)]">
                                             <FiHardDrive className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-semibold text-[var(--text-primary)]">Reset local cache</span>
                                     </div>
-                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group- transition-colors" />
+                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:translate-x-1 transition-transform" />
                                 </button>
 
                                 <button className="w-full flex items-center justify-between p-4 bg-[var(--bg-input)]  border border-[var(--border-color)] rounded-xl transition-colors group" onClick={() => {
@@ -1339,18 +1340,18 @@ const AdminDashboard = () => {
                                     showToast('System report generated & downloaded.', 'success'); setIsSettingsModalOpen(false);
                                 }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group- transition-colors bg-[var(--bg-primary)]">
+                                        <div className="p-2 border border-[var(--border-color)] rounded-lg text-[var(--text-muted)] group-hover:bg-brand-500 group-hover:text-white transition-colors bg-[var(--bg-primary)]">
                                             <FiDownload className="w-4 h-4" />
                                         </div>
                                         <span className="text-sm font-semibold text-[var(--text-primary)]">Export system report (CSV)</span>
                                     </div>
-                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group- transition-colors" />
+                                    <FiArrowRight className="w-4 h-4 text-[var(--text-muted)] group-hover:translate-x-1 transition-transform" />
                                 </button>
 
                                 <button className="w-full flex items-center justify-between p-4 bg-red-50  dark:bg-red-500/10 dark: border border-red-100 dark:border-red-500/20 rounded-xl transition-colors text-red-600 dark:text-red-400 group" onClick={() => { showToast('Emergency refresh initiated - reloading.', 'error'); handleRefresh(); setIsSettingsModalOpen(false); }}>
                                     <div className="flex items-center space-x-3">
-                                        <div className="p-2 border border-red-200 dark:border-red-500/30 rounded-lg group- dark:group- transition-colors bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
-                                            <FiRefreshCw className="w-4 h-4" />
+                                        <div className="p-2 border border-red-200 dark:border-red-500/30 rounded-lg group-hover:bg-red-500 group-hover:text-white transition-colors bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+                                            <FiRefreshCw className="w-4 h-4 group-hover:animate-spin" />
                                         </div>
                                         <span className="text-sm font-bold">Restart connection links</span>
                                     </div>

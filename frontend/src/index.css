@@ -175,23 +175,24 @@
 }
 
 /* ====== DARK THEME ====== */
+/* Colors matched to the cinematic warm dark palette from the loading page */
 .dark {
   --bg-primary: transparent;
-  --bg-body: #030712;
-  --bg-card: #0F172A;
-  --bg-card-hover: #1E293B;
-  --bg-input: #1E293B;
-  --bg-header: rgba(3, 7, 18, 0.85);
-  --bg-footer: #030712;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --border-color: #1E293B;
-  --border-hover: #334155;
-  --shadow-color: rgba(0, 0, 0, 0.4);
-  --glass-bg: rgba(15, 23, 42, 0.85);
-  --glass-border: rgba(30, 41, 59, 0.7);
-  --glass-shadow: rgba(0, 0, 0, 0.3);
+  --bg-body: #0D0C0B;           /* deep warm near-black — matches loading page bg */
+  --bg-card: #1A1916;           /* warm charcoal card surface */
+  --bg-card-hover: #232220;     /* slightly lighter warm charcoal on hover */
+  --bg-input: #1F1E1C;          /* warm dark input background */
+  --bg-header: rgba(13, 12, 11, 0.88); /* warm near-black header with blur */
+  --bg-footer: #0D0C0B;         /* matches body bg */
+  --text-primary: #F0EDEA;      /* warm off-white — not cold white */
+  --text-secondary: #A09890;    /* warm muted taupe */
+  --text-muted: #6B6460;        /* warm dark muted */
+  --border-color: #2A2825;      /* warm dark border */
+  --border-hover: #3D3A36;      /* warm lighter border on hover */
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(20, 19, 17, 0.85);  /* warm dark glass */
+  --glass-border: rgba(50, 46, 42, 0.6);
+  --glass-shadow: rgba(0, 0, 0, 0.4);
 }
 
 /* ====== BASE ====== */
@@ -331,8 +332,8 @@ img {
 }
 
 .dark .glass-premium {
-  background: rgba(3, 7, 18, 0.8);
-  border: 1px solid rgba(30, 41, 59, 0.6);
+  background: rgba(13, 12, 11, 0.85);
+  border: 1px solid rgba(50, 46, 42, 0.5);
 }
 
 /* ====== SCANNING LINE ====== */
@@ -455,7 +456,7 @@ img {
 
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #3A3733;
 }
 
 /* ====== CARDS ====== */
@@ -500,6 +501,13 @@ img {
   contain: content;
 }
 
+/* GPU acceleration for fixed overlays */
+.canvas-container,
+header {
+  will-change: auto;
+  transform: translateZ(0);
+}
+
 .gradient-border-bottom {
   border-bottom: 3px solid;
   border-image: linear-gradient(to right, var(--color-brand-500), #8b5cf6) 1;
@@ -518,13 +526,28 @@ img {
   letter-spacing: -0.01em;
 }
 
-/* ====== GLOBAL TRANSITIONS (light — no lag) ====== */
-*,
-*::before,
-*::after {
-  transition-property: background-color, border-color, color;
-  transition-duration: 0.15s;
+/* ====== GLOBAL TRANSITIONS — opt-in only, not wildcard ====== */
+.transition-theme {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.25s;
   transition-timing-function: ease;
+}
+
+/* 
+  BUTTERY THEME TRANSITIONS 
+  This safely transitions colors globally when the .dark class is toggled on HTML/body,
+  without transitioning layout properties (which causes lag).
+*/
+body, body * {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 0.4s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Except for elements that explicitly opt-out or use framer-motion */
+body .animate-none, 
+body .transition-none {
+  transition: none !important;
 }
 
 /* ====== INPUTS ====== */
@@ -554,12 +577,12 @@ img {
 }
 
 .dark .input-field {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: #1E293B;
+  background: rgba(26, 25, 22, 0.7);
+  border-color: #2A2825;
 }
 
 .dark .input-field:focus {
-  background: rgba(15, 23, 42, 0.9);
+  background: rgba(26, 25, 22, 0.95);
   border-color: var(--color-brand-400);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }

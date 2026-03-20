@@ -1,6 +1,16 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import React, { useState, Suspense, useEffect } from 'react';
+
+// Auto scroll to top on every route change
+function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [pathname]);
+    return null;
+}
 import { useAuth } from './hooks/context/AuthContext';
+const GameHubButton = React.lazy(() => import('./components/student/GameHub').then(m => ({ default: m.GameHubInline })));
 import { CartProvider } from './hooks/context/CartContext';
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
@@ -35,7 +45,6 @@ const TermsOfService = React.lazy(() => import('./pages/public/TermsOfService'))
 const GameHub = React.lazy(() => import('./components/student/GameHub'));
 
 import { useSocket } from './hooks/useSocket';
-import { ReactLenis } from 'lenis/react';
 
 // Lazy load the 3D scene because it includes heavy three.js logic
 const Scene = React.lazy(() => import('./canvas/Scene').then(module => ({ default: module.Scene })));
@@ -46,7 +55,7 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     return (
-        <header className="fixed bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] shadow-2xl transition-all duration-300 flex items-center justify-between gap-4 md:gap-8">
+        <header className="fixed top-6 md:top-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] transition-all duration-300 flex items-center justify-between gap-4 md:gap-8">
             <Link to="/" className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full font-black text-white shadow-xl shadow-brand-500/20 flex-shrink-0 transition-transform">
                 <span className="text-xl md:text-2xl tracking-tighter">CB</span>
             </Link>
@@ -75,6 +84,9 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
                             </span>
                         )}
                     </Link>
+                    <Suspense fallback={null}>
+                        <GameHubButton />
+                    </Suspense>
                 </div>
             )}
 
@@ -115,11 +127,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
             <Header darkMode={isDark} setDarkMode={toggleTheme} />
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 pt-8 pb-40 relative z-10 transition-all duration-150">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-16 relative z-10 transition-all duration-150">
                 {children}
             </main>
 
-            {/* Mini Games — Student only */}
+            {/* Mini Games — floating windows only, trigger is in header */}
             {user?.role === 'STUDENT' && (
                 <React.Suspense fallback={null}>
                     <GameHub />
@@ -127,16 +139,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             )}
 
             {/* Footer */}
-            <footer className="py-24 pb-48 lg:pb-24 bg-slate-950 border-t-[12px] border-brand-500">
+            <footer className="py-12 bg-[var(--bg-body)] border-t-[8px] border-brand-500 relative z-20">
                 <div className="max-w-7xl mx-auto px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                         {/* Brand Column */}
                         <div className="md:col-span-2">
                             <div className="flex items-center space-x-4 mb-8">
                                 <div className="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-500/20">C</div>
-                                <span className="text-3xl font-black text-white tracking-tighter">CampusBite</span>
+                                <span className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">CampusBite</span>
                             </div>
-                            <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-md">
+                            <p className="text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
                                 We believe campus dining should be smooth. Skip the queues, grab your meal, and get back to what matters. Handcrafted for Bennett.
                             </p>
                         </div>
@@ -144,30 +156,30 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                         {/* Navigation */}
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-8 opacity-80">Navigate</h4>
-                            <ul className="space-y-4 text-base text-slate-300 font-bold">
-                                <li><Link to="/" className=" inline-block transition-all duration-150">Daily Feed</Link></li>
-                                <li><Link to="/orders/history" className=" inline-block transition-all duration-150">History</Link></li>
-                                <li><Link to="/leaderboard" className=" inline-block transition-all duration-150">ELITE Board</Link></li>
+                            <ul className="space-y-4 text-base text-[var(--text-primary)] font-bold">
+                                <li><Link to="/" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Daily Feed</Link></li>
+                                <li><Link to="/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">History</Link></li>
+                                <li><Link to="/leaderboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">ELITE Board</Link></li>
                             </ul>
                         </div>
 
                         {/* Help & Legal */}
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-8 opacity-80">Support</h4>
-                            <ul className="space-y-4 text-base text-slate-300 font-bold">
-                                <li><Link to="/help" className=" inline-block transition-all duration-150">Get Help</Link></li>
-                                <li><Link to="/contact" className=" inline-block transition-all duration-150">Talk to us</Link></li>
-                                <li><Link to="/privacy" className=" inline-block transition-all duration-150">Privacy</Link></li>
-                                <li><Link to="/terms" className=" inline-block transition-all duration-150">Rules of Play</Link></li>
+                            <ul className="space-y-4 text-base text-[var(--text-primary)] font-bold">
+                                <li><Link to="/help" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Get Help</Link></li>
+                                <li><Link to="/contact" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Talk to us</Link></li>
+                                <li><Link to="/privacy" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Privacy</Link></li>
+                                <li><Link to="/terms" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Rules of Play</Link></li>
                             </ul>
                         </div>
                     </div>
 
-                    <div className="pt-10 border-t border-slate-900/50 flex flex-col md:flex-row items-center justify-between gap-6">
-                        <p className="text-sm font-black text-slate-600 tracking-tight">&copy; {new Date().getFullYear()} CampusBite. All rights to your appetite.</p>
-                        <div className="flex items-center space-x-3 bg-slate-900/50 px-5 py-2.5 rounded-2xl border border-slate-800/50">
+                    <div className="pt-10 border-t border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6">
+                        <p className="text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} CampusBite. All rights to your appetite.</p>
+                        <div className="flex items-center space-x-3 bg-[var(--bg-card)] px-5 py-2.5 rounded-2xl border border-[var(--border-color)]">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Kitchens are Live</p>
+                            <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none">Kitchens are Live</p>
                         </div>
                     </div>
                 </div>
@@ -224,13 +236,13 @@ function App() {
         <ThemeProvider>
             <ToastProvider>
                 <CartProvider>
-                    <ReactLenis root>
+                    <div className="html-overlay min-h-screen flex flex-col">
                         <React.Suspense fallback={null}>
                             <Scene />
                         </React.Suspense>
-                        <div className="html-overlay min-h-screen flex flex-col">
-                            <Router>
-                                <React.Suspense fallback={<FullScreenLoader />}>
+                        <Router>
+                            <ScrollToTop />
+                            <React.Suspense fallback={<FullScreenLoader />}>
                                     <Routes>
                                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
                             <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
@@ -339,12 +351,11 @@ function App() {
                                     <Route path="*" element={<Navigate to="/" replace />} />
                                     </Routes>
                                 </React.Suspense>
-                            </Router>
-                        </div>
-                    </ReactLenis>
+                        </Router>
+                    </div>
                 </CartProvider>
             </ToastProvider>
-        </ThemeProvider >
+        </ThemeProvider>
     );
 }
 

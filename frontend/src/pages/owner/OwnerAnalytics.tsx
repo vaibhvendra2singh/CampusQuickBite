@@ -16,7 +16,10 @@ interface AnalyticsData {
  revenueTrend: Array<{ date: string, revenue: number, orders: number }>;
  popularItems: Array<{ name: string, quantity: number, revenue: number }>;
  peakHours: Array<{ hour: string, orders: number }>;
+ isReset?: boolean;
 }
+
+
 
 const OwnerAnalytics = () => {
  const { outletId } = useParams<{ outletId: string }>();
@@ -24,30 +27,30 @@ const OwnerAnalytics = () => {
  const [isLoading, setIsLoading] = useState(true);
 
  useEffect(() => {
- const fetchAnalytics = async () => {
- try {
- const res = await api.get(`/analytics/${outletId}`);
- setData(res.data);
- } catch (error) {
- console.error('Failed to fetch analytics', error);
- } finally {
- setIsLoading(false);
- }
- };
- fetchAnalytics();
+     const fetchAnalytics = async () => {
+         try {
+             const res = await api.get(`/analytics/${outletId}`);
+             setData(res.data);
+         } catch (error) {
+             console.error('Failed to fetch analytics', error);
+         } finally {
+             setIsLoading(false);
+         }
+     };
+     fetchAnalytics();
  }, [outletId]);
 
  if (isLoading) {
  return (
- <div className="max-w-7xl mx-auto p-8 animate-pulse space-y-12 pt-20">
- <div className="h-20 bg-slate-100 dark:bg-slate-800 rounded-[2rem] w-64"></div>
- <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
- <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
- <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
- <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
- </div>
- <div className="h-[500px] bg-slate-100 dark:bg-slate-800 rounded-[3rem] w-full"></div>
- </div>
+  <div className="max-w-7xl mx-auto p-8 animate-pulse space-y-12 pt-20">
+  <div className="h-20 bg-slate-100 dark:bg-slate-800 rounded-[2rem] w-64"></div>
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+   <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
+   <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
+   <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-[3rem]"></div>
+  </div>
+  <div className="h-[500px] bg-slate-100 dark:bg-slate-800 rounded-[3rem] w-full"></div>
+  </div>
  );
  }
 
@@ -55,7 +58,16 @@ const OwnerAnalytics = () => {
 
  return (
  <div className="max-w-7xl mx-auto pb-40 px-6 animate-none pt-10">
- {/* Header */}
+  {/* Reset Banner */}
+  {data?.isReset && (
+   <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl flex items-center gap-3">
+    <FiActivity className="w-5 h-5 text-amber-500 flex-shrink-0" />
+    <p className="text-sm text-amber-700 dark:text-amber-300">
+     <span className="font-bold">Dashboard Reset Active.</span> These metrics are counting from your last reset. Your lifetime records are safely preserved in <span className="font-bold">Order History</span>.
+    </p>
+   </div>
+  )}
+  {/* Header */}
  <div className="mb-16">
  <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
  <FiArrowLeft className="w-3.5 h-3.5 transition-" />
@@ -167,7 +179,7 @@ const OwnerAnalytics = () => {
  contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '12px', color: 'white', fontSize: '11px' }}
  />
  <Bar dataKey="quantity" radius={[0, 8, 8, 0]} barSize={24} animationDuration={1500}>
- {data.popularItems.map((_, index) => (
+ {data.popularItems.map((_: any, index: number) => (
  <Cell key={`cell-${index}`} fill={index === 0 ? '#0070FF' : '#64748b'} opacity={1 - (index * 0.12)} />
  ))}
  </Bar>

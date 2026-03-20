@@ -26,9 +26,10 @@ export const loginSchema = z.object({
 
 export const registerSchema = z.object({
     email: emailSchema,
-    password: z.string().min(8),
+    password: z.string().min(6),
     name: sanitizedString(2, 100),
     role: z.string().optional().transform(v => v?.toLowerCase()).pipe(z.enum(['student', 'owner', 'admin']).optional()),
+    enrollmentNumber: z.string().min(5).max(20).optional(),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -113,7 +114,7 @@ export const updateUserProfileSchema = z.object({
     name: sanitizedString(2, 100).optional(),
     phoneNumber: z.string().max(15).optional(),
     enrollmentNumber: z.string().max(20).optional(),
-    profilePic: z.string().url().optional(),
+    profilePic: z.string().url().optional().or(z.literal('')),
 });
 
 export const updateUserRoleSchema = z.object({
@@ -129,7 +130,7 @@ export const toggleUserStatusSchema = z.object({
 // Announcement Schemas
 export const createAnnouncementSchema = z.object({
     title: z.string().min(2).max(100),
-    content: z.string().min(2).max(1000),
+    message: z.string().min(2).max(1000),
     priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().default('normal'),
     target_role: z.enum(['student', 'owner', 'admin', 'all']).optional().default('all'),
 });
