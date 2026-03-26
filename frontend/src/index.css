@@ -169,9 +169,12 @@
   --border-color: #E2E8F0;
   --border-hover: #94A3B8;
   --shadow-color: rgba(15, 23, 42, 0.06);
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(226, 232, 240, 0.8);
-  --glass-shadow: rgba(0, 112, 255, 0.04);
+  --glass-bg: rgba(241, 245, 255, 0.92);
+  --glass-border: rgba(37, 99, 235, 0.14);
+  --glass-shadow: rgba(37, 99, 235, 0.08);
+  --nav-icon-bg: #DDE3ED;
+  --nav-icon-border: rgba(148, 163, 184, 0.4);
+  --nav-pill-bg: #EEF1F7;
 }
 
 /* ====== DARK THEME ====== */
@@ -193,6 +196,9 @@
   --glass-bg: rgba(20, 19, 17, 0.85);  /* warm dark glass */
   --glass-border: rgba(50, 46, 42, 0.6);
   --glass-shadow: rgba(0, 0, 0, 0.4);
+  --nav-icon-bg: #252320;
+  --nav-icon-border: rgba(58, 55, 51, 0.8);
+  --nav-pill-bg: #1F1E1C;
 }
 
 /* ====== BASE ====== */
@@ -347,6 +353,32 @@ img {
   animation: scan 3s linear infinite;
   z-index: 10;
   pointer-events: none;
+}
+
+/* ====== NAV ICON BUTTONS ====== */
+.nav-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  background-color: var(--nav-icon-bg);
+  border: 1px solid var(--nav-icon-border);
+  border-radius: 9999px;
+  color: var(--text-secondary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.nav-icon-btn:hover {
+  background-color: var(--border-color);
+  transform: scale(1.08);
+}
+
+@media (min-width: 768px) {
+  .nav-icon-btn {
+    padding: 1rem;
+  }
 }
 
 /* ====== BUTTONS ====== */

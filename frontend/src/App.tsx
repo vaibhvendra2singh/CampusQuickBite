@@ -55,23 +55,37 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
     return (
-        <header className="fixed top-6 md:top-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] transition-all duration-300 flex items-center justify-between gap-4 md:gap-8">
-            <Link to="/" className="flex items-center justify-center w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full font-black text-white shadow-xl shadow-brand-500/20 flex-shrink-0 transition-transform">
-                <span className="text-xl md:text-2xl tracking-tighter">CB</span>
+        <header
+            className="fixed top-6 md:top-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] transition-all duration-300 flex items-center justify-between gap-4 md:gap-8"
+            style={{ boxShadow: '0 4px 24px rgba(37,99,235,0.10), 0 1px 4px rgba(37,99,235,0.06)' }}
+        >
+            <Link
+                to="/"
+                className="flex items-center gap-0.5 px-3 py-1.5 rounded-xl flex-shrink-0 select-none"
+                style={{
+                    background: 'rgba(37,99,235,0.08)',
+                    border: '1px solid rgba(37,99,235,0.18)',
+                    fontWeight: 900,
+                    fontSize: '1rem',
+                    letterSpacing: '-0.03em',
+                }}
+            >
+                <span style={{ color: 'var(--color-brand-500)' }}>Campus</span>
+                <span style={{ color: 'var(--text-primary)' }}>Bites</span>
             </Link>
 
             {user?.role === 'STUDENT' && (
                 <div className="flex items-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar flex-1 justify-center">
-                    <Link to="/" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="Board">
-                        <FiServer className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    <Link to="/" className="nav-icon-btn" title="Board">
+                        <FiServer className="w-5 h-5 md:w-6 md:h-6" />
                     </Link>
-                    <Link to="/restaurants" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="Explore">
-                        <FiCompass className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    <Link to="/restaurants" className="nav-icon-btn" title="Explore">
+                        <FiCompass className="w-5 h-5 md:w-6 md:h-6" />
                     </Link>
-                    <Link to="/orders/history" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-[var(--text-secondary)] font-bold text-sm shadow-inner transition-colors" title="History">
-                        <FiShoppingBag className="w-5 h-5 md:w-6 md:h-6 opacity-80" />
+                    <Link to="/orders/history" className="nav-icon-btn" title="History">
+                        <FiShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
                     </Link>
-                    <Link to="/leaderboard" className="p-3 md:p-4 bg-[var(--bg-input)] rounded-full text-amber-500 font-bold text-sm shadow-inner transition-colors relative" title="Elite">
+                    <Link to="/leaderboard" className="nav-icon-btn text-amber-500" title="Elite">
                         <FiAward className="w-5 h-5 md:w-6 md:h-6" />
                         <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse-subtle"></div>
                     </Link>
@@ -90,7 +104,7 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
                 </div>
             )}
 
-            <div className="flex items-center gap-2 bg-[var(--bg-input)] p-1.5 md:p-2 rounded-[2rem] shadow-inner flex-shrink-0 mr-1">
+            <div className="flex items-center gap-2 bg-[var(--nav-pill-bg)] p-1.5 md:p-2 rounded-[2rem] shadow-sm border border-[var(--glass-border)] flex-shrink-0 mr-1">
                 <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 md:p-3 rounded-full text-[var(--text-secondary)] bg-[var(--bg-card)] shadow-sm transition-transform" title="Shift View">
                     {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
                 </button>
@@ -146,7 +160,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                         <div className="md:col-span-2">
                             <div className="flex items-center space-x-4 mb-8">
                                 <div className="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-500/20">C</div>
-                                <span className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">CampusBite</span>
+                                <span className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">Campus Bites</span>
                             </div>
                             <p className="text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
                                 We believe campus dining should be smooth. Skip the queues, grab your meal, and get back to what matters. Handcrafted for Bennett.
@@ -176,7 +190,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                     </div>
 
                     <div className="pt-10 border-t border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6">
-                        <p className="text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} CampusBite. All rights to your appetite.</p>
+                        <p className="text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} Campus Bites. All rights to your appetite.</p>
                         <div className="flex items-center space-x-3 bg-[var(--bg-card)] px-5 py-2.5 rounded-2xl border border-[var(--border-color)]">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                             <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none">Kitchens are Live</p>
@@ -219,7 +233,7 @@ const FullScreenLoader = () => (
             <FiZap className="text-white w-8 h-8" />
         </div>
         <div className="flex flex-col items-center">
-            <p className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-1">CampusBite</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-1">Campus Bites</p>
             <p className="text-sm text-[var(--text-muted)]">Loading your campus feed</p>
         </div>
     </div>
