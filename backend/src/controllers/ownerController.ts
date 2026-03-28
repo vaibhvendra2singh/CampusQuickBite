@@ -161,10 +161,21 @@ export const getOrderHistoryStats = async (req: AuthRequest, res: Response): Pro
         const ownerId = req.user?.id;
         if (!ownerId) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-        const { data: rows, error } = await supabase
+        const { startDate, endDate } = req.query as any;
+
+        let query = supabase
             .from('owner_order_history')
             .select('total_amount, status, items, created_at')
             .eq('owner_id', ownerId);
+
+        if (startDate) {
+            query = query.gte('created_at', startDate);
+        }
+        if (endDate) {
+            query = query.lte('created_at', endDate);
+        }
+
+        const { data: rows, error } = await query;
 
         if (error) throw error;
 

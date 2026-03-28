@@ -5,6 +5,7 @@ import api from '../../services/api';
 import { FiClock, FiSearch, FiChevronLeft, FiChevronRight, FiCheckCircle, FiInfo, FiRefreshCcw, FiDownload, FiX, FiDollarSign, FiShoppingBag, FiTrendingUp, FiXCircle } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../hooks/context/ToastContext';
+import { useAuth } from '../../hooks/context/AuthContext';
 
 interface OrderItem {
  itemName: string;
@@ -42,6 +43,7 @@ const DATE_PRESETS = [
 ];
 
 const OwnerOrderHistory = () => {
+ const { user } = useAuth();
  const { showToast } = useToast();
  const [orders, setOrders] = useState<OrderHistoryItem[]>([]);
  const [loading, setLoading] = useState(true);
@@ -61,6 +63,27 @@ const OwnerOrderHistory = () => {
  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
  const [showReceiptModal, setShowReceiptModal] = useState(false);
  const [downloadingReceiptId, setDownloadingReceiptId] = useState<number | null>(null);
+
+ const [resetAt, setResetAt] = useState<string | null>(null);
+ const [showAllTime, setShowAllTime] = useState(false);
+ const [initDone, setInitDone] = useState(false);
+
+ useEffect(() => {
+  const init = async () => {
+   try {
+    const res = await api.get('/outlets');
+    const myOutlet = res.data?.find((o: any) => o.owner?.id === user?.id || o.owner_id === user?.id);
+    if (myOutlet && myOutlet.insights_reset_at) {
+     setResetAt(myOutlet.insights_reset_at);
+    }
+   } catch (e) {
+    console.error('Failed to load outlet info', e);
+   } finally {
+    setInitDone(true);
+   }
+  };
+  if (user?.id) init();
+ }, [user]);
 
  const handleViewReceipt = async (orderId: number) => {
   setDownloadingReceiptId(orderId);
@@ -88,7 +111,21 @@ const OwnerOrderHistory = () => {
  const fetchStats = async () => {
   setStatsLoading(true);
   try {
-   const res = await api.get('/owner/order-history/stats');
+   const params: any = {};
+   if (!showAllTime && resetAt) {
+    if (startDate) {
+     const rDate = new Date(resetAt);
+     const sDate = new Date(startDate);
+     params.startDate = rDate > sDate ? rDate.toISOString() : sDate.toISOString();
+    } else {
+     params.startDate = resetAt;
+    }
+   } else if (startDate) {
+    params.startDate = new Date(startDate).toISOString();
+   }
+   if (endDate) params.endDate = new Date(endDate).toISOString();
+
+   const res = await api.get('/owner/order-history/stats', { params });
    setStats(res.data);
   } catch (error: any) {
    console.error('Failed to load stats', error);
@@ -104,7 +141,19 @@ const OwnerOrderHistory = () => {
    if (studentName) params.studentName = studentName;
    if (status) params.status = status;
    if (datePreset) params.date = datePreset;
-   if (startDate) params.startDate = new Date(startDate).toISOString();
+
+   if (!showAllTime && resetAt) {
+    if (startDate) {
+     const rDate = new Date(resetAt);
+     const sDate = new Date(startDate);
+     params.startDate = rDate > sDate ? rDate.toISOString() : sDate.toISOString();
+    } else {
+     params.startDate = resetAt;
+    }
+   } else if (startDate) {
+    params.startDate = new Date(startDate).toISOString();
+   }
+
    if (endDate) params.endDate = new Date(endDate).toISOString();
 
    let response;
@@ -135,8 +184,8 @@ const OwnerOrderHistory = () => {
   }
  };
 
- useEffect(() => { fetchStats(); }, []);
- useEffect(() => { fetchOrders(); }, [page]);
+ useEffect(() => { if (initDone) fetchStats(); }, [initDone, showAllTime, datePreset, startDate, endDate]);
+ useEffect(() => { if (initDone) fetchOrders(); }, [page, initDone, showAllTime]);
 
  const handleFilter = (e: React.FormEvent) => {
   e.preventDefault();
@@ -182,9 +231,36 @@ const OwnerOrderHistory = () => {
       <h1 className="text-4xl md:text-5xl font-bold text-[var(--text-primary)] tracking-tight leading-tight">
        Order History
       </h1>
-      <p className="text-base font-medium text-slate-500 max-w-md leading-relaxed">Permanent archive of completed and cancelled orders. Data persists independently of dashboard resets.</p>
+      <p className="text-base font-medium text-slate-500 max-w-md leading-relaxed">
+       {showAllTime
+        ? 'Permanent archive of all completed and cancelled orders.'
+        : 'Displaying orders generated since your last dashboard reset.'}
+      </p>
      </div>
     </div>
+   </div>
+
+   <div className="flex gap-4 mb-8">
+    <button
+     onClick={() => { setShowAllTime(false); setPage(0); }}
+     className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+      !showAllTime
+       ? 'bg-brand-500 text-white border-brand-500 shadow-md'
+       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300'
+     }`}
+    >
+     Current Shift
+    </button>
+    <button
+     onClick={() => { setShowAllTime(true); setPage(0); }}
+     className={`px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+      showAllTime
+       ? 'bg-slate-900 border-slate-900 text-white'
+       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-300'
+     }`}
+    >
+     All-Time History
+    </button>
    </div>
 
    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
