@@ -21,7 +21,6 @@ export const submitRating = async (req: AuthRequest, res: Response): Promise<voi
         const column = menuItemId ? 'menu_item_id' : 'outlet_id';
         const targetId = menuItemId || outletId;
 
-        // 1. Check if user already rated this target
         const query = supabase
             .from('ratings')
             .select('id, rating_value')
@@ -40,7 +39,6 @@ export const submitRating = async (req: AuthRequest, res: Response): Promise<voi
 
         let result;
         if (existingRating) {
-            // Update existing rating
             const { data, error: updateError } = await supabase
                 .from('ratings')
                 .update({ rating_value: val, comment: comment || '' })
@@ -50,7 +48,6 @@ export const submitRating = async (req: AuthRequest, res: Response): Promise<voi
             if (updateError) throw updateError;
             result = data;
         } else {
-            // Insert new rating
             const payload: any = { user_id: userId, rating_value: val, comment: comment || '' };
             if (menuItemId) payload.menu_item_id = menuItemId;
             else payload.outlet_id = outletId;
@@ -64,7 +61,6 @@ export const submitRating = async (req: AuthRequest, res: Response): Promise<voi
             result = data;
         }
 
-        // 2. Re-calculate average rating for the entity EXCLUDING hidden ones
         const { data: allVisibleRatings, error: countError } = await supabase
             .from('ratings')
             .select('rating_value')
@@ -175,7 +171,6 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // 1. Fetch current review details to cross-reference with outlet ownership
         const { data: review, error: fetchError } = await supabase
             .from('ratings')
             .select('*, outlets(owner_id), menu_items(outlet_id)')
@@ -187,16 +182,13 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
             return;
         }
 
-        // Security Check: Only Admin or the Outlet Owner can toggle visibility
         if (userRole !== 'admin') {
             let authorized = false;
             
-            // If it's an outlet rating
             if (review.outlet_id && (review.outlets as any)?.owner_id === userId) {
                 authorized = true;
             }
             
-            // If it's a menu item rating, we need to check the outlet's owner
             if (review.menu_item_id) {
                 const outletId = (review.menu_items as any)?.outlet_id;
                 const { data: outlet } = await supabase
@@ -216,7 +208,6 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
             }
         }
 
-        // 2. Update visibility
         const { data: updatedReview, error: updateError } = await supabase
             .from('ratings')
             .update({ is_hidden })
@@ -226,11 +217,9 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
 
         if (updateError) throw updateError;
 
-        // 2. Identify the target (menu_item or outlet)
         const targetId = updatedReview.menu_item_id || updatedReview.outlet_id;
         const column = updatedReview.menu_item_id ? 'menu_item_id' : 'outlet_id';
 
-        // 3. Re-calculate metrics EXCLUDING hidden reviews
         const { data: allVisibleRatings, error: countError } = await supabase
             .from('ratings')
             .select('rating_value')
@@ -243,7 +232,6 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
         const sum = allVisibleRatings?.reduce((acc, curr) => acc + curr.rating_value, 0) || 0;
         const average = count > 0 ? parseFloat((sum / count).toFixed(2)) : 0;
 
-        // 4. Update the target table
         const table = updatedReview.menu_item_id ? 'menu_items' : 'outlets';
         const { error: targetUpdateError } = await supabase
             .from(table)

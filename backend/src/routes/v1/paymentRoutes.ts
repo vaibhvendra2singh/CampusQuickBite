@@ -6,7 +6,6 @@ import { z } from 'zod';
 
 const router = Router();
 
-// Mock Payment Endpoint
 router.post('/', authenticateUser as any, validate(z.object({ body: paymentSchema })), async (req: any, res: Response): Promise<void> => {
     try {
         const { orderId, amount, paymentMethod } = req.body;
@@ -19,7 +18,6 @@ router.post('/', authenticateUser as any, validate(z.object({ body: paymentSchem
 
         const { supabase } = require('../../config/supabase');
 
-        // Security Check 1: Verify order existence and fetch true total
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('user_id, total_amount, payment_status')
@@ -31,19 +29,16 @@ router.post('/', authenticateUser as any, validate(z.object({ body: paymentSchem
             return;
         }
 
-        // Security Check 2: Ownership verification (IDOR prevention)
         if (order.user_id !== userId) {
             res.status(403).json({ error: 'Unauthorized: You cannot pay for someone else\'s order' });
             return;
         }
 
-        // Security Check 3: Prevent duplicate payments
         if (order.payment_status === 'paid') {
             res.status(400).json({ error: 'Order is already paid' });
             return;
         }
 
-        // Security Check 4: CRITICAL - Verify amount matches DB total (Prevent Forgery)
         const expectedAmount = parseFloat(order.total_amount.toString());
         const providedAmount = parseFloat(amount.toString());
 
@@ -53,10 +48,8 @@ router.post('/', authenticateUser as any, validate(z.object({ body: paymentSchem
             return;
         }
 
-        // Normally you'd connect to Stripe here
         console.log(`[PAYMENT] Processing ₹${amount} for Order ${orderId} via ${paymentMethod}`);
 
-        // Mock logic: Update the database to reflect payment
         const { error: updateError } = await supabase
             .from('orders')
             .update({

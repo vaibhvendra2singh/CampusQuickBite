@@ -4,7 +4,6 @@ import logger from '../services/logger';
 export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
     const statusCode = err.statusCode || (err.name === 'ValidationError' ? 400 : 500);
 
-    // Filter sensitive info from production logs but keep enough for debugging
     logger.error(`${req.method} ${req.url} - Status ${statusCode} - ${err.message}`, {
         ip: req.ip,
         method: req.method,
@@ -14,7 +13,6 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
         details: err.details || null
     });
 
-    // Provide generic message for 500 errors to avoid leaking implementation details
     let message = err.message;
     if (statusCode === 500 && process.env.NODE_ENV === 'production') {
         message = 'Internal Server Error';

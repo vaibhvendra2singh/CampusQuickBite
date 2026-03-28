@@ -8,15 +8,12 @@ const router = Router();
 router.use(authenticateUser as any);
 router.use(requireRole(['SHOP_OWNER', 'ADMIN', 'owner', 'admin']) as any);
 
-// ─── Legacy endpoints (query live orders table directly) ───────────
 router.get('/orders/history', getOwnerOrderHistory as any);
 router.get('/orders/history/filter', getOwnerOrderHistory as any);
 
-// ─── New endpoints (query dedicated owner_order_history table) ─────
 router.get('/order-history', getOrderHistory as any);
 router.get('/order-history/stats', getOrderHistoryStats as any);
 
-// ─── Actions ───────────────────────────────────────────────────────
 router.post('/reset-insights', resetInsights as any);
 
 export default router;

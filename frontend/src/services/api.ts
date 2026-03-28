@@ -21,7 +21,6 @@ const processQueue = (error: any, token: string | null = null) => {
     failedQueue = [];
 };
 
-// Request Interceptor: Attach JWT Token
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -33,10 +32,8 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle auth errors with token refresh
 api.interceptors.response.use(
     (response) => {
-        // Automatically unwrap the 'data' field from our standardized Response format
         if (response.data && response.data.success && response.data.data !== undefined) {
             return {
                 ...response,
@@ -48,7 +45,6 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         
-        // Map standardized 'message' to 'error' for backward compatibility in components
         if (error.response?.data && !error.response.data.error && error.response.data.message) {
             error.response.data.error = error.response.data.message;
         }
@@ -72,7 +68,6 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // Call the refresh endpoint (which reads the HttpOnly cookie)
                 const refreshRes = await axios.post(`${baseURL}/auth/refresh`, {}, { withCredentials: true });
                 const { token } = refreshRes.data.data;
 
@@ -85,7 +80,6 @@ api.interceptors.response.use(
             } catch (refreshError) {
                 processQueue(refreshError, null);
                 
-                // Refresh failed — clear local state and logout
                 const wasLoggedIn = !!localStorage.getItem('token');
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
@@ -103,7 +97,6 @@ api.interceptors.response.use(
             }
         }
 
-        // Handle Case: Banned (403 or specific error message)
         if ((error.response?.status === 403 || isBanned) && !originalRequest._retry) {
              if (isBanned) {
                 localStorage.removeItem('token');

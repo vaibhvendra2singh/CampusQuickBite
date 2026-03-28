@@ -16,7 +16,6 @@
 
 import { Response } from 'express';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface PaginationMeta {
     page: number;
     size: number;
@@ -26,7 +25,6 @@ interface PaginationMeta {
     hasPrev: boolean;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
  * Send a successful response.

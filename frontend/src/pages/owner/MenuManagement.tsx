@@ -101,20 +101,17 @@ const MenuManagement = () => {
 
     const toggleAvailability = async (e: React.MouseEvent, item: MenuItem) => {
         e.stopPropagation();
-        // Prevent rapid double-clicks
         if (togglingIds.has(item.id)) return;
         setTogglingIds(prev => new Set([...prev, item.id]));
 
         const newAvailability = !item.availability;
 
-        // Optimistic UI update immediately
         setMenuItems(prev => prev.map(m => m.id === item.id ? { ...m, availability: newAvailability } : m));
 
         try {
             await api.put(`/menu/${item.id}`, { availability: newAvailability });
             showToast(newAvailability ? '✅ Item is now AVAILABLE' : '⏸️ Item marked UNAVAILABLE', 'success');
         } catch (error: any) {
-            // Rollback on failure
             setMenuItems(prev => prev.map(m => m.id === item.id ? { ...m, availability: item.availability } : m));
             const msg = error?.response?.data?.error || error?.message || 'Unknown error';
             console.error('Toggle availability failed:', msg, error?.response?.data);

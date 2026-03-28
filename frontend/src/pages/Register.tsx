@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/context/AuthContext';
 import { FiMail, FiLock, FiUser, FiArrowRight, FiHash } from 'react-icons/fi';
 import { FadeIn } from '../components/animations/FadeIn';
 
-// --- Validation helpers ---
 const ENROLLMENT_REGEX = /^[a-zA-Z0-9]{8,12}$/;
 
 const validateEnrollment = (value: string): string => {
@@ -39,7 +38,6 @@ const Register = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    // Real-time enrollment validation (only after field is touched)
     useEffect(() => {
         if (touched.enrollmentNumber) {
             setEnrollmentError(validateEnrollment(enrollmentNumber));
@@ -51,10 +49,8 @@ const Register = () => {
         setEnrollmentError(validateEnrollment(enrollmentNumber));
     }, [enrollmentNumber]);
 
-    // Derived: show enrollment field only for STUDENT role
     const isStudent = role === 'STUDENT';
 
-    // Derived: overall form validity
     const isFormValid = useMemo(() => {
         if (!name || !email || password.length < 6) return false;
         if (isStudent && !!validateEnrollment(enrollmentNumber)) return false;
@@ -64,7 +60,6 @@ const Register = () => {
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Force-show enrollment error on submit attempt (students only)
         if (isStudent) {
             setTouched({ enrollmentNumber: true });
             const enrErr = validateEnrollment(enrollmentNumber);
@@ -143,7 +138,6 @@ const Register = () => {
 
     const handleRoleChange = useCallback((newRole: string) => {
         setRole(newRole);
-        // Reset enrollment state when switching roles
         if (newRole !== 'STUDENT') {
             setEnrollmentNumber('');
             setEnrollmentError('');
@@ -151,7 +145,6 @@ const Register = () => {
         }
     }, []);
 
-    // --- Shared input class builder ---
     const inputClass = (hasError: boolean) =>
         `block w-full pl-11 pr-4 py-3 bg-[var(--bg-input)] border rounded-xl text-[var(--text-primary)] font-medium placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 transition-all text-sm ${
             hasError
@@ -162,7 +155,6 @@ const Register = () => {
     return (
         <div className="min-h-screen w-full flex bg-transparent relative overflow-hidden font-sans">
             <div className="flex w-full z-10 flex-row-reverse">
-                {/* Right Panel */}
                 <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden">
                     <div className="relative z-10 flex flex-col h-full">
                         <FadeIn delay={0.1} direction="up">
@@ -202,7 +194,6 @@ const Register = () => {
                     </div>
                 </div>
 
-                {/* Left Panel — Form */}
                 <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-16 relative">
                     <FadeIn delay={0.3} direction="up" className="w-full max-w-md">
                         <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-5 sm:p-8 md:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
@@ -224,7 +215,6 @@ const Register = () => {
                                     )}
 
                                     <div className="space-y-4">
-                                        {/* Full Name */}
                                         <div>
                                             <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Full name<span className="ml-1 text-red-500">*</span></label>
                                             <div className="relative">
@@ -240,7 +230,6 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        {/* Email */}
                                         <div>
                                             <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Email<span className="ml-1 text-red-500">*</span></label>
                                             <div className="relative">
@@ -256,7 +245,6 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        {/* Password */}
                                         <div>
                                             <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Password<span className="ml-1 text-red-500">*</span></label>
                                             <div className="relative">
@@ -273,7 +261,6 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        {/* Account Type */}
                                         <div>
                                             <label className="text-sm font-medium text-[var(--text-secondary)] block mb-2">Account type<span className="ml-1 text-red-500">*</span></label>
                                             <div className="grid grid-cols-2 gap-3">
@@ -294,7 +281,6 @@ const Register = () => {
                                             </div>
                                         </div>
 
-                                        {/* Enrollment Number — only for students */}
                                         {isStudent && (
                                             <div>
                                                 <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">

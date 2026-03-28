@@ -2,7 +2,6 @@ import { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 
-// ─── Helper: get the owner's outlet ────────────────────────────────
 const getOwnerOutlet = async (ownerId: string) => {
     const { data, error } = await supabase
         .from('outlets')
@@ -12,9 +11,6 @@ const getOwnerOutlet = async (ownerId: string) => {
     return { outlet: data, error };
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// POST /api/owner/reset-insights
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export const resetInsights = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const ownerId = req.user?.id;
@@ -27,7 +23,6 @@ export const resetInsights = async (req: AuthRequest, res: Response): Promise<vo
         }
         if (!outlet) { res.status(404).json({ error: 'No outlet linked to this account' }); return; }
 
-        // Update the reset timestamp in the database
         const resetTime = new Date().toISOString();
         const { error: updateError } = await supabase
             .from('outlets')
@@ -51,10 +46,6 @@ export const resetInsights = async (req: AuthRequest, res: Response): Promise<vo
     }
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GET /api/owner/order-history
-// Query params: ?status, ?startDate, ?endDate, ?studentName, ?page, ?size, ?date (shortcut)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const ownerId = req.user?.id;
@@ -70,24 +61,20 @@ export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<
             date, // shortcut: today, last7days, last30days, thisMonth
         } = req.query as any;
 
-        // Build query from owner_order_history table
         let query = supabase
             .from('owner_order_history')
             .select('*', { count: 'exact' })
             .eq('owner_id', ownerId)
             .order('created_at', { ascending: false });
 
-        // Status filter
         if (status) {
             query = query.eq('status', status.toLowerCase());
         }
 
-        // Student name search (ILIKE on denormalized field)
         if (studentName) {
             query = query.ilike('student_name', `%${studentName}%`);
         }
 
-        // Date shortcuts
         if (date) {
             const now = new Date();
             let fromDate: Date;
@@ -113,7 +100,6 @@ export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<
             query = query.gte('created_at', fromDate.toISOString());
         }
 
-        // Custom date range (overrides shortcut)
         if (startDate) {
             query = query.gte('created_at', startDate);
         }
@@ -121,7 +107,6 @@ export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<
             query = query.lte('created_at', endDate);
         }
 
-        // Pagination
         const pageNum = parseInt(page || '0');
         const pageSize = parseInt(size || '10');
         const from = pageNum * pageSize;
@@ -131,7 +116,6 @@ export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<
         const { data: orders, error, count } = await query;
         if (error) throw error;
 
-        // Map to the DTO shape the frontend expects
         const content = (orders || []).map(row => {
             let displayStatus = (row.status || 'pending').toUpperCase();
             if (displayStatus === 'COMPLETED') displayStatus = 'DELIVERED';
@@ -169,16 +153,11 @@ export const getOrderHistory = async (req: AuthRequest, res: Response): Promise<
     }
 };
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// GET /api/owner/order-history/stats
-// Aggregation endpoint — powers the summary card on the history page
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 export const getOrderHistoryStats = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const ownerId = req.user?.id;
         if (!ownerId) { res.status(401).json({ error: 'Unauthorized' }); return; }
 
-        // Fetch all history rows for this owner (minimal columns)
         const { data: rows, error } = await supabase
             .from('owner_order_history')
             .select('total_amount, status, items, created_at')
@@ -194,7 +173,6 @@ export const getOrderHistoryStats = async (req: AuthRequest, res: Response): Pro
         const totalOrders = allRows.length;
         const avgOrderValue = completed.length ? totalRevenue / completed.length : 0;
 
-        // Top items aggregation
         const itemMap = new Map<string, { name: string; quantity: number; revenue: number }>();
         completed.forEach(row => {
             (row.items || []).forEach((item: any) => {

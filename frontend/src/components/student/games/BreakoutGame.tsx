@@ -59,7 +59,6 @@ const BreakoutGame: React.FC = () => {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, W, H);
 
-        // Draw Bricks
         for (let c = 0; c < BRICK_COLS; c++) {
             for (let r = 0; r < BRICK_ROWS; r++) {
                 if (s.bricks[c][r].status === 1) {
@@ -78,14 +77,12 @@ const BreakoutGame: React.FC = () => {
             }
         }
 
-        // Draw Ball
         ctx.beginPath();
         ctx.arc(s.ball.x, s.ball.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = isDark ? '#60A5FA' : '#3B82F6';
         ctx.fill();
         ctx.closePath();
 
-        // Draw Paddle
         ctx.beginPath();
         ctx.roundRect(s.paddle.x, H - PADDLE_HEIGHT - 10, PADDLE_WIDTH, PADDLE_HEIGHT, 5);
         ctx.fillStyle = isDark ? '#8B5CF6' : '#6D28D9';
@@ -98,11 +95,9 @@ const BreakoutGame: React.FC = () => {
 
         const s = stateRef.current;
         
-        // Ball movement
         s.ball.x += s.ball.dx;
         s.ball.y += s.ball.dy;
 
-        // Wall collision
         if (s.ball.x + s.ball.dx > W - BALL_RADIUS || s.ball.x + s.ball.dx < BALL_RADIUS) {
             s.ball.dx = -s.ball.dx;
         }
@@ -111,7 +106,6 @@ const BreakoutGame: React.FC = () => {
         } else if (s.ball.y + s.ball.dy > H - BALL_RADIUS - 10 - PADDLE_HEIGHT) {
             if (s.ball.x > s.paddle.x && s.ball.x < s.paddle.x + PADDLE_WIDTH) {
                 s.ball.dy = -s.ball.dy;
-                // Add some variation based on where it hits the paddle
                 const hitPos = (s.ball.x - (s.paddle.x + PADDLE_WIDTH / 2)) / (PADDLE_WIDTH / 2);
                 s.ball.dx = hitPos * 4;
             } else if (s.ball.y + s.ball.dy > H - BALL_RADIUS) {
@@ -119,7 +113,6 @@ const BreakoutGame: React.FC = () => {
             }
         }
 
-        // Brick collision
         for (let c = 0; c < BRICK_COLS; c++) {
             for (let r = 0; r < BRICK_ROWS; r++) {
                 const b = s.bricks[c][r];

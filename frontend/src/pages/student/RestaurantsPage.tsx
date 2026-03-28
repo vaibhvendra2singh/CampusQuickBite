@@ -80,7 +80,6 @@ const RestaurantsPage = () => {
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-12 mt-4 animate-none pb-32">
-            {/* Header Section */}
             <div className="mb-12">
                 <Link to="/" className="inline-flex items-center text-sm font-bold text-[var(--text-muted)]  transition-all mb-8 group">
                     <FiArrowLeft className="mr-2 transition-all duration-150" />
@@ -92,12 +91,10 @@ const RestaurantsPage = () => {
                 </p>
             </div>
 
-            {/* Admin Announcements */}
             <div className="mb-10">
                 <AnnouncementWidget />
             </div>
 
-            {/* Search & Sort Controls */}
             <div className="flex flex-col md:flex-row gap-6 mb-16 items-center">
                 <div className="relative flex-1 w-full">
                     <FiSearch className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-5 h-5" />
@@ -122,7 +119,6 @@ const RestaurantsPage = () => {
                 </div>
             </div>
 
-            {/* Grid Layout */}
             {filteredAndSortedOutlets.length === 0 ? (
                 <div className="text-center py-20 bg-[var(--bg-card)] rounded-3xl border border-[var(--border-color)]">
                     <p className="text-xl text-[var(--text-muted)] font-medium">No restaurants found matching"{searchTerm}"</p>

@@ -52,7 +52,6 @@ const OwnerOrderHistory = () => {
  const [stats, setStats] = useState<HistoryStats | null>(null);
  const [statsLoading, setStatsLoading] = useState(true);
 
- // Filters
  const [studentName, setStudentName] = useState('');
  const [status, setStatus] = useState('');
  const [datePreset, setDatePreset] = useState('');
@@ -93,7 +92,6 @@ const OwnerOrderHistory = () => {
    setStats(res.data);
   } catch (error: any) {
    console.error('Failed to load stats', error);
-   // Fallback: try legacy endpoint stats from the order list
   } finally {
    setStatsLoading(false);
   }
@@ -102,7 +100,6 @@ const OwnerOrderHistory = () => {
  const fetchOrders = async () => {
   setLoading(true);
   try {
-   // Try new dedicated endpoint first; fall back to legacy
    const params: any = { page, size: 10 };
    if (studentName) params.studentName = studentName;
    if (status) params.status = status;
@@ -114,7 +111,6 @@ const OwnerOrderHistory = () => {
    try {
     response = await api.get('/owner/order-history', { params });
    } catch {
-    // Fallback to legacy endpoint if table doesn't exist yet
     const legacyParams: any = { page, size: 10 };
     if (studentName) legacyParams.studentName = studentName;
     if (status) legacyParams.status = status;
@@ -170,7 +166,6 @@ const OwnerOrderHistory = () => {
 
  return (
   <div className="animate-none pb-40 px-6 max-w-7xl mx-auto pt-10">
-   {/* Header */}
    <div className="mb-12">
     <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
      <FiChevronLeft className="w-3.5 h-3.5 transition-" />
@@ -192,7 +187,6 @@ const OwnerOrderHistory = () => {
     </div>
    </div>
 
-   {/* Stats Summary Cards */}
    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
     <div className="bg-[var(--bg-card)] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
      <div className="flex items-center justify-between mb-4">
@@ -265,7 +259,6 @@ const OwnerOrderHistory = () => {
     </div>
    </div>
 
-   {/* Top Items Quick View */}
    {stats && stats.topItems && stats.topItems.length > 0 && (
     <div className="bg-[var(--bg-card)] rounded-2xl border border-slate-200 dark:border-slate-800 p-6 mb-10 shadow-sm">
      <div className="flex items-center gap-2 mb-4">
@@ -282,11 +275,9 @@ const OwnerOrderHistory = () => {
     </div>
    )}
 
-   {/* Filter Section */}
    <div className="bg-[var(--bg-card)] rounded-3xl border border-slate-200 dark:border-slate-800 p-10 mb-10 shadow-sm relative overflow-hidden group">
     <div className="absolute top-0 right-0 w-48 h-48 bg-brand-500/5 rounded-full -translate-y-24 translate-x-24 transition-all duration-150"></div>
     <form onSubmit={handleFilter} className="relative z-10 space-y-8">
-     {/* Date preset pills */}
      <div className="space-y-3">
       <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Quick Filter</label>
       <div className="flex flex-wrap gap-2">
@@ -307,7 +298,6 @@ const OwnerOrderHistory = () => {
       </div>
      </div>
 
-     {/* Main filters */}
      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-end">
       <div className="space-y-3">
        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Student Name</label>
@@ -363,7 +353,6 @@ const OwnerOrderHistory = () => {
     </form>
    </div>
 
-   {/* Table Section */}
    <div className="bg-[var(--bg-card)] rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
     <div className="overflow-x-auto">
      <table className="w-full text-left">
@@ -462,7 +451,6 @@ const OwnerOrderHistory = () => {
      </table>
     </div>
 
-    {/* Pagination */}
     <div className="p-8 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
       Page {page + 1} of {totalPages || 1} · {totalElements} total records

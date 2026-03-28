@@ -7,7 +7,6 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
         const { outletId } = req.params;
         const userId = req.user?.id;
 
-        // 1. Security Check & get reset timestamp
         let resetTimestamp: string | null = null;
         
         const { data: outlet, error: outletError } = await supabase
@@ -28,7 +27,6 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
         
         resetTimestamp = outlet.insights_reset_at;
 
-        // 2. Fetch all completed orders for this outlet
         let query = supabase
             .from('orders')
             .select(`
@@ -46,7 +44,6 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
             .eq('outlet_id', outletId)
             .eq('status', 'completed');
             
-        // Apply reset filter
         if (resetTimestamp) {
             query = query.gt('created_at', resetTimestamp);
         }
@@ -55,19 +52,16 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
 
         if (ordersError) throw ordersError;
 
-        // 3. Process Data
         let totalRevenue = 0;
         const dailyStats: Record<string, { date: string, revenue: number, orders: number }> = {};
         const popularItems: Record<string, { name: string, quantity: number, revenue: number }> = {};
         const peakHours: Record<number, number> = {};
 
-        // Initialize peak hours (0-23)
         for (let i = 0; i < 24; i++) peakHours[i] = 0;
 
         orders?.forEach(order => {
             totalRevenue += order.total_amount;
 
-            // Daily Stats
             const date = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
             if (!dailyStats[date]) {
                 dailyStats[date] = { date, revenue: 0, orders: 0 };
@@ -75,11 +69,9 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
             dailyStats[date].revenue += order.total_amount;
             dailyStats[date].orders += 1;
 
-            // Peak Hours
             const hour = new Date(order.created_at).getHours();
             peakHours[hour] += 1;
 
-            // Item Stats
             order.order_items?.forEach((item: any) => {
                 const name = item.item_name || 'Unknown Item';
                 if (!popularItems[name]) {
@@ -154,7 +146,6 @@ export const getUpsellRecommendations = async (req: AuthRequest, res: Response):
     try {
         const { itemId } = req.params;
 
-        // Find orders that contain this item
         const { data: orderItems, error: subsetError } = await supabase
             .from('order_items')
             .select('order_id')
@@ -168,7 +159,6 @@ export const getUpsellRecommendations = async (req: AuthRequest, res: Response):
 
         const orderIds = orderItems.map(oi => oi.order_id);
 
-        // Find other items in those exact same orders
         const { data: relatedItems, error: relatedError } = await supabase
             .from('order_items')
             .select('menu_item_id, item_name, price')
@@ -200,7 +190,6 @@ export const getDynamicTrending = async (req: Request, res: Response): Promise<v
     try {
         const currentHour = new Date().getHours();
 
-        // Fetch top rated items
         const { data: rawItems, error } = await supabase
             .from('menu_items')
             .select('id, name, description, price, outlet_id, average_rating, rating_count, is_veg, outlets(name)')
@@ -209,20 +198,16 @@ export const getDynamicTrending = async (req: Request, res: Response): Promise<v
 
         if (error || !rawItems) throw error;
 
-        // Apply a slight time-of-day multiplier bias (pseudo-AI)
         const trendingScore = (item: any) => {
             let score = item.average_rating || 0;
             const name = item.name.toLowerCase();
 
-            // Morning bias (Breakfast, Coffee, Tea)
             if (currentHour >= 7 && currentHour <= 11) {
                 if (name.includes('coffee') || name.includes('tea') || name.includes('chai') || name.includes('dosa') || name.includes('paratha')) score *= 1.2;
             }
-            // Lunch bias (Meals, Rice, Pizza)
             else if (currentHour >= 12 && currentHour <= 15) {
                 if (name.includes('rice') || name.includes('pizza') || name.includes('meal')) score *= 1.2;
             }
-            // Late night bias (Maggi, Rolls, Sweets)
             else if (currentHour >= 22 || currentHour <= 3) {
                 if (name.includes('maggi') || name.includes('roll') || name.includes('cake')) score *= 1.3;
             }

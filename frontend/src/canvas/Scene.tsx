@@ -5,7 +5,6 @@ import { Suspense } from 'react';
 
 import { useTheme } from '../hooks/context/ThemeContext';
 
-// Central Scene Component to be absolute positioned behind HTML overlay
 export function Scene() {
     const { isDark } = useTheme();
 

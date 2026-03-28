@@ -2,9 +2,7 @@ import cron from 'node-cron';
 import { supabase } from '../config/supabase';
 import logger from './logger';
 
-// Job to clean up stale orders (e.g., Pending orders older than 2 hours)
 export const initBackgroundJobs = () => {
-    // Run every hour
     cron.schedule('0 * * * *', async () => {
         logger.info('🧹 Running background job: Stale Order Cleanup');
 
@@ -12,7 +10,6 @@ export const initBackgroundJobs = () => {
             const twoHoursAgo = new Date();
             twoHoursAgo.setHours(twoHoursAgo.getHours() - 2);
 
-            // Find pending orders older than 2 hours
             const { data: staleOrders, error: fetchError } = await supabase
                 .from('orders')
                 .select('id')

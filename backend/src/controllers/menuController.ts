@@ -71,7 +71,6 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Security Check: Verify ownership
         if (userRole !== 'admin') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
@@ -106,7 +105,6 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
             image_url: image_url || ''
         };
 
-        // Attempt with is_veg first
         const { data, error } = await supabase
             .from('menu_items')
             .insert([{ ...insertData, is_veg: isVeg !== undefined ? isVeg : true }])
@@ -114,7 +112,6 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
             .single();
 
         if (error) {
-            // Fallback
             if (error.message.includes('is_veg')) {
                 const { data: retryData, error: retryError } = await supabase
                     .from('menu_items')
@@ -166,7 +163,6 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Security Check: Fetch item and its outlet's owner in ONE combined query
         const { data: menuItem, error: fetchError } = await supabase
             .from('menu_items')
             .select('id, outlet_id, outlets!inner(owner_id)')
@@ -195,7 +191,6 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
         if (description !== undefined) updateData.description = description;
         if (image_url !== undefined) updateData.image_url = image_url;
 
-        // Try with is_veg if provided
         let finalUpdate = { ...updateData };
         if (isVeg !== undefined) finalUpdate.is_veg = isVeg;
 
@@ -207,7 +202,6 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
             .single();
 
         if (error) {
-            // Fallback for is_veg column missing
             if (error.message.includes('is_veg')) {
                 const { data: retryData, error: retryError } = await supabase
                     .from('menu_items')
@@ -269,7 +263,6 @@ export const deleteMenuItem = async (req: AuthRequest, res: Response): Promise<v
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Security Check: Fetch item and its outlet's owner in ONE combined query
         const { data: menuItem, error: fetchError } = await supabase
             .from('menu_items')
             .select('id, outlet_id, outlets!inner(owner_id)')

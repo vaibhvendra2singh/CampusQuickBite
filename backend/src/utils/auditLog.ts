@@ -24,35 +24,26 @@
 import { supabase } from '../config/supabase';
 import logger from '../services/logger';
 
-// ─── Typed Action Names ───────────────────────────────────────────────────────
 export type AuditAction =
-    // Orders
     | 'ORDER_STATUS_CHANGED'
     | 'ORDER_CANCELLED'
     | 'ORDER_MANUALLY_COMPLETED'
     | 'ORDER_QR_VERIFIED'
-    // Users
     | 'USER_BANNED'
     | 'USER_UNBANNED'
     | 'USER_FROZEN'
     | 'USER_UNFROZEN'
     | 'USER_ROLE_CHANGED'
-    // Menu
     | 'MENU_ITEM_CREATED'
     | 'MENU_ITEM_UPDATED'
     | 'MENU_ITEM_DELETED'
-    // Outlet
     | 'OUTLET_CREATED'
     | 'OUTLET_UPDATED'
     | 'OUTLET_DELETED'
-    // Auth
     | 'ADMIN_PASSWORD_RESET'
-    // Payments
     | 'PAYMENT_REFUND_ISSUED'
-    // Generic
     | 'ADMIN_ACTION';
 
-// ─── Request Shape ────────────────────────────────────────────────────────────
 export interface AuditLogEntry {
     action: AuditAction;
     actorId: string;
@@ -63,7 +54,6 @@ export interface AuditLogEntry {
     ipAddress?: string;
 }
 
-// ─── Writer ───────────────────────────────────────────────────────────────────
 export const auditLog = async (entry: AuditLogEntry): Promise<void> => {
     const payload = {
         action: entry.action,
@@ -76,14 +66,11 @@ export const auditLog = async (entry: AuditLogEntry): Promise<void> => {
         created_at: new Date().toISOString(),
     };
 
-    // Always log to Winston first (non-blocking)
     logger.info(`[AUDIT] ${entry.action}`, payload);
 
-    // Then persist to database
     const { error } = await supabase.from('audit_logs').insert([payload]);
 
     if (error) {
-        // Don't crash the request for a failed audit log — just warn
         logger.warn(`[AUDIT] Failed to persist audit log to DB:`, {
             error: error.message,
             action: entry.action,

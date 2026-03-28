@@ -25,11 +25,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // SECURITY: Role escalation prevention. Always default to student for public registration.
-        // Admins and Shop Owners must be created through the internal admin dashboard.
         const normalizedRole = ROLES.STUDENT;
 
-        // Check if user already exists
         const { data: existingUser, error: checkError } = await supabase.from('users').select('id').eq('email', email).single();
 
         if (checkError && checkError.code !== 'PGRST116') {
@@ -45,7 +42,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         const hashedPassword = await bcrypt.hash(password, 12); 
 
-        // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpiry = new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
 
@@ -72,7 +68,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         logger.info(`User registered, awaiting verification: ${email}`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
 
-        // Send OTP email asynchronously
         sendSignupOTPEmail(email, otp).catch(err => {
             logger.error(`Failed to send signup OTP to ${email}:`, err);
         });
@@ -111,7 +106,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // Resilient check for ban status
         if ((profileData as any).is_banned === true) {
             logger.error(`Login failed: User banned - ${email}`, { ip: req.ip });
             sendError(res, 'ACCOUNT_BANNED', 401);
@@ -131,18 +125,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        // NEW: Sync and verify enrollment number
         let finalEnrollment = profileData.enrollment_number;
         
         if (enrollmentNumber && finalEnrollment) {
-            // Strict check: If user provides an ID but it doesn't match the DB record
             if (enrollmentNumber.trim().toUpperCase() !== finalEnrollment.trim().toUpperCase()) {
                 logger.warn(`Login failed: Enrollment ID mismatch - ${email}. Input: "${enrollmentNumber}", DB: "${finalEnrollment}"`, { ip: req.ip });
                 sendError(res, 'Enrollment ID does not match our records', 401);
                 return;
             }
         } else if (!finalEnrollment && enrollmentNumber) {
-            // Lazy sync: First time providing ID during login
             console.log(`[AUTH] Syncing missing enrollment number for ${email}: ${enrollmentNumber}`);
             const { error: syncError } = await supabase
                 .from('users')
@@ -156,13 +147,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const payload = { id: profileData.id, role: profileData.role, name: profileData.name, email: profileData.email };
         
-        // Short-lived access token (15 minutes)
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
         
-        // Long-lived refresh token (7 days)
         const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
 
-        // Set refresh token in HttpOnly cookie
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -207,7 +195,6 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
                 return;
             }
 
-            // Verify user still exists and is not banned
             const { data: user, error } = await supabase.from('users').select('is_banned').eq('id', decoded.id).single();
 
             if (error || !user) {
@@ -222,7 +209,6 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
                 return;
             }
 
-            // Generate new access token
             const payload = { id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email };
             const newToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
 
@@ -378,7 +364,6 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        // Send the real email asynchronously (don't block the request)
         sendPasswordResetEmail(user.email, token).catch(e => {
             logger.error(`[Email Service] Failed to send password reset to ${email}:`, e);
         });

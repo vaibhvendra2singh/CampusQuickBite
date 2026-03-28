@@ -43,7 +43,6 @@ const FlappyGame: React.FC = () => {
         const ctx = cvs.getContext('2d')!;
         const s = stateRef.current;
 
-        // Sky gradient
         const sky = ctx.createLinearGradient(0, 0, 0, H);
         if (isDark) {
             sky.addColorStop(0, '#0F172A');
@@ -55,7 +54,6 @@ const FlappyGame: React.FC = () => {
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, W, H);
 
-        // Stars
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
         [
             [30, 30], [90, 60], [150, 25], [200, 80], [260, 40],
@@ -66,15 +64,12 @@ const FlappyGame: React.FC = () => {
             ctx.fill();
         });
 
-        // Ground
         ctx.fillStyle = isDark ? '#0F172A' : '#E2E8F0';
         ctx.fillRect(0, H - 60, W, 60);
         ctx.fillStyle = isDark ? 'rgba(0,112,255,0.3)' : 'rgba(0,112,255,0.5)';
         ctx.fillRect(0, H - 62, W, 3);
 
-        // Pipes
         s.pipes.forEach(pipe => {
-            // Top pipe
             const topGrad = ctx.createLinearGradient(pipe.x, 0, pipe.x + PIPE_W, 0);
             topGrad.addColorStop(0, '#1d4ed8');
             topGrad.addColorStop(0.5, '#0070FF');
@@ -83,13 +78,11 @@ const FlappyGame: React.FC = () => {
             ctx.beginPath();
             ctx.roundRect(pipe.x, 0, PIPE_W, pipe.topH, [0, 0, 8, 8]);
             ctx.fill();
-            // Pipe cap
             ctx.fillStyle = '#2563eb';
             ctx.beginPath();
             ctx.roundRect(pipe.x - 4, pipe.topH - 16, PIPE_W + 8, 16, 4);
             ctx.fill();
 
-            // Bottom pipe
             const botY = pipe.topH + PIPE_GAP;
             const botH = H - 60 - botY;
             const botGrad = ctx.createLinearGradient(pipe.x, 0, pipe.x + PIPE_W, 0);
@@ -106,7 +99,6 @@ const FlappyGame: React.FC = () => {
             ctx.fill();
         });
 
-        // Bird body
         const birdGlow = ctx.createRadialGradient(BIRD_X, s.birdY, 2, BIRD_X, s.birdY, BIRD_R + 6);
         birdGlow.addColorStop(0, 'rgba(251,191,36,0.4)');
         birdGlow.addColorStop(1, 'transparent');
@@ -115,7 +107,6 @@ const FlappyGame: React.FC = () => {
         ctx.arc(BIRD_X, s.birdY, BIRD_R + 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bird
         const birdGrad = ctx.createRadialGradient(BIRD_X - 4, s.birdY - 4, 2, BIRD_X, s.birdY, BIRD_R);
         birdGrad.addColorStop(0, '#fde68a');
         birdGrad.addColorStop(0.7, '#fbbf24');
@@ -124,7 +115,6 @@ const FlappyGame: React.FC = () => {
         ctx.beginPath();
         ctx.arc(BIRD_X, s.birdY, BIRD_R, 0, Math.PI * 2);
         ctx.fill();
-        // Eye
         ctx.fillStyle = '#1a0a3d';
         ctx.beginPath();
         ctx.arc(BIRD_X + 7, s.birdY - 4, 4, 0, Math.PI * 2);
@@ -133,7 +123,6 @@ const FlappyGame: React.FC = () => {
         ctx.beginPath();
         ctx.arc(BIRD_X + 8, s.birdY - 5, 1.5, 0, Math.PI * 2);
         ctx.fill();
-        // Beak
         ctx.fillStyle = '#f59e0b';
         ctx.beginPath();
         ctx.moveTo(BIRD_X + BIRD_R - 2, s.birdY);
@@ -141,7 +130,6 @@ const FlappyGame: React.FC = () => {
         ctx.lineTo(BIRD_X + BIRD_R - 2, s.birdY + 6);
         ctx.fill();
 
-        // Score overlay
         ctx.fillStyle = isDark ? 'rgba(15,23,42,0.6)' : 'rgba(255,255,255,0.55)';
         ctx.beginPath();
         ctx.roundRect(W / 2 - 40, 12, 80, 34, 10);
@@ -173,7 +161,6 @@ const FlappyGame: React.FC = () => {
         s.birdY += s.birdVy;
         s.frameCount++;
 
-        // Pipes
         if (s.frameCount % 90 === 0) {
             const topH = 60 + Math.random() * (H - 60 - PIPE_GAP - 80 - 60);
             s.pipes.push({ x: W, topH, passed: false });
@@ -193,7 +180,6 @@ const FlappyGame: React.FC = () => {
             }
         });
 
-        // Collision
         const birdTop = s.birdY - BIRD_R;
         const birdBot = s.birdY + BIRD_R;
         const birdLeft = BIRD_X - BIRD_R;

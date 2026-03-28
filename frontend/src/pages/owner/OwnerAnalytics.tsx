@@ -58,7 +58,6 @@ const OwnerAnalytics = () => {
 
  return (
  <div className="max-w-7xl mx-auto pb-40 px-6 animate-none pt-10">
-  {/* Reset Banner */}
   {data?.isReset && (
    <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl flex items-center gap-3">
     <FiActivity className="w-5 h-5 text-amber-500 flex-shrink-0" />
@@ -67,7 +66,6 @@ const OwnerAnalytics = () => {
     </p>
    </div>
   )}
-  {/* Header */}
  <div className="mb-16">
  <Link to="/owner/dashboard" className="inline-flex items-center space-x-3 group text-slate-500  transition-all font-semibold uppercase tracking-wider text-[11px] bg-slate-100 dark:bg-slate-800/50 px-5 py-3 rounded-xl border border-transparent  mb-10 shadow-sm">
  <FiArrowLeft className="w-3.5 h-3.5 transition-" />
@@ -89,7 +87,6 @@ const OwnerAnalytics = () => {
  </div>
  </div>
 
- {/* Summary Cards */}
  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
  <div className="bg-[var(--bg-card)] p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 relative overflow-hidden group shadow-sm">
  <div className="relative z-10">
@@ -124,9 +121,7 @@ const OwnerAnalytics = () => {
  </div>
  </div>
 
- {/* Charts Grid */}
  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
- {/* Revenue Trend */}
  <div className="bg-[var(--bg-card)] p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 lg:col-span-2 shadow-sm relative overflow-hidden group">
  <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -translate-y-32 translate-x-32 transition-all duration-150"></div>
  <div className="flex items-center justify-between mb-10 relative z-10">
@@ -161,7 +156,6 @@ const OwnerAnalytics = () => {
  </div>
  </div>
 
- {/* Popular Items */}
  <div className="bg-[var(--bg-card)] p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
  <div className="flex items-center justify-between mb-10">
  <div>
@@ -188,7 +182,6 @@ const OwnerAnalytics = () => {
  </div>
  </div>
 
- {/* Peak Hours */}
  <div className="bg-[var(--bg-card)] p-10 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
  <div className="flex items-center justify-between mb-10">
  <div>

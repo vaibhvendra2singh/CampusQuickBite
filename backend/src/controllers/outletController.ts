@@ -74,10 +74,8 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        // 1. Hash the owner's password
         const hashedPassword = await bcrypt.hash(ownerPassword, 10);
 
-        // 2. Insert the owner into the 'users' table
         const { data: newUser, error: userError } = await supabase
             .from('users')
             .insert([{
@@ -94,7 +92,6 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        // 3. Insert the outlet, linking it to the new Owner's ID
         const { data: newOutlet, error: outletError } = await supabase
             .from('outlets')
             .insert([{
@@ -115,10 +112,8 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
             return;
         }
 
-        // Invalidate cache
         await cacheDel(CacheKey.outlets());
 
-        // Audit Log
         await auditLog({
             action: 'OUTLET_CREATED',
             actorId: 'system', // Ideally use req.user.id if an admin is creating this
@@ -141,7 +136,6 @@ export const updateOutlet = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Security Check: Verify ownership
         if (userRole !== 'admin') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
@@ -168,10 +162,8 @@ export const updateOutlet = async (req: AuthRequest, res: Response): Promise<voi
             return;
         }
 
-        // Invalidate cache
         await cacheDel(CacheKey.outlets(), CacheKey.outletById(id as string));
 
-        // Audit Log
         if (req.user) {
             await auditLog({
                 action: 'OUTLET_UPDATED',
@@ -196,7 +188,6 @@ export const deleteOutlet = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Security Check: Verify ownership
         if (userRole !== 'admin') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
@@ -234,8 +225,6 @@ export const updateOutletStatus = async (req: AuthRequest, res: Response): Promi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Allow ANY logged-in user (student, owner, admin) to report wait time.
-        // This is a crowdsourced feature. No ownership check needed here.
 
         if (!['FAST', 'MODERATE', 'BUSY'].includes(status)) {
             res.status(400).json({ error: 'Invalid status. Must be FAST, MODERATE, or BUSY.' });

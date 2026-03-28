@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import React, { useState, Suspense, useEffect } from 'react';
 
-// Auto scroll to top on every route change
 function ScrollToTop() {
     const { pathname } = useLocation();
     useEffect(() => {
@@ -46,7 +45,6 @@ const GameHub = React.lazy(() => import('./components/student/GameHub'));
 
 import { useSocket } from './hooks/useSocket';
 
-// Lazy load the 3D scene because it includes heavy three.js logic
 const Scene = React.lazy(() => import('./canvas/Scene').then(module => ({ default: module.Scene })));
 
 const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) => {
@@ -145,18 +143,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 {children}
             </main>
 
-            {/* Mini Games — floating windows only, trigger is in header */}
             {user?.role === 'STUDENT' && (
                 <React.Suspense fallback={null}>
                     <GameHub />
                 </React.Suspense>
             )}
 
-            {/* Footer */}
             <footer className="py-10 md:py-12 bg-[var(--bg-body)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-12">
-                        {/* Brand Column */}
                         <div className="sm:col-span-2">
                             <div className="flex items-center space-x-3 mb-5 md:mb-8">
                                 <div className="w-10 h-10 md:w-12 md:h-12 bg-brand-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl shadow-xl shadow-brand-500/20">C</div>
@@ -167,7 +162,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                             </p>
                         </div>
 
-                        {/* Navigation */}
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Navigate</h4>
                             <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
@@ -177,7 +171,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                             </ul>
                         </div>
 
-                        {/* Help & Legal */}
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Support</h4>
                             <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
@@ -268,7 +261,6 @@ function App() {
                                 </ProtectedRoute>
                             } />
 
-                            {/* Public Informational Routes */}
                             <Route path="/help" element={<Layout><HelpFAQ /></Layout>} />
                             <Route path="/contact" element={<Layout><ContactUs /></Layout>} />
                             <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
@@ -286,7 +278,6 @@ function App() {
                                 )
                             } />
 
-                            {/* Student Routes */}
                             <Route path="/restaurants" element={
                                 <ProtectedRoute allowedRoles={['STUDENT']}>
                                     <Layout><RestaurantsPage /></Layout>
@@ -319,7 +310,6 @@ function App() {
                             } />
 
 
-                            {/* Owner Routes */}
                             <Route path="/owner/dashboard" element={
                                 <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
                                     <Layout><OwnerDashboard /></Layout>
@@ -341,7 +331,6 @@ function App() {
                                 </ProtectedRoute>
                             } />
 
-                            {/* Admin Routes */}
                             <Route path="/admin/dashboard" element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
                                     <Layout><AdminDashboard /></Layout>

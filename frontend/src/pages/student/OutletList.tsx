@@ -245,7 +245,6 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
     const [quickFilter, setQuickFilter] = useState<string | null>(null); // NEW: quick filter pill state
     const resultsRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll to results when user types in the search bar
     useEffect(() => {
         if (searchTerm && resultsRef.current) {
             resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -256,14 +255,12 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
         .flatMap(outlet => (outlet.menu_items || []).map(item => ({ ...item, outlet_id: outlet.id, outlet_name: outlet.name })))
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 10), [outlets]);
-    // Removed listRef and scroll function as per instruction
 
     const gridOutlets = useMemo(() => {
         return outlets.filter(o => {
         const name = o.name.toLowerCase();
         const menuString = o.menu_items?.map(m => m.name.toLowerCase()).join(' ') || '';
 
-        // 1. Text Search Filter
         if (searchTerm) {
             const st = searchTerm.toLowerCase();
             if (!name.includes(st) && !o.location.toLowerCase().includes(st) && !menuString.includes(st)) {
@@ -271,18 +268,15 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             }
         }
 
-        // 2. Quick Filter Pills 
         if (quickFilter) {
             if (quickFilter === 'Fast Delivery' && o.current_status === 'BUSY') return false;
             if (quickFilter === 'Top Rated' && (o.average_rating || 0) < 4.0) return false;
             if (quickFilter === 'Veg Only') {
-                // Now using real backend menu data
                 const servesMeat = o.menu_items?.some(m => m.is_veg === false);
                 if (servesMeat) return false;
             }
         }
 
-        // 3. Category Filter
         if (selectedCategory) {
             const cat = selectedCategory.toLowerCase();
 
@@ -298,10 +292,8 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
             const isKnownMapped = ['pizza', 'chinese', 'momos', 'south indian', 'burgers', 'north indian', 'desserts'].includes(cat);
             if (isKnownMapped) {
-                // Check if either the outlet name matches, OR any of its menu items match the category keywords
                 if (!isMatch(name) && !isMatch(menuString)) return false;
             } else {
-                // Fallback Hash for totally custom categories
                 let hash = 0;
                 const strId = String(o.id);
                 for (let i = 0; i < strId.length; i++) hash = strId.charCodeAt(i) + ((hash << 5) - hash);

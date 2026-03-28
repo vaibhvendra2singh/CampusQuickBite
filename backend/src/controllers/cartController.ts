@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 
-// Helper to fetch the full cart for a user
 const fetchFullCart = async (userId: string) => {
     const { data, error } = await supabase
         .from('cart_items')
@@ -56,8 +55,6 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        // 1. Fetch item and current cart in one trip (or close to it)
-        // We validate item availability and check for outlet conflicts simultaneously
         const [{ data: menuItem, error: menuErr }, currentCart] = await Promise.all([
             supabase.from('menu_items').select('id, outlet_id, availability').eq('id', menuItemId).single(),
             fetchFullCart(userId)
@@ -73,7 +70,6 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        // 2. Multi-outlet order prevention
         if (currentCart && currentCart.length > 0) {
             const existingOutletId = (currentCart[0].menu_items as any)?.outlet_id;
             if (existingOutletId && existingOutletId !== menuItem.outlet_id) {
@@ -87,8 +83,6 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
         const requestedQty = Math.max(1, parseInt(quantity?.toString()) || 1);
         const existingItem = currentCart?.find(item => (item.menu_items as any)?.id === menuItemId);
 
-        // 3. Perform Upsert for better concurrency handling
-        // This assumes a unique constraint on [user_id, menu_item_id] exists in Postgres
         const { error: mutationError } = await supabase
             .from('cart_items')
             .upsert({
@@ -99,7 +93,6 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
 
         if (mutationError) throw mutationError;
 
-        // 4. Return fresh state
         const updatedCart = await fetchFullCart(userId);
         res.status(200).json(updatedCart);
 
@@ -143,7 +136,6 @@ export const updateCartItem = async (req: AuthRequest, res: Response): Promise<v
         }
 
         if (newQuantity <= 0) {
-            // Remove item
             const { error: deleteError } = await supabase
                 .from('cart_items')
                 .delete()
@@ -152,7 +144,6 @@ export const updateCartItem = async (req: AuthRequest, res: Response): Promise<v
 
             if (deleteError) throw deleteError;
         } else {
-            // Update quantity
             const { error: updateError } = await supabase
                 .from('cart_items')
                 .update({ quantity: newQuantity })

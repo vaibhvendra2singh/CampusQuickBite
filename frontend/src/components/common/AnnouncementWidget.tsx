@@ -26,11 +26,9 @@ const AnnouncementWidget = ({ compact = false }: Props) => {
                 const res = await api.get('/announcements');
                 setAnnouncements(res.data);
             } catch {
-                // silently ignore — not critical
             }
         };
         fetch();
-        // Refresh every 2 minutes
         const id = setInterval(fetch, 120_000);
         return () => clearInterval(id);
     }, []);
@@ -44,7 +42,6 @@ const AnnouncementWidget = ({ compact = false }: Props) => {
             ? 'border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5'
             : 'border-amber-200 dark:border-amber-500/20 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5'
             }`}>
-            {/* Header */}
             <button
                 onClick={() => setIsExpanded(v => !v)}
                 className="w-full flex items-center justify-between px-5 py-3 text-left"
@@ -67,7 +64,6 @@ const AnnouncementWidget = ({ compact = false }: Props) => {
                 }
             </button>
 
-            {/* Body */}
             {isExpanded && (
                 <div className={`space-y-2 px-4 pb-4 ${compact ? 'max-h-52 overflow-y-auto' : ''}`}>
                     {visible.map(a => (

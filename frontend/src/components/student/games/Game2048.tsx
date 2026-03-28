@@ -141,7 +141,6 @@ const Game2048: React.FC = () => {
 
     return (
         <div className="flex flex-col items-center justify-between h-full p-4 gap-3" style={{ background: 'var(--bg-card)' }}>
-            {/* Header */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex gap-3">
                     <div className="flex flex-col items-center rounded-xl px-4 py-2" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
@@ -158,7 +157,6 @@ const Game2048: React.FC = () => {
                 </button>
             </div>
 
-            {/* Board */}
             <div
                 className="relative"
                 style={{

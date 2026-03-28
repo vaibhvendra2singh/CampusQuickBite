@@ -81,11 +81,9 @@ interface OpenGame {
     key: number;
 }
 
-// Shared event bus so GameHubInline (in header) can trigger the panel in GameHub (fixed overlay)
 const listeners: Array<() => void> = [];
 const emitToggle = () => listeners.forEach(fn => fn());
 
-// ─── Inline trigger button (placed in header nav) ────────────────────────────
 export const GameHubInline: React.FC = () => (
     <button
         id="mini-games-fab"
@@ -101,12 +99,10 @@ export const GameHubInline: React.FC = () => (
     </button>
 );
 
-// ─── Main overlay: picker panel + floating game windows ──────────────────────
 const GameHub: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [openGames, setOpenGames] = useState<OpenGame[]>([]);
 
-    // Subscribe to toggle events from GameHubInline
     useEffect(() => {
         const handler = () => setOpen(o => !o);
         listeners.push(handler);
@@ -138,7 +134,6 @@ const GameHub: React.FC = () => {
 
     return (
         <>
-            {/* Picker panel — anchored above bottom-right */}
             {open && (
                 <div
                     className="fixed bottom-28 right-8 z-[9990] rounded-2xl overflow-hidden shadow-2xl"
@@ -190,7 +185,6 @@ const GameHub: React.FC = () => {
                 </div>
             )}
 
-            {/* Open Game Windows */}
             {openGames.map((g, i) => {
                 const def = GAMES.find(d => d.id === g.id)!;
                 return (
@@ -209,7 +203,6 @@ const GameHub: React.FC = () => {
                 );
             })}
 
-            {/* Backdrop click-away */}
             {open && (
                 <div className="fixed inset-0 z-[9989]" onClick={() => setOpen(false)} />
             )}

@@ -46,13 +46,11 @@ const SnakeGame: React.FC = () => {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, W, H);
 
-        // Grid dots
         ctx.fillStyle = dotColor;
         for (let i = 0; i < COLS; i++)
             for (let j = 0; j < ROWS; j++)
                 ctx.fillRect(i * CELL + CELL / 2 - 1, j * CELL + CELL / 2 - 1, 2, 2);
 
-        // Food
         const gf = ctx.createRadialGradient(
             s.food.x * CELL + CELL / 2, s.food.y * CELL + CELL / 2, 2,
             s.food.x * CELL + CELL / 2, s.food.y * CELL + CELL / 2, CELL / 2
@@ -67,16 +65,13 @@ const SnakeGame: React.FC = () => {
         ctx.beginPath();
         ctx.arc(s.food.x * CELL + CELL / 2, s.food.y * CELL + CELL / 2, CELL / 2 - 3, 0, Math.PI * 2);
         ctx.fill();
-        // Shine
         ctx.fillStyle = 'rgba(255,255,255,0.55)';
         ctx.beginPath();
         ctx.arc(s.food.x * CELL + CELL / 2 - 3, s.food.y * CELL + CELL / 2 - 3, 3, 0, Math.PI * 2);
         ctx.fill();
 
-        // Snake
         s.snake.forEach((seg, i) => {
             const t = i / s.snake.length;
-            // vivid green-to-teal gradient along body
             const r = Math.round(22 + t * 20);
             const g = Math.round(195 - t * 50);
             const b = Math.round(100 - t * 30);
@@ -168,7 +163,6 @@ const SnakeGame: React.FC = () => {
         return () => window.removeEventListener('keydown', onKey);
     }, []);
 
-    // Touch controls
     const touchStart = useRef<{ x: number; y: number } | null>(null);
     const onTouchStart = (e: React.TouchEvent) => {
         touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
@@ -231,7 +225,6 @@ const SnakeGame: React.FC = () => {
                     </div>
                 )}
             </div>
-            {/* D-pad for mobile */}
             <div className="flex flex-col items-center gap-1">
                 <button onClick={() => { stateRef.current.nextDir = { x: 0, y: -1 }; }} className="w-10 h-8 rounded-lg text-xs font-bold flex items-center justify-center border transition-colors btn-secondary">▲</button>
                 <div className="flex gap-1">

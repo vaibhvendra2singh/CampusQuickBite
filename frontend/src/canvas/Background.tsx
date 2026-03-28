@@ -10,7 +10,6 @@ export function Background({ isDark }: { isDark: boolean }) {
 
     return (
         <group>
-            {/* Reduced star count significantly for perf */}
             <Stars
                 radius={100}
                 depth={50}
@@ -30,7 +29,6 @@ export function Background({ isDark }: { isDark: boolean }) {
                 color={dustColor}
             />
 
-            {/* Shift spheres closer to center on mobile so they don't render off-screen */}
             <Float speed={0.3} rotationIntensity={0.3} floatIntensity={0.8}>
                 <Sphere args={[1, 12, 12]} position={[isMobile ? -2 : -5, 2, -10]}>
                     <meshStandardMaterial

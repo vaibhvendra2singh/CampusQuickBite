@@ -155,7 +155,6 @@ const Cart = () => {
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
 
-                {/* Left Column: Cart Items & Settings */}
                 <div className="flex-1 w-full space-y-6">
                     <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-[2.5rem] overflow-hidden p-0 border border-[var(--glass-border)] shadow-2xl">
                         <div className="flex flex-col divide-y divide-[var(--glass-border)]">
@@ -204,9 +203,7 @@ const Cart = () => {
                         </div>
                     </div>
 
-                    {/* Additional Options */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Schedule Pickup */}
                         <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-3xl p-6 border border-[var(--glass-border)] shadow-xl">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center flex-shrink-0">
@@ -239,7 +236,6 @@ const Cart = () => {
                             )}
                         </div>
 
-                        {/* Order Notes */}
                         <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-3xl p-6 border border-[var(--glass-border)] shadow-xl">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center flex-shrink-0">
@@ -261,7 +257,6 @@ const Cart = () => {
                     </div>
                 </div>
 
-                {/* Right Column: Order Summary */}
                 <div className="w-full lg:w-[400px] flex-shrink-0">
                     <div className="bg-[var(--glass-bg)] backdrop-blur-2xl rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl sticky top-28 p-8">
                         <h3 className="text-2xl font-heading font-black tracking-tighter text-[var(--text-primary)] mb-6">Bill Details</h3>

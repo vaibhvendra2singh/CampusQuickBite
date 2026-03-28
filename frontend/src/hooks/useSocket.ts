@@ -12,24 +12,20 @@ export const useSocket = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            // Initialize socket connection
             const newSocket = io(SOCKET_URL);
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSocket(newSocket);
 
             newSocket.on('connect', () => {
                 console.log('Connected to socket server');
-                // Join person room for notifications
                 newSocket.emit('join_room', user.id);
             });
 
             newSocket.on('order_update', (data: { orderId: string, status: string, message: string }) => {
                 console.log('Received order update socket event:', data);
 
-                // Show notification to user
                 showToast(data.message, 'info');
 
-                // Browser notification if permitted
                 if (Notification.permission === 'granted') {
                     new Notification('CampusQuickBite Update', {
                         body: data.message,
@@ -44,7 +40,6 @@ export const useSocket = () => {
                     showToast(data.message, data.isFrozen || data.isBanned ? 'error' : 'success');
                 }
 
-                // Update local context to reflect status change immediately
                 updateUser({
                     ...user,
                     isFrozen: data.isFrozen ?? user.isFrozen,
@@ -52,7 +47,6 @@ export const useSocket = () => {
                 });
             });
 
-            // Request notification permission on first load
             if (Notification.permission === 'default') {
                 Notification.requestPermission();
             }

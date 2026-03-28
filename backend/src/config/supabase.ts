@@ -14,7 +14,6 @@ export function getSupabase(): SupabaseClient {
     return _supabase;
 }
 
-// Backwards-compat export
 export const supabase = new Proxy({} as SupabaseClient, {
     get(_target, prop) {
         return getSupabase()[prop as keyof SupabaseClient];

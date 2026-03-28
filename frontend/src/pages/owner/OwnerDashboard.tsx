@@ -53,12 +53,9 @@ const OwnerDashboard = () => {
     const [isDelivering, setIsDelivering] = useState(false);
     const [showResetModal, setShowResetModal] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
-    // Database-backed property: excludes everything before this timestamp
     const [viewResetAt, setViewResetAt] = useState<Date | null>(null);
 
-    // Ref-based lock for synchronous check (useState is async)
     const scanLockRef = useRef(false);
-    // Sound alert for new orders
     const [soundEnabled, setSoundEnabled] = useState(true);
     const prevOrderCountRef = useRef<number | null>(null);
 
@@ -102,7 +99,6 @@ const OwnerDashboard = () => {
             await fetchDashboardData();
             const duration = Date.now() - startTime;
             if (duration < 800) await new Promise(r => setTimeout(r, 800 - duration));
-            // No longer clearing the reset on refresh. Reset is permanent and DB-backed.
             showToast('Dashboard updated.', 'success');
         } catch (error) {
             showToast('Update failed.', 'error');
@@ -137,7 +133,6 @@ const OwnerDashboard = () => {
         return () => clearInterval(interval);
     }, [user]);
 
-    // Play a chime when new orders come in
     useEffect(() => {
         const activeCount = orders.filter(o => {
             const s = o.status?.toUpperCase();
@@ -220,8 +215,6 @@ const OwnerDashboard = () => {
     const handleMarkAsDelivered = async (orderId: number) => {
         setIsDelivering(true);
         try {
-            // Use the standard status update endpoint which Owners are authorized for,
-            // instead of the admin-only manual-delivered override.
             await api.put(`/orders/${orderId}/status`, { status: 'COMPLETED' });
             showToast('Order completed!', 'success');
             setVerificationOrder(null);
@@ -310,18 +303,12 @@ const OwnerDashboard = () => {
         }
     };
 
-    // ── Insight-reset filter ─────────────────────────────────────────────────
-    // When owner resets insights, viewResetAt is set to the current timestamp.
-    // displayOrders excludes everything before that point, so all metrics/charts
-    // zero out — even though the 15-second poll keeps refreshing `orders` from
-    // the server (backend data is never deleted).
     const displayOrders = viewResetAt
         ? orders.filter(o => {
               const ts = new Date(o.createdAt || o.created_at || 0);
               return ts > viewResetAt;
           })
         : orders;
-    // ─────────────────────────────────────────────────────────────────────────
 
     const activeOrders = displayOrders.filter(o => {
         const status = o.status?.toUpperCase();
@@ -344,7 +331,6 @@ const OwnerDashboard = () => {
 
     const completedTodayCount = todaysOrders.filter(o => o.status?.toUpperCase() === 'COMPLETED').length;
 
-    // Analytics Data Prep
     const dailyMap = new Map<string, number>();
     const now = new Date();
     for (let i = 6; i >= 0; i--) {
@@ -386,7 +372,6 @@ const OwnerDashboard = () => {
 
     return (
         <div className="animate-none pb-40 pt-12 md:pt-16">
-            {/* Header Section */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-16 border-b border-slate-200 dark:border-slate-800 pb-10 gap-8">
                 <div className="space-y-3">
                     <div className="flex items-center space-x-3">
@@ -452,7 +437,6 @@ const OwnerDashboard = () => {
                         {soundEnabled ? <FiBell className="mr-2 w-4 h-4" /> : <FiBellOff className="mr-2 w-4 h-4" />}
                         {soundEnabled ? 'Alerts On' : 'Alerts Off'}
                     </button>
-                    {/* Reset Insights — danger action */}
                     <button
                         onClick={() => setShowResetModal(true)}
                         disabled={isResetting}
@@ -465,7 +449,6 @@ const OwnerDashboard = () => {
                 </div>
             </div>
 
-            {/* Core Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
                 <div
                     onClick={() => document.getElementById('live-orders')?.scrollIntoView({ behavior: 'smooth' })}
@@ -537,12 +520,10 @@ const OwnerDashboard = () => {
                 </div>
             </div>
 
-            {/* Admin Announcements for Owner */}
             <div className="mb-10">
                 <AnnouncementWidget compact />
             </div>
 
-            {/* Current Orders Section */}
             <div id="live-orders" className="mb-16 rounded-2xl bg-[var(--bg-card)] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm animate-none" style={{ animationDelay: '0.1s' }}>
                 <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
                     <div>
@@ -667,7 +648,6 @@ const OwnerDashboard = () => {
                                             Mark Delivered
                                         </button>
                                     )}
-                                    {/* Print Ticket - always visible */}
                                     <button
                                         onClick={() => {
                                             const w = window.open('', '_blank', 'width=400,height=600');
@@ -682,6 +662,7 @@ const OwnerDashboard = () => {
                                                 <p><b>Order #${order.id}</b> &nbsp; ${order.status}</p>
                                                 <p>Customer: ${order.user?.name || 'Guest'}</p>
                                                 <p>Time: ${new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                ${order.notes ? `<hr/><p style="margin:8px 0;"><b>Notes:</b> ${order.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>` : ''}
                                                 <hr/>
                                                 <table><thead><tr><th>Qty</th><th>Item</th><th style="text-align:right">Price</th></tr></thead><tbody>${items}</tbody></table>
                                                 <hr/>
@@ -702,7 +683,6 @@ const OwnerDashboard = () => {
                 </div>
             </div>
 
-            {/* Statistics Section */}
             <div className="mt-32 space-y-16 mb-24">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-2 border-slate-100 dark:border-slate-800 pb-8">
                     <div className="space-y-3">
@@ -857,7 +837,6 @@ const OwnerDashboard = () => {
                 </div>
             </div>
 
-            {/* Verification Detail Modal */}
             {verificationOrder && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md animate-none" onClick={() => setVerificationOrder(null)}></div>
@@ -920,26 +899,20 @@ const OwnerDashboard = () => {
                 </div>
             )}
 
-            {/* ── Reset Insights Confirmation Modal ── */}
             {showResetModal && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-slate-900/50 backdrop-blur-md"
                         onClick={() => !isResetting && setShowResetModal(false)}
                     />
-                    {/* Dialog */}
                     <div className="relative w-full max-w-md bg-[var(--bg-card)] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                        {/* Top accent bar */}
                         <div className="h-1 w-full bg-gradient-to-r from-rose-400 to-rose-600" />
 
                         <div className="p-8">
-                            {/* Icon */}
                             <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-500/10 flex items-center justify-center mb-6">
                                 <FiTrash2 className="w-7 h-7 text-rose-500" />
                             </div>
 
-                            {/* Copy */}
                             <h3 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-3">
                                 Reset Insights Data?
                             </h3>
@@ -951,7 +924,6 @@ const OwnerDashboard = () => {
                                 Your menu and order history will remain completely untouched.
                             </p>
 
-                            {/* Actions */}
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setShowResetModal(false)}
@@ -983,7 +955,6 @@ const OwnerDashboard = () => {
                 </div>
             )}
 
-            {/* QR Scanner Modal */}
             {isScanning && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-none"></div>

@@ -44,7 +44,6 @@ Access tokens expire in **15 minutes**. Use \`POST /api/v1/auth/refresh\` to get
                 },
             },
             schemas: {
-                // ─── Auth ─────────────────────────────────────────────────────
                 RegisterRequest: {
                     type: 'object',
                     required: ['name', 'email', 'password'],
@@ -81,7 +80,6 @@ Access tokens expire in **15 minutes**. Use \`POST /api/v1/auth/refresh\` to get
                         },
                     },
                 },
-                // ─── Orders ───────────────────────────────────────────────────
                 CreateOrderRequest: {
                     type: 'object',
                     required: ['outletId', 'items'],
@@ -112,7 +110,6 @@ Access tokens expire in **15 minutes**. Use \`POST /api/v1/auth/refresh\` to get
                         },
                     },
                 },
-                // ─── Payments ─────────────────────────────────────────────────
                 PaymentRequest: {
                     type: 'object',
                     required: ['orderId', 'amount', 'paymentMethod'],
@@ -122,7 +119,6 @@ Access tokens expire in **15 minutes**. Use \`POST /api/v1/auth/refresh\` to get
                         paymentMethod: { type: 'string', enum: ['card', 'upi', 'cash'], example: 'upi' },
                     },
                 },
-                // ─── Common ───────────────────────────────────────────────────
                 SuccessResponse: {
                     type: 'object',
                     properties: {
@@ -161,7 +157,6 @@ Access tokens expire in **15 minutes**. Use \`POST /api/v1/auth/refresh\` to get
         },
         security: [{ BearerAuth: [] }],
     },
-    // Glob pattern to scan for JSDoc annotations
     apis: ['./src/routes/v1/*.ts', './src/controllers/*.ts'],
 };
 

@@ -12,7 +12,6 @@ router.post('/', authenticateUser as any, validate(z.object({ body: submitRating
 router.get('/item/:itemId', validate(z.object({ params: z.object({ itemId: z.string().min(1) }) })), getMenuItemRatings as any);
 router.get('/outlet/:outletId', validate(z.object({ params: z.object({ outletId: z.string().min(1) }) })), getOutletRatings as any);
 
-// Admin Routes
 router.get('/admin/feed', authenticateUser as any, requireRole(['admin']) as any, getAdminReviewFeed as any);
 router.put('/:id/visibility', authenticateUser as any, requireRole(['admin']) as any, validate(z.object({ 
     params: z.object({ id: z.coerce.number() }),

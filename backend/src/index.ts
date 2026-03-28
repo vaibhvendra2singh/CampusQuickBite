@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-// MUST load config before reading process.env
 dotenv.config();
 
 import http from 'http';
@@ -13,10 +12,8 @@ const PORT = process.env.PORT || 5001;
 
 const server = http.createServer(app);
 
-// Initialize Socket.io
 initSocket(server);
 
-// Start Background Jobs
 initBackgroundJobs();
 
 server.listen(Number(PORT), '0.0.0.0', () => {

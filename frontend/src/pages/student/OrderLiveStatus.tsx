@@ -83,7 +83,6 @@ const OrderLiveStatus = () => {
  prevStatusRef.current = newOrder.status;
  setOrder(newOrder);
 
- // Verify orderId is available for QR
  if (newOrder.status.toUpperCase() === 'READY' && !qrToken) {
  try {
  const tokenRes = await api.get(`/orders/${newOrder.id}/token`);
@@ -144,7 +143,6 @@ const OrderLiveStatus = () => {
  <div className="bg-[var(--glass-bg)] backdrop-blur-2xl rounded-[3rem] border border-[var(--glass-border)] overflow-hidden shadow-2xl">
  <div className="p-8 md:p-14">
  <div className="flex flex-col lg:flex-row justify-between gap-12">
- {/* Tracker Section */}
  <div className="flex-1 space-y-8">
  <div className="pb-6 border-b border-[var(--border-color)]">
  <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-2">Order status</h2>
@@ -198,7 +196,6 @@ const OrderLiveStatus = () => {
  )}
  </div>
 
- {/* Sidebar Section */}
  <div className="lg:w-72 space-y-6 pt-6 lg:pt-0">
  <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] p-8 rounded-3xl shadow-xl">
  <div className="flex justify-between items-start mb-5 text-[var(--text-primary)]">

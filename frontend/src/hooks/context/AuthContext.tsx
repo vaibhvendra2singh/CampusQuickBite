@@ -41,7 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedUser = localStorage.getItem('user');
 
         if (storedToken && storedUser) {
-            // Validate the token is not expired (check client-side JWT expiry)
             try {
                 const payload = JSON.parse(atob(storedToken.split('.')[1]));
                 const isExpired = payload.exp * 1000 < Date.now();
@@ -53,9 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     return;
                 }
 
-                // Token not expired client-side — validate against backend
                 api.get('/cart').then(() => {
-                    // Token valid — restore session
                     setToken(storedToken);
                     setUser(JSON.parse(storedUser));
                 }).catch((err: any) => {
@@ -64,7 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                     } else {
-                        // Network error or server down — restore session anyway
                         setToken(storedToken);
                         setUser(JSON.parse(storedUser));
                     }
@@ -78,7 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
     }, []);
 
-    // Also sync if localStorage changes in other tabs or background clearings
     useEffect(() => {
         const syncAuth = (e: StorageEvent) => {
             if (e.key === 'token' && !e.newValue) {

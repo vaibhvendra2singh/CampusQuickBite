@@ -7,7 +7,6 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is not defined in environment variables');
 }
 
-// Extend the Request interface to include user
 export interface AuthRequest extends Request {
     user?: any;
 }
@@ -22,11 +21,8 @@ export const authenticateUser = async (req: AuthRequest, res: Response, next: Ne
 
         const token = authHeader.split(' ')[1];
 
-        // Verify native JWT token
         const decoded: any = jwt.verify(token, JWT_SECRET);
 
-        // EXTRA SECURITY: Check if user is banned in the database
-        // We use a try-catch and specific error check to prevent locking everyone out if the migration hasn't run
         const { data: user, error: banError } = await supabase
             .from('users')
             .select('is_banned')
@@ -40,7 +36,6 @@ export const authenticateUser = async (req: AuthRequest, res: Response, next: Ne
             return;
         }
 
-        // Attach decoded user to request
         req.user = decoded;
         next();
     } catch (error) {
@@ -58,7 +53,6 @@ export const requireRole = (roles: string[]) => {
                 return;
             }
 
-            // Fetch the user's role from our custom users table
             const { data: userData, error } = await supabase
                 .from('users')
                 .select('role')

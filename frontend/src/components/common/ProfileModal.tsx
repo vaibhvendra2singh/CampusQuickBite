@@ -103,7 +103,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
             }}
         >
             <div className="bg-[var(--bg-card)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-none flex flex-col max-h-[90vh]">
-                {/* Header Banner */}
                 <div className="h-28 bg-brand-500 relative flex-shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-brand-700"></div>
                     <button
@@ -113,7 +112,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         <FiX className="w-5 h-5" />
                     </button>
 
-                    {/* Avatar Overlap */}
                     <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
                         <div className="p-1 bg-[var(--bg-card)] rounded-full">
                             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative shadow-sm group">
@@ -132,7 +130,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                {/* Body Content */}
                 <div className="flex-1 overflow-y-auto pt-14 pb-8 px-6 custom-scrollbar">
                     <div className="flex items-start justify-between mb-8">
                         <div className="space-y-1 text-left">
@@ -167,7 +164,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     )}
 
                     <div className="space-y-4">
-                        {/* Details Card */}
                         <div className="bg-[var(--bg-card)] rounded-2xl p-6 border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
                             {isOwner && <InfoRow icon={FiMapPin} label="Shop Location" value={shopAddress || 'Not Assigned'} />}
                             {!isOwner && !isAdmin && (
@@ -209,7 +205,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                             )}
                         </div>
 
-                        {/* Order History Link (for students) */}
                         {!isEditing && !isAdmin && !isOwner && (
                             <button
                                 onClick={() => { onClose(); navigate('/orders/history'); }}
@@ -226,7 +221,6 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         )}
                     </div>
 
-                    {/* Main Actions */}
                     <div className="flex gap-4 mt-8">
                         {isEditing ? (
                             <>

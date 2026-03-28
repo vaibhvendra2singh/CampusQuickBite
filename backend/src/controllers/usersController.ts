@@ -9,8 +9,6 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
         const { id } = req.params;
         const authenticatedUserId = req.user?.id;
 
-        // Security check
-        // Only allow users to update their own profile, or admins
         if (String(id) !== String(authenticatedUserId)) {
             res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
             return;
@@ -32,11 +30,9 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             .select()
             .single();
 
-        // Check if it's a schema issue (e.g., column doesn't exist)
         if (error && error.message && error.message.includes('schema cache')) {
             console.warn("Falling back to basic profile update due to missing Supabase columns.");
 
-            // Retry with only the existing columns
             const fallbackResponse = await supabase
                 .from('users')
                 .update({ name })
@@ -50,7 +46,6 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             }
 
             data = fallbackResponse.data;
-            // Mock the un-persisted columns for the frontend so it successfully updates its state
             data.phone_number = phoneNumber;
             data.enrollment_number = enrollmentNumber;
             data.profile_pic = profilePic;
@@ -59,7 +54,6 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
-        // Send back the mapped fields so frontend Context isn't broken
         res.status(200).json({
             id: data.id,
             name: data.name,
@@ -86,7 +80,6 @@ export const getLeaderboard = async (req: Request, res: Response): Promise<void>
             .limit(10);
 
         if (error) {
-            // If the column doesn't exist yet, return dummy data instead of crashing
             if (error.message.includes('Could not find the column')) {
                 res.status(200).json([]);
                 return;
@@ -95,7 +88,6 @@ export const getLeaderboard = async (req: Request, res: Response): Promise<void>
             return;
         }
 
-        // Map data
         const leaderboard = (data || []).map(u => ({
             id: u.id,
             name: u.name,
@@ -175,7 +167,6 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
         const { id } = req.params;
         const { is_banned, is_frozen, statusType, field, value } = req.body;
 
-        // Support both direct keys (is_banned: true) and key/value pairs (field: 'is_frozen', value: true)
         let updatePayload: any = {};
         if (is_banned !== undefined) updatePayload.is_banned = is_banned;
         if (is_frozen !== undefined) updatePayload.is_frozen = is_frozen;
@@ -193,7 +184,6 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
             return;
         }
 
-        // SECURITY: Self-lockout prevention & admin-on-admin action prevention
         const currentUserId = req.user?.id;
         if (id === currentUserId) {
             res.status(400).json({ error: 'You cannot ban or freeze your own administrator account' });
@@ -207,7 +197,6 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
         }
 
         if (targetUser.role === ROLES.ADMIN) {
-            // Admins can't ban other admins; only super admins (system level) should do this.
             res.status(403).json({ error: 'Illegal Action: Administrators cannot modify the status of other administrators' });
             return;
         }
@@ -225,7 +214,6 @@ export const toggleUserStatus = async (req: AuthRequest, res: Response): Promise
             return;
         }
 
-        // Notify the user via socket so they update immediately
         notifyAccountStatus(String(id), {
             isFrozen: data.is_frozen,
             isBanned: data.is_banned,
@@ -245,7 +233,6 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
         const authenticatedUserId = req.user?.id;
         const authenticatedUserRole = req.user?.role;
 
-        // Security check: Only allow users to view their own profile, or admins
         if (authenticatedUserRole !== 'admin' && String(id) !== String(authenticatedUserId)) {
             res.status(403).json({ error: 'Forbidden: You can only view your own profile' });
             return;
@@ -262,7 +249,6 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Send back an object mapping DB snake_case columns to frontend camelCase expectations
         res.status(200).json({
             id: data.id,
             name: data.name,

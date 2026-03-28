@@ -36,7 +36,6 @@ export const getAnnouncements = async (req: AuthRequest, res: Response): Promise
         const userRole = req.user?.role || 'student';
         const now = new Date().toISOString();
 
-        // Admin sees everything, others see 'all' + their role, and not expired
         let query = supabase
             .from('announcements')
             .select('*')
@@ -60,7 +59,6 @@ export const getAnnouncements = async (req: AuthRequest, res: Response): Promise
 export const deleteAnnouncement = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        // Handle potential ID mismatch (migration uses BIGINT, earlier might have been UUID)
         const parsedId = isNaN(Number(id)) ? id : Number(id);
 
         const { error } = await supabase

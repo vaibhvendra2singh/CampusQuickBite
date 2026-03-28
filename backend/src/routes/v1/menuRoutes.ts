@@ -7,12 +7,10 @@ import { z } from 'zod';
 
 const router = Router();
 
-// Public routes
 router.get('/', getAllMenu);
 router.get('/outlet/:outletId', getMenuByOutlet);
 router.get('/:outletId', getMenuByOutlet);
 
-// Protected routes - Owner/Admin only
 router.use(authenticateUser as any);
 router.use(requireRole(['owner', 'admin']) as any);
 

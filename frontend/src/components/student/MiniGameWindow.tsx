@@ -77,7 +77,6 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
                 boxShadow: '0 8px 40px var(--shadow-color), 0 2px 8px var(--shadow-color)',
             }}
         >
-            {/* Title Bar */}
             <div
                 className="flex items-center justify-between px-4 py-3 cursor-grab active:cursor-grabbing"
                 style={{
@@ -122,7 +121,6 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
                 </div>
             </div>
 
-            {/* Content */}
             {!minimized && (
                 <div className="flex-1 overflow-hidden relative" style={{ minHeight: 0 }}>
                     {children}

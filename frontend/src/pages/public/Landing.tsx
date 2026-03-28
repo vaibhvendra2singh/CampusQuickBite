@@ -6,7 +6,6 @@ const Landing = () => {
 
     return (
         <div className="relative min-h-screen w-full bg-[#0A0A0A] text-[#F8F9FA] font-sans selection:bg-[#0070FF]/30 selection:text-[#0070FF] overflow-hidden">
-            {/* Background Video */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
                 <div className="absolute inset-0 bg-radial-[circle_at_center] from-transparent via-transparent to-[#0A0A0A] opacity-90 z-10" />
                 <video
@@ -21,7 +20,6 @@ const Landing = () => {
                 </video>
             </div>
 
-            {/* Navigation */}
             <nav className="fixed top-0 w-full px-4 sm:px-[5%] py-4 sm:py-6 flex justify-between items-center z-50">
                 <Link to="/" className="text-lg sm:text-2xl font-black tracking-tighter flex-shrink-0">
                     CAMPUS<span className="text-[#0070FF]">BITE</span>
@@ -49,7 +47,6 @@ const Landing = () => {
                 </div>
             </nav>
 
-            {/* Hero — Branding Overlay */}
             <main className="relative z-20 h-screen flex flex-col justify-center items-center text-center px-4 sm:px-[5%] pointer-events-none">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -57,7 +54,6 @@ const Landing = () => {
                     transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                     className="flex flex-col items-center w-full"
                 >
-                    {/* Split into two lines on mobile so it doesn't overflow */}
                     <h1
                         className="font-black tracking-[-0.05em] leading-[0.9] select-none text-transparent bg-clip-text bg-gradient-to-b from-white/60 to-white/10 w-full"
                         style={{
@@ -81,7 +77,6 @@ const Landing = () => {
                 </motion.div>
             </main>
 
-            {/* Floating stat cards — desktop only */}
             <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -102,7 +97,6 @@ const Landing = () => {
                 <p className="font-extrabold text-lg text-[#F8F9FA]">SnaEats&nbsp;&nbsp;4.9⭐️</p>
             </motion.div>
 
-            {/* CTA Button */}
             <div className="fixed bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] sm:w-auto max-w-xs sm:max-w-none">
                 <button
                     onClick={() => navigate('/login')}

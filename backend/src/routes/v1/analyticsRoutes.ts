@@ -13,7 +13,6 @@ router.get('/:outletId',
     getOutletAnalytics as any
 );
 
-// Smart Menu Endpoints
 router.get('/recommendations/personal', authenticateUser as any, getPersonalRecommendations as any);
 router.get('/recommendations/upsell/:itemId', authenticateUser as any, validate(z.object({ params: z.object({ itemId: z.string().min(1) }) })), getUpsellRecommendations as any);
 router.get('/trending', getDynamicTrending as any);

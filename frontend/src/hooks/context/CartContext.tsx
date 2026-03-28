@@ -27,8 +27,6 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Safely maps a backend cart response to frontend CartItem[]
-// Node backend returns: [{id, user_id, quantity, menu_items: {id, name, price, outlets: {id, ...}}}]
 const mapCartResponse = (cart: any): { outletId: number | null; items: CartItem[] } => {
     if (!Array.isArray(cart) || cart.length === 0) {
         return { outletId: null, items: [] };

@@ -12,7 +12,6 @@ interface Card {
 
 const MemoryGame: React.FC = () => {
     const { isDark } = useTheme();
-    // Use isDark to style the question mark shadow or border for better visibility
     const accentColor = isDark ? '#818cf8' : '#6366f1';
     const [cards, setCards] = useState<Card[]>([]);
     const [flippedCards, setFlippedCards] = useState<number[]>([]);

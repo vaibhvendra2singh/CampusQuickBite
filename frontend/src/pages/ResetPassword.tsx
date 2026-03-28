@@ -31,7 +31,6 @@ const ResetPassword = () => {
  setMessage('Password updated successfully!');
  setError('');
 
- // Navigate back to their respective dashboard after 2s
  setTimeout(() => {
  const normalizedRole = user?.role === 'SHOP_OWNER' ? 'owner' : user?.role?.toLowerCase();
  if (normalizedRole === 'admin') navigate('/admin/dashboard');

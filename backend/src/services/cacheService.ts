@@ -13,7 +13,6 @@
 import RedisClient, { Redis } from 'ioredis';
 import logger from './logger';
 
-// ─── TTL Constants (seconds) ──────────────────────────────────────────────────
 export const CACHE_TTL = {
     MENU: 60 * 5,      // 5 minutes
     OUTLETS: 60 * 2,   // 2 minutes
@@ -21,7 +20,6 @@ export const CACHE_TTL = {
     ANALYTICS: 60 * 10 // 10 minutes
 } as const;
 
-// ─── Cache Key Builder ────────────────────────────────────────────────────────
 export const CacheKey = {
     menu: (outletId: string) => `menu:outlet:${outletId}`,
     outlets: () => `outlets:all`,
@@ -29,7 +27,6 @@ export const CacheKey = {
     analytics: (outletId: string) => `analytics:${outletId}`,
 };
 
-// ─── Redis Client ─────────────────────────────────────────────────────────────
 let redisClient: Redis | null = null;
 
 const createRedisClient = (): Redis | null => {
@@ -58,7 +55,6 @@ const createRedisClient = (): Redis | null => {
     }
 };
 
-// Lazily initialize
 const getClient = (): Redis | null => {
     if (!redisClient) {
         redisClient = createRedisClient();
@@ -66,7 +62,6 @@ const getClient = (): Redis | null => {
     return redisClient;
 };
 
-// ─── Cache API ────────────────────────────────────────────────────────────────
 
 /**
  * Get a cached value. Returns `null` on miss or error.

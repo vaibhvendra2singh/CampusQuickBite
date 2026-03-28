@@ -101,7 +101,6 @@ const OutletMenu = () => {
                 if (user) {
                     try {
                         const recsRes = await api.get('/analytics/recommendations/personal');
-                        // Map the simple {id, name, price} returned into full menu items if they exist at this outlet
                         const outletItemsMap = new Map(menuRes.data.map((i: MenuItem) => [i.id, i]));
                         const mappedRecs = recsRes.data
                             .map((r: { id: number }) => outletItemsMap.get(r.id))
@@ -120,7 +119,6 @@ const OutletMenu = () => {
         if (outletId) {
             fetchData();
 
-            // Listen for real-time menu updates via socket
             if (socket) {
                 const handleMenuUpdate = (data: { outletId: string }) => {
                     if (data.outletId === outletId) {
@@ -158,13 +156,11 @@ const OutletMenu = () => {
             await addToCart({ menuItemId: item.id, name: item.name, price: item.price });
             showToast(`${item.name} added to cart`, 'success');
 
-            // Fetch contextual upsell
             try {
                 const upsellRes = await api.get(`/analytics/recommendations/upsell/${item.id}`);
                 const upsells = upsellRes.data;
                 if (upsells && upsells.length > 0) {
                     const topUpsell = upsells[0];
-                    // Verify it exists at this outlet before prompting
                     const validAtOutlet = menuItems.find(m => m.id === topUpsell.id);
                     if (validAtOutlet) {
                         setTimeout(() => {
@@ -173,7 +169,6 @@ const OutletMenu = () => {
                     }
                 }
             } catch {
-                // Ignore upsell fetch errors silently
             }
 
         } catch (err: unknown) {
@@ -225,7 +220,6 @@ const OutletMenu = () => {
 
     return (
         <div className="max-w-6xl mx-auto animate-none relative pb-32 sm:pb-48 px-3 sm:px-5 md:px-6">
-            {/* Minimalist Navigation */}
             <div className="mb-10">
                 <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)]  transition-all font-bold text-sm">
                     <FiArrowLeft className="mr-2 transition-all duration-150" />
@@ -243,7 +237,6 @@ const OutletMenu = () => {
                 </div>
             )}
 
-            {/* Refined Outlet Header */}
             <FadeIn delay={0.1}>
             <div className="relative mb-12 sm:mb-16 md:mb-20 mt-4 p-5 sm:p-8 md:p-12 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3.5rem] border border-[var(--border-color)] shadow-sm overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
@@ -280,7 +273,6 @@ const OutletMenu = () => {
                             )}
                         </div>
 
-                        {/* Crowdsourcing Wait Time UI */}
                     <div className="p-4 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[1.5rem] sm:rounded-[2rem] shadow-sm max-w-sm">
                             <p className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-4">How's the queue?</p>
                             <div className="flex items-center gap-3">
@@ -298,7 +290,6 @@ const OutletMenu = () => {
             </div>
             </FadeIn>
 
-            {/* 🔍 Search Bar */}
             <div className="mb-8 sm:mb-12 relative max-w-2xl">
                 <div className="relative flex-1">
                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-4.5 h-4.5" />
@@ -311,7 +302,6 @@ const OutletMenu = () => {
                 )}
             </div>
 
-            {/* 🍱 Filter Section */}
             <div className="mb-10 sm:mb-16">
                 <div className="flex items-center justify-between mb-4">
                     <button
@@ -369,12 +359,10 @@ const OutletMenu = () => {
                 )}
             </div>
 
-            {/* Offerings Header */}
             <div className="mb-6 flex items-center justify-between">
                 <h3 className="text-lg font-bold text-[var(--text-primary)]">{filteredItems.length} items</h3>
             </div>
 
-            {/* Smart Suggestions (Personal Recs) */}
             {personalRecs.length > 0 && !searchQuery && activeFilters.length === 0 && (
                 <div className="mb-8">
                     <h3 className="text-base font-bold text-[var(--text-primary)] mb-1">Based on your orders</h3>
@@ -393,7 +381,6 @@ const OutletMenu = () => {
                 </div>
             )}
 
-            {/* Menu Grid / Categories */}
             <div className="space-y-20">
                 {menuItems.length === 0 ? (
                     <div className="col-span-3 text-center py-24 bg-[var(--bg-card)] rounded-[2.5rem] border border-[var(--border-color)] border-dashed">
@@ -497,7 +484,6 @@ const OutletMenu = () => {
                     outletId={outlet.id}
                     outletName={outlet.name}
                     onRatingSubmitted={() => {
-                        // Refresh data to show new rating count if we had it
                         showToast(`Thanks for rating ${outlet.name}!`, 'success');
                     }}
                 />

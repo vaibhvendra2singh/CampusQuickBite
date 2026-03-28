@@ -22,7 +22,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Check if user is frozen or banned
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('is_frozen, is_banned')
@@ -49,8 +48,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Call the secure PostgreSQL function for atomic transaction
-        // Handles: Stock check, Price calculation, Order creation, Stock decrement, Cart clearing
         const { data: orderData, error: rpcError } = await supabase.rpc('create_order_v2', {
             p_user_id: userId,
             p_outlet_id: outletId,
@@ -66,7 +63,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Fetch and format the newly created order for the response
         const { data: order, error: fetchError } = await supabase
             .from('orders')
             .select(`
@@ -94,9 +90,6 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
 
 
 const formatOrderWithItems = (orderData: any) => {
-    // Only include items that have a resolvable name.
-    // item_name is the snapshot saved at order time; menu_items.name is the live fallback.
-    // If neither exists (menu item deleted before migration ran), skip the item entirely.
     const formattedItems = (orderData.order_items || [])
         .map((oi: any) => {
             const resolvedName = oi.item_name || oi.menu_items?.name;
@@ -161,10 +154,6 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Authorization logic:
-        // 1. If student: must own the order
-        // 2. If owner: order must belong to one of their outlets
-        // 3. Admin: access all
         if (userRole === 'student') {
             if (data.user_id !== userId) {
                 sendError(res, 'Unauthorized to view this order', 403);
@@ -229,7 +218,6 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
         const from = page * size;
         const to = from + size - 1;
 
-        // Verify the owner/admin is authorized for this outlet
         if (userRole !== 'admin') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
@@ -284,7 +272,6 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
-        // 1. Fetch current order with outlet info for security check
         const { data: currentOrder, error: fetchError } = await supabase
             .from('orders')
             .select(`
@@ -305,7 +292,6 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         const currentStatus = currentOrder.status.toLowerCase();
 
-        // Robust owner check: Handle cases where Supabase returns outlets as an object OR an array
         let outletData = (currentOrder as any).outlets;
         if (Array.isArray(outletData)) outletData = outletData[0];
         const outletOwnerId = outletData?.owner_id;
@@ -318,7 +304,6 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
-        // 2. Define allowed transitions
         const allowedTransitions: Record<string, string[]> = {
             'pending': ['preparing', 'cancelled'],
             'placed': ['preparing', 'cancelled'],
@@ -334,7 +319,6 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         }
 
         if (!allowedTransitions[currentStatus]?.includes(requestedStatus)) {
-            // Admin bypass for emergency overrides
             if (req.user?.role !== 'admin') {
                 console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
                 sendError(res, 'Invalid state transition', 400);
@@ -342,17 +326,13 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             }
         }
 
-        // 3. SECURITY: Payment Verification
-        // Do not allow preparing or completing orders that haven't been paid
         if (['preparing', 'ready', 'completed'].includes(requestedStatus)) {
-            // Admin can override payment check for emergency handling
             if (currentOrder.payment_status !== 'paid' && req.user?.role !== 'admin') {
                 sendError(res, 'Cannot process unpaid orders', 400);
                 return;
             }
         }
 
-        // 3. Perform the update
         const updatePayload: any = { 
             status: requestedStatus,
             verified_by: req.user?.id 
@@ -372,7 +352,6 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
-        // 4. Re-fetch the full order with nicely aliased fields for the frontend
         const { data: updatedOrder, error: reFetchError } = await supabase
             .from('orders')
             .select(`
@@ -392,10 +371,8 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             return;
         }
 
-        // Notify user via Socket.io
         notifyOrderUpdate(updatedOrder.user_id, updatedOrder.id, updatedOrder.status);
 
-        // Audit Log
         await auditLog({
             action: 'ORDER_STATUS_CHANGED',
             actorId: req.user.id,
@@ -419,7 +396,6 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
         const actorId = req.user?.id;
         const userRole = req.user?.role;
 
-        // Fetch order and ownership details
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .select('id, status, payment_status, outlets!inner(owner_id)')
@@ -431,21 +407,18 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Only owner of that outlet or admin can cancel
         const outletOwnerId = (order.outlets as any)?.owner_id;
         if (userRole !== 'admin' && outletOwnerId !== actorId) {
             sendError(res, 'Unauthorized: You can only cancel orders for your own outlet', 403);
             return;
         }
 
-        // Only allow cancel if status is pending, preparing, or placed
         const currentStatus = order.status?.toLowerCase();
         if (currentStatus !== 'pending' && currentStatus !== 'preparing' && currentStatus !== 'placed') {
             sendError(res, `Cannot cancel an order that is already ${currentStatus}`, 400);
             return;
         }
 
-        // Update the order status to cancelled
         const updateData: any = {
             status: 'cancelled',
             cancelled_at: new Date().toISOString(),
@@ -463,7 +436,6 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Audit Log
         if (req.user) {
             await auditLog({
                 action: 'ORDER_CANCELLED',
@@ -575,7 +547,6 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // AUTO-COMPLETE: After successful token verification, COMPLETE the order
         const { error: updateError } = await supabase
             .from('orders')
             .update({
@@ -591,7 +562,6 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        // Grant XP for verified delivery
         try {
             const { data: user } = await supabase.from('users').select('xp, tier').eq('id', order.user_id).single();
             if (user) {
@@ -621,7 +591,6 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
         const operatorId = req.user?.id;
         const userRole = req.user?.role;
 
-        // EMERGENCY OVERRIDE ONLY: Restrict to Admins to prevent owner-level verification bypass
         if (userRole !== 'admin') {
             res.status(403).json({ error: 'Security: Manual completion is restricted to administrators' });
             return;
@@ -653,7 +622,6 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
             return;
         }
 
-        // Grant XP & Update Tier
         try {
             const { data: user } = await supabase.from('users').select('xp, tier').eq('id', order.user_id).single();
             if (user && user.xp !== undefined) {
@@ -680,7 +648,6 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
         const userId = req.user?.id;
         const { page = '0', size = '10', studentName, status, startDate, endDate } = req.query as any;
 
-        // 1. Get outlet for this owner
         const { data: outlet, error: outletError } = await supabase
             .from('outlets')
             .select('id')
@@ -692,7 +659,6 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
             return;
         }
 
-        // 2. Build Query
         let query = supabase
             .from('orders')
             .select(`
@@ -703,7 +669,6 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
             .eq('outlet_id', outlet.id)
             .order('created_at', { ascending: false });
 
-        // Filters
         if (studentName) {
             query = query.ilike('users.name', `%${studentName}%`);
         }
@@ -717,7 +682,6 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
             query = query.lte('created_at', endDate);
         }
 
-        // Pagination
         const from = parseInt(page || '0') * parseInt(size || '10');
         const to = from + parseInt(size || '10') - 1;
         query = query.range(from, to);
@@ -725,7 +689,6 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
         const { data: orders, error: orderError, count } = await query;
         if (orderError) throw orderError;
 
-        // 3. Map to DTO-like format
         const content = (orders || []).map(order => {
             let status = (order.status || 'pending').toUpperCase();
             if (status === 'COMPLETED') status = 'DELIVERED';
@@ -859,7 +822,6 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
         const canvas = createCanvas(width, height);
         const ctx = canvas.getContext('2d');
 
-        // Styles
         const brandColor = '#0070FF';
         const textColor = '#121212';
         const subduedColor = '#666666';
@@ -944,7 +906,6 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
         ctx.fillStyle = brandColor;
         ctx.fillText(`₹${order.total_amount}`, width - 30, y);
 
-        // Order status line
         const orderStatus = (order.status || '').toUpperCase();
         const isCancelled = orderStatus === 'CANCELLED';
 
@@ -973,7 +934,6 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             ctx.fillText('Skip the queue, pick up when ready.', width / 2, y);
         }
 
-        // Faint CAMPUSBITE watermark
         ctx.globalAlpha = 0.07;
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 60px sans-serif';
@@ -981,7 +941,6 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
         ctx.fillText('CAMPUSBITE', width / 2, height - 30);
         ctx.globalAlpha = 1.0;
 
-        // Big diagonal CANCELLED stamp
         if (isCancelled) {
             ctx.save();
             ctx.globalAlpha = 0.13;
@@ -993,7 +952,6 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             ctx.fillText('CANCELLED', 0, 0);
             ctx.restore();
 
-            // Red border around entire receipt
             ctx.strokeStyle = '#EF4444';
             ctx.lineWidth = 6;
             ctx.strokeRect(3, 3, width - 6, height - 6);

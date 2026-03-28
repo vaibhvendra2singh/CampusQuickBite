@@ -134,7 +134,6 @@ const OrderHistory = () => {
                     return (
                         <div key={order.id} className="bg-[var(--bg-card)] rounded-[2.5rem] border-2 border-[var(--border-color)] overflow-hidden  shadow-sm transition-all duration-150 group">
                             <div className="flex flex-col lg:flex-row divide-y-2 lg:divide-y-0 lg:divide-x-2 divide-[var(--border-color)]">
-                                {/* Order Content */}
                                 <div className="flex-1 p-8 space-y-8">
                                     <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                                         <div className="flex items-center gap-6">
@@ -191,7 +190,6 @@ const OrderHistory = () => {
                                         </div>
                                     )}
 
-                                    {/* Items */}
                                     <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-2xl p-6 border-2 border-[var(--border-color)]">
                                         <ul className="space-y-4">
                                             {order.items.filter((item: OrderItem) => item.menuItem?.name).map((item: OrderItem, idx: number) => (
@@ -219,7 +217,6 @@ const OrderHistory = () => {
                                         </ul>
                                     </div>
 
-                                    {/* Actions */}
                                     <div className="flex flex-wrap gap-3 pt-2">
                                         <button
                                             onClick={() => handleViewReceipt(order.id)}
@@ -236,7 +233,6 @@ const OrderHistory = () => {
                                         </button>
                                     </div>
 
-                                    {/* Timeline */}
                                     {isExpanded && !isCancelled && (
                                         <div className="mt-8 pt-8 border-t-2 border-[var(--border-color)] border-dashed animate-none">
                                             <div className="space-y-6">
@@ -275,7 +271,6 @@ const OrderHistory = () => {
                                     )}
                                 </div>
 
-                                {/* Sidebar */}
                                 <div className="lg:w-72 p-8 bg-slate-50 dark:bg-slate-900/30 flex flex-col justify-between group- dark:group- transition-colors">
                                     <div className="space-y-8">
                                         <div>

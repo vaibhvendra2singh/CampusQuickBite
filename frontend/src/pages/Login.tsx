@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/context/AuthContext';
 import { FiMail, FiLock, FiArrowRight, FiAlertOctagon, FiHash } from 'react-icons/fi';
 import { FadeIn } from '../components/animations/FadeIn';
 
-// --- Validation helper ---
 const ENROLLMENT_REGEX = /^[a-zA-Z0-9]{8,12}$/;
 
 const validateEnrollment = (value: string): string => {
@@ -33,7 +32,6 @@ const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    // Auto-fill saved enrollment number for students
     useEffect(() => {
         const saved = localStorage.getItem('enrollmentNumber');
         if (saved) setEnrollmentNumber(saved);
@@ -45,14 +43,12 @@ const Login = () => {
         }
     }, []);
 
-    // Real-time enrollment validation (only after touched)
     useEffect(() => {
         if (enrollmentTouched && loginAs === 'STUDENT') {
             setEnrollmentError(validateEnrollment(enrollmentNumber));
         }
     }, [enrollmentNumber, enrollmentTouched, loginAs]);
 
-    // Reset enrollment state when switching role
     const handleRoleChange = useCallback((role: LoginRole) => {
         setLoginAs(role);
         setEnrollmentError('');
@@ -67,7 +63,6 @@ const Login = () => {
 
     const isStudent = loginAs === 'STUDENT';
 
-    // Derived: is form ready to submit?
     const isFormValid = useMemo(() => {
         if (!email || !password) return false;
         if (isStudent && !!validateEnrollment(enrollmentNumber)) return false;
@@ -77,7 +72,6 @@ const Login = () => {
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Gate enrollment validation for students
         if (isStudent) {
             setEnrollmentTouched(true);
             const enrErr = validateEnrollment(enrollmentNumber);
@@ -112,7 +106,6 @@ const Login = () => {
         }
     }, [email, password, enrollmentNumber, isStudent, login, navigate]);
 
-    // Shared input class builder
     const inputClass = (hasError: boolean) =>
         `block w-full pl-11 pr-4 py-3 bg-[var(--bg-input)] border rounded-xl text-[var(--text-primary)] font-medium placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 transition-all text-sm ${
             hasError
@@ -123,7 +116,6 @@ const Login = () => {
     return (
         <div className="min-h-screen w-full flex bg-transparent relative overflow-hidden font-sans">
             <div className="flex w-full z-10">
-                {/* Left Panel */}
                 <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden">
                     <div className="relative z-10 flex flex-col h-full">
                         <FadeIn delay={0.1} direction="up">
@@ -155,7 +147,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Right Panel — Form */}
                 <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-16 relative">
                     <FadeIn delay={0.3} direction="up" className="w-full max-w-md">
                         <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-5 sm:p-8 md:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
@@ -167,7 +158,6 @@ const Login = () => {
                                 <p className="text-sm text-[var(--text-muted)]">Welcome back to Campus Bites</p>
                             </div>
 
-                            {/* Role selector */}
                             <div className="mb-6">
                                 <p className="text-sm font-medium text-[var(--text-secondary)] mb-2">Sign in as<span className="ml-1 text-red-500">*</span></p>
                                 <div className="grid grid-cols-2 gap-3">
@@ -215,7 +205,6 @@ const Login = () => {
                                 )}
 
                                 <div className="space-y-4">
-                                    {/* Email */}
                                     <div>
                                         <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Email<span className="ml-1 text-red-500">*</span></label>
                                         <div className="relative">
@@ -231,7 +220,6 @@ const Login = () => {
                                         </div>
                                     </div>
 
-                                    {/* Password */}
                                     <div>
                                         <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">Password<span className="ml-1 text-red-500">*</span></label>
                                         <div className="relative">
@@ -247,7 +235,6 @@ const Login = () => {
                                         </div>
                                     </div>
 
-                                    {/* Enrollment Number — Students only */}
                                     {isStudent && (
                                         <div>
                                             <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">

@@ -37,31 +37,25 @@ const AdminDashboard = () => {
     const { user: currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState<'outlets' | 'users' | 'orders' | 'announcements' | 'reviews'>('outlets');
 
-    // Existing Outlet State
     const [outlets, setOutlets] = useState<Outlet[]>([]);
     const [outletStats, setOutletStats] = useState<Record<string, OutletStats>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    // User Management State
     const [users, setUsers] = useState<any[]>([]);
     const [userSearch, setUserSearch] = useState('');
     const [isUsersLoading, setIsUsersLoading] = useState(false);
 
-    // Global Order State
     const [globalOrders, setGlobalOrders] = useState<any[]>([]);
     const [orderHeatmap, setOrderHeatmap] = useState<any[]>([]);
     const [isOrdersLoading, setIsOrdersLoading] = useState(false);
 
-    // Announcements State
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [newAnnouncement, setNewAnnouncement] = useState({ title: '', message: '', target_role: 'all' });
 
-    // Review Moderation State
     const [reviews, setReviews] = useState<any[]>([]);
     const [isReviewsLoading, setIsReviewsLoading] = useState(false);
 
-    // Bulk user actions
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [orderSearch, setOrderSearch] = useState('');
 
@@ -119,7 +113,6 @@ const AdminDashboard = () => {
         if (selectedUsers.size === 0) { showToast('Select at least one user', 'error'); return; }
         const field = (action === 'ban' || action === 'unban') ? 'is_banned' : 'is_frozen';
         const value = action === 'ban' || action === 'freeze';
-        // Never apply bulk actions to admin accounts
         const safeIds = [...selectedUsers].filter((id: string) => {
             const u = users.find((u: any) => u.id === id);
             return u && u.role !== 'admin';
@@ -399,14 +392,12 @@ const AdminDashboard = () => {
                                     <FiUsers className="text-brand-600 dark:text-brand-400 w-4 h-4" />
                                     <span>{users.length} Total Registered Users</span>
                                 </div>
-                                {/* Export CSV */}
                                 <button
                                     onClick={exportUsersCSV}
                                     className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white text-xs font-bold rounded-xl  transition-all shadow-md group-"
                                 >
                                     <FiDownload className="w-4 h-4" /> Export CSV
                                 </button>
-                                {/* Bulk Actions */}
                                 {selectedUsers.size > 0 && (
                                     <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
                                         <span className="text-xs font-black text-amber-700">{selectedUsers.size} selected</span>
@@ -568,7 +559,6 @@ const AdminDashboard = () => {
                 );
                 return (
                     <div className="space-y-12 animate-none">
-                        {/* Heatmap Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                             <div className="lg:col-span-8">
                                 <div className="card-modern p-8 h-full">
@@ -650,7 +640,6 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Global Order Search + Recent Orders List */}
                         <div className="space-y-6">
                             <div className="flex items-center gap-4">
                                 <h3 className="text-xl font-bold flex items-center">
@@ -904,7 +893,6 @@ const AdminDashboard = () => {
             default:
                 return (
                     <div className="animate-none">
-                        {/* Stats Overview */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
                             <div className="card-modern relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full -translate-y-16 translate-x-16 transition-all duration-150"></div>
@@ -939,7 +927,6 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Original Outlet Directory Logic */}
                         <div className="mb-24">
                             <div className="flex justify-between items-end mb-8 border-b border-[var(--border-color)] pb-4">
                                 <h2 className="text-xl font-bold flex items-center text-[var(--text-primary)]">
@@ -955,7 +942,6 @@ const AdminDashboard = () => {
                                 )}
                             </div>
 
-                            {/* Add Outlet Form */}
                             {isAdding && (
                                 <div className="card-modern mb-16 animate-none p-8">
                                     <div className="flex items-center justify-between mb-8">
@@ -1002,7 +988,6 @@ const AdminDashboard = () => {
                                 </div>
                             )}
 
-                            {/* Outlet Cards Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {(() => {
                                     const topOutletId = outlets.length > 0
@@ -1080,7 +1065,6 @@ const AdminDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Admin Analytics Section */}
                         {outlets.length > 0 && Object.keys(outletStats).length > 0 && (
                             <div className="mt-32">
                                 <div className="flex items-center space-x-3 mb-12 border-b border-[var(--border-color)] pb-4">
@@ -1133,7 +1117,6 @@ const AdminDashboard = () => {
 
     return (
         <div className="animate-none pb-32 pt-12 md:pt-16">
-            {/* Header */}
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10 mb-12 border-b-8 border-brand-500 pb-12">
                 <div className="space-y-6">
                     <div className="flex items-center space-x-4">
@@ -1158,7 +1141,6 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Tab Navigation */}
             <div className="flex flex-wrap items-center gap-4 mb-20 p-2 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-color)]">
                 <button
                     onClick={() => setActiveTab('outlets')}
@@ -1192,7 +1174,6 @@ const AdminDashboard = () => {
                 </button>
             </div>
 
-            {/* Main Content Area */}
             {renderTabContent()}
 
             <div className="mt-20 pt-12 border-t border-[var(--border-color)]">
@@ -1202,7 +1183,6 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Settings Modal */}
             {selectedOutlet && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-none" onClick={() => setSelectedOutlet(null)}>
                     <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-none" onClick={e => e.stopPropagation()}>
@@ -1296,7 +1276,6 @@ const AdminDashboard = () => {
                 </div>
             )}
 
-            {/* System Settings Modal */}
             {isSettingsModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-[var(--bg-card)]/80 backdrop-blur-sm" onClick={() => setIsSettingsModalOpen(false)}></div>
