@@ -165,9 +165,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Navigate</h4>
                             <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
-                                <li><Link to="/" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Daily Feed</Link></li>
-                                <li><Link to="/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">History</Link></li>
-                                <li><Link to="/leaderboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">ELITE Board</Link></li>
+                                {(!user || user?.role === 'STUDENT') && (
+                                    <>
+                                        <li><Link to="/" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Daily Feed</Link></li>
+                                        <li><Link to="/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">History</Link></li>
+                                        <li><Link to="/leaderboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">ELITE Board</Link></li>
+                                    </>
+                                )}
+                                {user?.role === 'SHOP_OWNER' && (
+                                    <>
+                                        <li><Link to="/owner/dashboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Dashboard</Link></li>
+                                        <li><Link to="/owner/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Order History</Link></li>
+                                    </>
+                                )}
+                                {user?.role === 'ADMIN' && (
+                                    <>
+                                        <li><Link to="/admin/dashboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Admin Console</Link></li>
+                                    </>
+                                )}
                             </ul>
                         </div>
 
