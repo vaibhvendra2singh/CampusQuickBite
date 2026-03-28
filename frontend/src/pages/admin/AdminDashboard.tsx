@@ -174,7 +174,14 @@ const AdminDashboard = () => {
                         api.get(`/menu/outlet/${outlet.id}`),
                         api.get(`/orders/outlet/${outlet.id}`).catch(() => ({ data: [] })),
                     ]);
-                    const orders = ordersRes.data || [];
+                    
+                    const allOrders = ordersRes.data || [];
+                    const resetAt = (outlet as any).insights_reset_at ? new Date((outlet as any).insights_reset_at) : null;
+                    
+                    const orders = resetAt 
+                        ? allOrders.filter((o: any) => new Date(o.createdAt || o.created_at || 0) > resetAt)
+                        : allOrders;
+
                     statsMap[outlet.id] = {
                         menuItems: menuRes.data?.length || 0,
                         totalOrders: orders.length,
