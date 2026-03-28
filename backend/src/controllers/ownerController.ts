@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
+import { cacheDel, CacheKey } from '../services/cacheService';
 
 const getOwnerOutlet = async (ownerId: string) => {
     const { data, error } = await supabase
@@ -33,6 +34,8 @@ export const resetInsights = async (req: AuthRequest, res: Response): Promise<vo
             console.error('Failed to update insights_reset_at:', updateError);
             res.status(500).json({ error: 'Failed to apply reset.' }); return;
         }
+
+        await cacheDel(CacheKey.outlets(), CacheKey.outletById(outlet.id));
 
         res.status(200).json({
             success: true,
