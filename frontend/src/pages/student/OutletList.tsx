@@ -62,30 +62,29 @@ const getVendorImage = (outletName: string, id: number | string) => {
 };
 
 const CategoryPill = ({ category, isSelected, onClick, index }: { category: { name: string, icon: string, color: string }, isSelected: boolean, onClick: () => void, index: number }) => {
-    // Adding slight asymmetry and varied sizing based on index
     const isOdd = index % 2 !== 0;
     return (
         <button
             onClick={onClick}
-            className={`flex items-center gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-card)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)]  text-[var(--text-primary)] '} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-3 px-6' : 'rounded-[2rem] rounded-bl-lg py-2.5 px-5'}`}
+            className={`flex items-center gap-2 sm:gap-3 transition-all duration-150 ease-[cubic-bezier(0.25,1,0.5,1)] flex-shrink-0 group/cat border-2 ${isSelected ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-card)] shadow-md rotate-1' : 'border-transparent bg-[var(--bg-card)]  text-[var(--text-primary)] '} ${isOdd ? 'rounded-[2rem] rounded-tr-lg py-2 sm:py-3 px-4 sm:px-6' : 'rounded-[2rem] rounded-bl-lg py-2 sm:py-2.5 px-3 sm:px-5'}`}
         >
-            <span className={`flex items-center justify-center w-10 h-10 rounded-full ${isSelected ? 'bg-[var(--bg-card)]/20' : category.color} text-xl transition-all group-hover/cat:scale-110`}>
+            <span className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full ${isSelected ? 'bg-[var(--bg-card)]/20' : category.color} text-lg sm:text-xl transition-all group-hover/cat:scale-110`}>
                 {category.icon}
             </span>
-            <span className={`font-semibold text-lg tracking-tight ${isSelected ? 'text-[var(--bg-card)]' : 'text-[var(--text-secondary)] group-hover/cat:text-[var(--text-primary)]'}`}>{category.name}</span>
+            <span className={`font-semibold text-sm sm:text-lg tracking-tight ${isSelected ? 'text-[var(--bg-card)]' : 'text-[var(--text-secondary)] group-hover/cat:text-[var(--text-primary)]'}`}>{category.name}</span>
         </button>
     );
 };
 
 const CategoryGallery = ({ selectedCategory, onSelectCategory }: { selectedCategory: string | null, onSelectCategory: (name: string) => void }) => {
     return (
-        <div className="relative mb-16 px-4 md:px-0 mt-8">
-            <div className="max-w-xl mb-6">
-                <h2 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight font-heading">What are you craving?</h2>
-                <p className="text-[var(--text-muted)] text-lg mt-2 font-medium leading-relaxed">Pick a mood, we'll find the food. No rushing, just browsing.</p>
+        <div className="relative mb-10 sm:mb-16 px-2 sm:px-4 md:px-0 mt-6 sm:mt-8">
+            <div className="max-w-xl mb-4 sm:mb-6">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight font-heading">What are you craving?</h2>
+                <p className="text-[var(--text-muted)] text-base sm:text-lg mt-2 font-medium leading-relaxed">Pick a mood, we'll find the food.</p>
             </div>
 
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="flex flex-wrap gap-2 sm:gap-4 pt-2">
                 {CATEGORIES.map((cat, idx) => (
                     <CategoryPill
                         key={cat.name}
@@ -170,10 +169,10 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
 
 const CompactRestaurantList = ({ outlets, title, description }: { outlets: Outlet[], title: string, description?: string }) => {
     return (
-        <div className="mb-24 mt-16 max-w-4xl mx-auto px-4 md:px-0">
-            <div className="mb-10">
-                <h2 className="text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight">{title}</h2>
-                {description && <p className="text-lg text-[var(--text-secondary)]">{description}</p>}
+        <div className="mb-16 sm:mb-24 mt-10 sm:mt-16 max-w-4xl mx-auto px-2 sm:px-4 md:px-0">
+            <div className="mb-6 sm:mb-10">
+                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight">{title}</h2>
+                {description && <p className="text-base sm:text-lg text-[var(--text-secondary)]">{description}</p>}
             </div>
 
             <div className="flex flex-col gap-5">
@@ -316,34 +315,34 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
     return (
         <>
-            <div className="relative min-h-[85vh] flex flex-col justify-center px-4 md:px-8 max-w-7xl mx-auto z-10 overscroll-none">
+            <div className="relative min-h-[80vh] sm:min-h-[85vh] flex flex-col justify-center px-4 sm:px-6 md:px-8 max-w-7xl mx-auto z-10 overscroll-none py-8 sm:py-0">
                 <FadeIn delay={0.1}>
-                    <h1 className="text-massive text-[var(--text-primary)] mb-6 drop-shadow-lg">
+                    <h1 className="text-[clamp(2.5rem,10vw,7rem)] font-black text-[var(--text-primary)] mb-4 sm:mb-6 drop-shadow-lg leading-[0.95] tracking-tight">
                         Bigger<br/>than hunger.
                         <span className="block text-brand-500 opacity-100 mt-2 drop-shadow-md">Closer than a line.</span>
                     </h1>
                 </FadeIn>
                 
                 <FadeIn delay={0.3}>
-                    <p className="text-fluid-large text-[var(--text-primary)] mb-12 max-w-3xl font-bold drop-shadow-md">
+                    <p className="text-base sm:text-lg md:text-xl text-[var(--text-primary)] mb-8 sm:mb-12 max-w-3xl font-bold drop-shadow-md">
                         Connect with campus vendors so your food is ready when you are.
                     </p>
                 </FadeIn>
 
                 <FadeIn delay={0.5} className="w-full max-w-2xl relative z-20">
-                    <div className="relative flex items-center bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-[2.5rem] p-2 shadow-2xl focus-within:ring-4 focus-within:ring-brand-500/20 transition-all duration-300 transform ">
-                        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-brand-500 text-white ml-2 shadow-lg">
-                            <FiSearch className="w-6 h-6" />
+                    <div className="relative flex items-center bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-[2rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl focus-within:ring-4 focus-within:ring-brand-500/20 transition-all duration-300">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-brand-500 text-white ml-1 sm:ml-2 shadow-lg flex-shrink-0">
+                            <FiSearch className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
                         <input
                             type="text"
-                            placeholder="Craving a burger? Feeling like tea?"
+                            placeholder="Craving something? Search here..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] px-6 py-5 text-xl font-bold"
+                            className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] px-3 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold"
                         />
                         {searchTerm && (
-                            <button onClick={() => setSearchTerm('')} className="pr-6 text-[var(--text-muted)]  transition-colors font-bold uppercase tracking-widest text-sm">
+                            <button onClick={() => setSearchTerm('')} className="pr-4 sm:pr-6 text-[var(--text-muted)] transition-colors font-bold uppercase tracking-widest text-xs sm:text-sm flex-shrink-0">
                                 Clear
                             </button>
                         )}
@@ -372,7 +371,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             </div>
 
             <FadeIn delay={0.2} direction="up" fullWidth>
-                <div className="max-w-7xl mx-auto px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem] pt-20 pb-10 mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem] pt-12 sm:pt-16 md:pt-20 pb-8 sm:pb-10 mt-8 sm:mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
                     <CategoryGallery
                         selectedCategory={selectedCategory}
                         onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
@@ -382,9 +381,9 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 
             {topFoodItems.length > 0 && (
                 <FadeIn delay={0.1} fullWidth>
-                    <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6 mb-6 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem] py-10">
-                        <div className="mb-12">
-                            <h2 className="text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 mt-4 sm:mt-6 mb-4 sm:mb-6 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem] py-8 sm:py-10">
+                        <div className="mb-8 sm:mb-12">
+                            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
                         </div>
 
                         <div className="flex gap-6 w-full overflow-x-auto pb-12 pt-4 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 -mx-4">
@@ -399,7 +398,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
             )}
 
             <FadeIn delay={0.1} fullWidth>
-                <div ref={resultsRef} className="max-w-7xl mx-auto px-4 md:px-8 mt-6 pb-32 pt-16 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[4rem]">
+                <div ref={resultsRef} className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 mt-4 sm:mt-6 pb-20 sm:pb-32 pt-10 sm:pt-16 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem]">
                     <CompactRestaurantList
                         outlets={gridOutlets}
                         title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}

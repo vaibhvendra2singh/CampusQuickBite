@@ -203,9 +203,9 @@ const Register = () => {
                 </div>
 
                 {/* Left Panel — Form */}
-                <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 relative">
+                <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-16 relative">
                     <FadeIn delay={0.3} direction="up" className="w-full max-w-md">
-                        <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
+                        <div className="bg-[var(--glass-bg)] backdrop-blur-2xl p-5 sm:p-8 md:p-10 rounded-[2rem] sm:rounded-[2.5rem] border border-[var(--glass-border)] shadow-2xl">
                             <div className="mb-10">
                                 <div className="lg:hidden mb-6 mx-auto text-center" style={{ fontSize: '1.1rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
                                     <span style={{ color: 'var(--color-brand-500)' }}>Campus</span>Bites

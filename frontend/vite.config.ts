@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    react()
+    react(),
   ],
   build: {
     minify: 'terser',
@@ -24,7 +24,7 @@ export default defineConfig({
     }
   },
   server: {
-    host: true, // Listen on all network interfaces
+    host: true,
     port: 5173,
     proxy: {
       '/api': {
@@ -39,3 +39,4 @@ export default defineConfig({
     }
   }
 })
+

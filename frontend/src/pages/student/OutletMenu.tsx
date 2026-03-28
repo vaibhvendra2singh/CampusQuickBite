@@ -224,7 +224,7 @@ const OutletMenu = () => {
     const hasActiveFilters = searchQuery || activeFilters.length > 0 || showFavsOnly || priceSort !== 'none';
 
     return (
-        <div className="max-w-6xl mx-auto animate-none relative pb-48 px-6">
+        <div className="max-w-6xl mx-auto animate-none relative pb-32 sm:pb-48 px-3 sm:px-5 md:px-6">
             {/* Minimalist Navigation */}
             <div className="mb-10">
                 <Link to="/restaurants" className="group inline-flex items-center text-[var(--text-muted)]  transition-all font-bold text-sm">
@@ -245,7 +245,7 @@ const OutletMenu = () => {
 
             {/* Refined Outlet Header */}
             <FadeIn delay={0.1}>
-            <div className="relative mb-20 mt-4 p-8 md:p-12 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl rounded-[3.5rem] border border-[var(--border-color)] shadow-sm overflow-hidden">
+            <div className="relative mb-12 sm:mb-16 md:mb-20 mt-4 p-5 sm:p-8 md:p-12 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] sm:rounded-[3.5rem] border border-[var(--border-color)] shadow-sm overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/5 rounded-full -translate-y-32 translate-x-32 blur-3xl"></div>
                 <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl"></div>
                 <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-10">
@@ -254,7 +254,7 @@ const OutletMenu = () => {
                             <div className="flex md:hidden w-12 h-12 bg-brand-500 text-white items-center justify-center text-xl font-black rounded-2xl shadow-xl shadow-brand-500/20">
                                 {outlet?.name.charAt(0)}
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] leading-none">{outlet?.name}</h2>
+                            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-[var(--text-primary)] leading-none">{outlet?.name}</h2>
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3 mb-8">
@@ -281,7 +281,7 @@ const OutletMenu = () => {
                         </div>
 
                         {/* Crowdsourcing Wait Time UI */}
-                        <div className="p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[2rem] shadow-sm max-w-sm">
+                    <div className="p-4 sm:p-6 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[1.5rem] sm:rounded-[2rem] shadow-sm max-w-sm">
                             <p className="text-[10px] font-black text-brand-600 dark:text-brand-400 uppercase tracking-widest mb-4">How's the queue?</p>
                             <div className="flex items-center gap-3">
                                 <button onClick={() => handleReportStatus('FAST')} className={`flex-1 py-3 border-2 rounded-2xl text-xs font-black uppercase tracking-wider transition-all ${outlet?.current_status === 'FAST' ? 'bg-green-500/10 border-green-500 text-green-600 dark:text-green-400' : 'border-[var(--border-color)] text-[var(--text-secondary)]  '}`}>FAST</button>
@@ -299,7 +299,7 @@ const OutletMenu = () => {
             </FadeIn>
 
             {/* 🔍 Search Bar */}
-            <div className="mb-12 relative max-w-2xl">
+            <div className="mb-8 sm:mb-12 relative max-w-2xl">
                 <div className="relative flex-1">
                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] w-4.5 h-4.5" />
                     <input type="text" placeholder="Search menu..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-11 pr-4 py-3 bg-[var(--bg-card)] border border-[var(--border-color)] focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 rounded-xl outline-none transition-all font-medium text-[var(--text-primary)] placeholder:text-[var(--text-muted)] text-sm" />
@@ -312,7 +312,7 @@ const OutletMenu = () => {
             </div>
 
             {/* 🍱 Filter Section */}
-            <div className="mb-16">
+            <div className="mb-10 sm:mb-16">
                 <div className="flex items-center justify-between mb-4">
                     <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -431,7 +431,7 @@ const OutletMenu = () => {
                                 <div className="h-0.5 bg-[var(--border-color)] flex-1 ml-8 opacity-40"></div>
                             </div>
                         )}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
                             {items.map((item, index) => (
                                 <FadeIn key={item.id} delay={index < 6 ? 0.05 * (index % 3) : 0} direction="up" className="h-full contain-paint">
                                 <div className={`contain-content group h-full bg-[var(--glass-bg)] backdrop-blur-md rounded-[2rem] border border-[var(--glass-border)] overflow-hidden flex flex-col transition-colors duration-200 ${!item.availability ? 'opacity-40 grayscale pointer-events-none' : ''}`}>

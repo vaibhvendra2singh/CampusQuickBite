@@ -220,12 +220,32 @@ body {
 .human-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .human-container {
+    padding: 0 1.5rem;
+  }
 }
 
 .section-spacing {
-  padding-top: 5rem;
-  padding-bottom: 6.5rem;
+  padding-top: 3.5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 640px) {
+  .section-spacing {
+    padding-top: 4.5rem;
+    padding-bottom: 6rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .section-spacing {
+    padding-top: 5rem;
+    padding-bottom: 6.5rem;
+  }
 }
 
 /* ====== TYPOGRAPHY ====== */
@@ -379,6 +399,15 @@ img {
   .nav-icon-btn {
     padding: 1rem;
   }
+}
+
+/* Hide scrollbar utility */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* ====== BUTTONS ====== */

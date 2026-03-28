@@ -56,17 +56,17 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
 
     return (
         <header
-            className="fixed top-6 md:top-10 left-1/2 -translate-x-1/2 z-[60] w-[95%] max-w-5xl px-3 py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2.5rem] transition-all duration-300 flex items-center justify-between gap-4 md:gap-8"
+            className="fixed top-4 md:top-8 left-1/2 -translate-x-1/2 z-[60] w-[96%] max-w-5xl px-2 sm:px-3 py-2 sm:py-3 bg-[var(--glass-bg)] backdrop-blur-3xl border border-[var(--glass-border)] rounded-[2rem] sm:rounded-[2.5rem] transition-all duration-300 flex items-center justify-between gap-2 md:gap-8"
             style={{ boxShadow: '0 4px 24px rgba(37,99,235,0.10), 0 1px 4px rgba(37,99,235,0.06)' }}
         >
             <Link
                 to="/"
-                className="flex items-center gap-0.5 px-3 py-1.5 rounded-xl flex-shrink-0 select-none"
+                className="flex items-center gap-0.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl flex-shrink-0 select-none"
                 style={{
                     background: 'rgba(37,99,235,0.08)',
                     border: '1px solid rgba(37,99,235,0.18)',
                     fontWeight: 900,
-                    fontSize: '1rem',
+                    fontSize: '0.9rem',
                     letterSpacing: '-0.03em',
                 }}
             >
@@ -75,25 +75,25 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
             </Link>
 
             {user?.role === 'STUDENT' && (
-                <div className="flex items-center gap-2 md:gap-3 overflow-x-auto hide-scrollbar flex-1 justify-center">
-                    <Link to="/" className="nav-icon-btn" title="Board">
-                        <FiServer className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-1 justify-center min-w-0">
+                    <Link to="/" className="nav-icon-btn !p-2 sm:!p-2.5" title="Board">
+                        <FiServer className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
-                    <Link to="/restaurants" className="nav-icon-btn" title="Explore">
-                        <FiCompass className="w-5 h-5 md:w-6 md:h-6" />
+                    <Link to="/restaurants" className="nav-icon-btn !p-2 sm:!p-2.5" title="Explore">
+                        <FiCompass className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
-                    <Link to="/orders/history" className="nav-icon-btn" title="History">
-                        <FiShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
+                    <Link to="/orders/history" className="nav-icon-btn !p-2 sm:!p-2.5" title="History">
+                        <FiShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
                     </Link>
-                    <Link to="/leaderboard" className="nav-icon-btn text-amber-500" title="Elite">
-                        <FiAward className="w-5 h-5 md:w-6 md:h-6" />
-                        <div className="absolute top-0 right-0 w-2.5 h-2.5 bg-amber-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse-subtle"></div>
+                    <Link to="/leaderboard" className="nav-icon-btn !p-2 sm:!p-2.5 text-amber-500" title="Elite">
+                        <FiAward className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full border border-white dark:border-slate-900 animate-pulse-subtle"></div>
                     </Link>
-                    <Link to="/cart" className="flex items-center gap-3 px-6 py-3.5 md:py-4 bg-brand-500 rounded-full text-white font-black text-sm shadow-xl shadow-brand-500/30 mx-2 relative transition-transform flex-shrink-0">
-                        <FiShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
-                        <span className="hidden md:inline uppercase tracking-widest text-xs">Checkout</span>
+                    <Link to="/cart" className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2.5 sm:py-3 md:py-4 bg-brand-500 rounded-full text-white font-black text-xs sm:text-sm shadow-xl shadow-brand-500/30 mx-1 relative transition-transform flex-shrink-0">
+                        <FiShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span className="hidden sm:inline uppercase tracking-widest text-[10px] sm:text-xs">Cart</span>
                         {items.length > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 w-6 h-6 md:w-7 md:h-7 bg-red-600 border-2 border-[var(--bg-card)] text-white text-[10px] md:text-xs font-black flex items-center justify-center rounded-full shadow-lg">
+                            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 sm:w-6 sm:h-6 bg-red-600 border-2 border-[var(--bg-card)] text-white text-[9px] sm:text-[10px] font-black flex items-center justify-center rounded-full shadow-lg">
                                 {items.length}
                             </span>
                         )}
@@ -104,26 +104,26 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
                 </div>
             )}
 
-            <div className="flex items-center gap-2 bg-[var(--nav-pill-bg)] p-1.5 md:p-2 rounded-[2rem] shadow-sm border border-[var(--glass-border)] flex-shrink-0 mr-1">
-                <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 md:p-3 rounded-full text-[var(--text-secondary)] bg-[var(--bg-card)] shadow-sm transition-transform" title="Shift View">
-                    {darkMode ? <FiSun className="w-5 h-5" /> : <FiMoon className="w-5 h-5" />}
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-[var(--nav-pill-bg)] p-1 sm:p-1.5 md:p-2 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-[var(--glass-border)] flex-shrink-0">
+                <button onClick={() => setDarkMode(!darkMode)} className="p-2 sm:p-2.5 rounded-full text-[var(--text-secondary)] bg-[var(--bg-card)] shadow-sm transition-transform" title="Shift View">
+                    {darkMode ? <FiSun className="w-4 h-4 sm:w-5 sm:h-5" /> : <FiMoon className="w-4 h-4 sm:w-5 sm:h-5" />}
                 </button>
 
                 {user ? (
-                    <div className="flex items-center gap-1.5">
-                        <button onClick={() => setIsProfileOpen(true)} className="w-10 h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-brand-500/10 border-2 border-[var(--bg-card)] shadow-sm flex items-center justify-center transition-transform">
+                    <div className="flex items-center gap-1">
+                        <button onClick={() => setIsProfileOpen(true)} className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden bg-brand-500/10 border-2 border-[var(--bg-card)] shadow-sm flex items-center justify-center transition-transform">
                             {user?.profilePic ? (
                                 <img src={user.profilePic} alt={user?.name || ''} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
-                                <FiUser className="text-brand-600 dark:text-brand-400 w-5 h-5" />
+                                <FiUser className="text-brand-600 dark:text-brand-400 w-4 h-4" />
                             )}
                         </button>
-                        <button onClick={logout} className="p-2.5 md:p-3 text-red-500 rounded-full bg-[var(--bg-card)] shadow-sm transition-transform pr-3 bg-red-50 dark:bg-red-500/10" title="Exit">
-                            <FiLogOut className="w-5 h-5" />
+                        <button onClick={logout} className="p-2 sm:p-2.5 text-red-500 rounded-full bg-[var(--bg-card)] shadow-sm transition-transform bg-red-50 dark:bg-red-500/10" title="Exit">
+                            <FiLogOut className="w-4 h-4" />
                         </button>
                     </div>
                 ) : (
-                    <Link to="/login" className="px-6 py-2.5 md:py-3 bg-slate-950 dark:bg-white text-white dark:text-slate-950 rounded-full font-black text-sm uppercase tracking-widest shadow-lg ml-2">Join In</Link>
+                    <Link to="/login" className="px-3 sm:px-5 py-2 sm:py-2.5 bg-slate-950 dark:bg-white text-white dark:text-slate-950 rounded-full font-black text-xs sm:text-sm uppercase tracking-widest shadow-lg">Join</Link>
                 )}
             </div>
             
@@ -141,7 +141,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
             <Header darkMode={isDark} setDarkMode={toggleTheme} />
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-6 md:px-12 pt-32 pb-16 relative z-10 transition-all duration-150">
+            <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 md:px-12 pt-24 sm:pt-28 md:pt-32 pb-16 relative z-10 transition-all duration-150">
                 {children}
             </main>
 
@@ -153,24 +153,24 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             )}
 
             {/* Footer */}
-            <footer className="py-12 bg-[var(--bg-body)] border-t-[8px] border-brand-500 relative z-20">
-                <div className="max-w-7xl mx-auto px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <footer className="py-10 md:py-12 bg-[var(--bg-body)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-12">
                         {/* Brand Column */}
-                        <div className="md:col-span-2">
-                            <div className="flex items-center space-x-4 mb-8">
-                                <div className="w-12 h-12 bg-brand-500 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-brand-500/20">C</div>
-                                <span className="text-3xl font-black text-[var(--text-primary)] tracking-tighter">Campus Bites</span>
+                        <div className="sm:col-span-2">
+                            <div className="flex items-center space-x-3 mb-5 md:mb-8">
+                                <div className="w-10 h-10 md:w-12 md:h-12 bg-brand-500 rounded-xl md:rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl shadow-xl shadow-brand-500/20">C</div>
+                                <span className="text-2xl md:text-3xl font-black text-[var(--text-primary)] tracking-tighter">Campus Bites</span>
                             </div>
-                            <p className="text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
-                                We believe campus dining should be smooth. Skip the queues, grab your meal, and get back to what matters. Handcrafted for Bennett.
+                            <p className="text-base md:text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
+                                We believe campus dining should be smooth. Skip the queues, grab your meal, and get back to what matters.
                             </p>
                         </div>
 
                         {/* Navigation */}
                         <div>
-                            <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-8 opacity-80">Navigate</h4>
-                            <ul className="space-y-4 text-base text-[var(--text-primary)] font-bold">
+                            <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Navigate</h4>
+                            <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
                                 <li><Link to="/" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Daily Feed</Link></li>
                                 <li><Link to="/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">History</Link></li>
                                 <li><Link to="/leaderboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">ELITE Board</Link></li>
@@ -179,8 +179,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
                         {/* Help & Legal */}
                         <div>
-                            <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-8 opacity-80">Support</h4>
-                            <ul className="space-y-4 text-base text-[var(--text-primary)] font-bold">
+                            <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Support</h4>
+                            <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
                                 <li><Link to="/help" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Get Help</Link></li>
                                 <li><Link to="/contact" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Talk to us</Link></li>
                                 <li><Link to="/privacy" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Privacy</Link></li>
@@ -189,9 +189,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                         </div>
                     </div>
 
-                    <div className="pt-10 border-t border-[var(--border-color)] flex flex-col md:flex-row items-center justify-between gap-6">
-                        <p className="text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} Campus Bites. All rights to your appetite.</p>
-                        <div className="flex items-center space-x-3 bg-[var(--bg-card)] px-5 py-2.5 rounded-2xl border border-[var(--border-color)]">
+                    <div className="pt-8 md:pt-10 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
+                        <p className="text-xs sm:text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} Campus Bites. All rights to your appetite.</p>
+                        <div className="flex items-center space-x-3 bg-[var(--bg-card)] px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl border border-[var(--border-color)]">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                             <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none">Kitchens are Live</p>
                         </div>

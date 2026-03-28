@@ -31,6 +31,9 @@ echo ""
 # ── 1. Cleanup ───────────────────────────────────────────────
 step "›" "Cleaning up stale processes on ports 5001, 3000, 5173..."
 lsof -ti:5001,3000,5173 | xargs kill -9 2>/dev/null || true
+pkill -9 -f "nodemon" 2>/dev/null || true
+pkill -9 -f "ts-node src/index" 2>/dev/null || true
+sleep 1
 ok "Ports cleared"
 
 # ── 2. Environment ───────────────────────────────────────────
