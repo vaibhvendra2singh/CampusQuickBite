@@ -75,6 +75,8 @@ router.post('/', validate(z.object({ body: createOrderSchema })), createOrder as
  *             schema:
  *               $ref: '#/components/schemas/SuccessResponse'
  */
+router.get('/user/:userId', getOrdersByUser as any);
+
 router.get('/:id', validate(z.object({ params: z.object({ id: z.string() }) })), getOrderById as any);
 router.get('/:id/receipt-image', generateReceiptImage as any);
 router.get('/:id/token', requireRole(['student', 'admin']) as any, generateOrderToken as any);

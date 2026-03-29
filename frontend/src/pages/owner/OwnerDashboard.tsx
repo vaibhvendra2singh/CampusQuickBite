@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/context/AuthContext';
-import { FiCheck, FiMenu, FiClock, FiDollarSign, FiBarChart2, FiMaximize, FiX, FiActivity, FiAlertCircle, FiRefreshCw, FiTrendingUp, FiBell, FiBellOff, FiPrinter, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { FiCheck, FiMenu, FiClock, FiDollarSign, FiBarChart2, FiMaximize, FiX, FiActivity, FiAlertCircle, FiRefreshCw, FiTrendingUp, FiBell, FiBellOff, FiPrinter, FiTrash2, FiMessageSquare, FiMonitor } from 'react-icons/fi';
 import { useToast } from '../../hooks/context/ToastContext';
 import { Html5Qrcode } from 'html5-qrcode';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -385,6 +385,12 @@ const OwnerDashboard = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-x-3 gap-y-5 lg:gap-x-4 lg:gap-y-5 w-full lg:w-auto">
+                    <Link
+                        to="/owner/kitchen"
+                        className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-slate-950 dark:bg-slate-900 border border-slate-800 text-white rounded-xl text-xs font-semibold transition-all shadow-md"
+                    >
+                        <FiMonitor className="mr-2 w-4 h-4" /> Kitchen View
+                    </Link>
                     <Link
                         to={`/owner/menu/${outlet.id}`}
                         className="flex-1 lg:flex-none inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold   transition-all shadow-sm"

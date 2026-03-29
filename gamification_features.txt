@@ -1,0 +1,49 @@
+# Campus QuickBite - Gamification & Hidden Features Guide
+
+## 🕵️ Hidden Easter Eggs & Secret Badges
+
+1. Shadow Member Badge (👾) | +50 XP
+- How to get it: Type `/secret` directly into the browser's URL bar. This opens a hidden hacker terminal that runs a typing animation before granting the badge and triggering dark-themed confetti.
+
+2. Caffeine Addict Badge (☕) | +20 XP
+- How to get it: Navigate to the Terms of Service page and scroll all the way to the bottom. Inside the tiny, faded "blood-pact" text, the word "coffee" is clickable. Clicking it triggers a brown confetti explosion and unlocks the badge.
+
+3. Urban Explorer Badge (🚨) | +50 XP
+- How to get it: On the main restaurants page (`/`), type "Area 51", "classified", or "staff" into the main search bar. This spawns a hidden, glowing red "Area 51 Kitchen (Staff Only)" card. Clicking on it triggers a Matrix-style green rain effect and grants the badge.
+
+4. Arcade King Badge (🕹️) | +40 XP
+- How to get it: Scroll to the footer at the very bottom of the website and click the exact phrase: "All rights to your appetite." It triggers a neon firework display.
+
+5. Night Owl Badge (🌙) | +20 XP
+- How to get it: Have an empty cart and visit the `/cart` page strictly between 1:00 AM and 4:00 AM local time. A faint moon icon will appear in the bottom-right corner. Clicking it drops a starry-night confetti effect and awards the badge.
+
+6. The Glutton Badge (🍔) | +30 XP
+- How to get it: Add 10 or more items to your cart simultaneously and visit the Cart page. The system will say "We're gonna need a bigger tray..." and shower the screen in food-colored confetti.
+
+## 🎮 Mini-Game Badges (The Game Hub)
+
+7. Pro Gamer Badge (🏆) | +40 XP
+- How to get it: Achieve a score greater than 10 in any of the available mini-games (Snake, 2048, Flappy Bird, Breakout, etc.).
+
+8. The Gamer / Completionist Badge (🎮) | +100 XP
+- How to get it: Open and play every single one of the 6 mini-games in the Game Hub at least once. Triggers a massive, 3-second firework finale.
+
+## 🚀 Advanced Gamification & Technical Features
+
+9. The "Cyberpunk/Hacker" Theme (Visual & Audio) 🎧
+- Deep developer Easter egg. If a user opens their browser's Developer Console and types:
+  `document.body.classList.add('unlocked')`
+- Visually: The entire website instantly transforms into a glitchy, green/black matrix cyberpunk theme.
+- Audio: A hidden `MutationObserver` detects this class and immediately triggers an `AudioContext` synthesizer that plays a fast, buzzing cyberpunk arpeggio loop directly in the browser!
+
+10. The Multi-Tasking "Mini-OS" Game Hub 🖥️
+- Games spawn in movable, floating windows instead of simple modals. Users can open multiple games at once, drag them around, and play simultaneously while waiting for their order.
+
+11. The Secret Portal Button ⏱️
+- In the footer, the "Kitchens are Live" server status indicator is actually a portal. Double-clicking it instantly teleports the user to the hacker terminal (`/secret`).
+
+12. Completionist "Glow" Profile ✨
+- If a student collects all 8 badges, their profile card applies an exclusive `.animate-profile-glow` CSS class, making their profile physically pulse with a slow, breathing golden/rainbow aura on the Leaderboard.
+
+13. Dynamic Tier Hierarchy System 🏅
+- Tracks user tiers based on XP thresholds (Bronze -> Silver -> Gold -> Electric Blue). This determines their ranking color on the Elite Leaderboard, encouraging them to order more and play games to rank up.

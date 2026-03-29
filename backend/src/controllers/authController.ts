@@ -169,7 +169,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
                 role: displayRole(profileData.role),
                 phoneNumber: profileData.phone_number || '',
                 enrollmentNumber: finalEnrollment || '',
-                profilePic: profileData.profile_pic || ''
+                profilePic: profileData.profile_pic || '',
+                hasShadowBadge: profileData.has_shadow_badge || false,
+                hasCaffeineBadge: profileData.has_caffeine_badge || false,
+                hasGluttonBadge: profileData.has_glutton_badge || false,
+                hasNightOwlBadge: profileData.has_night_owl_badge || false,
+                hasArcadeBadge: profileData.has_arcade_badge || false,
+                hasExplorerBadge: profileData.has_explorer_badge || false,
+                hasProGamerBadge: profileData.has_pro_gamer_badge || false,
+                hasCompletionistBadge: profileData.has_completionist_badge || false,
+                xp: profileData.xp || 0,
+                tier: profileData.tier || 'BRONZE'
             }
         }, 'Login successful');
 

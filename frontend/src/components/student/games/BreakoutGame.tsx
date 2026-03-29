@@ -122,6 +122,7 @@ const BreakoutGame: React.FC = () => {
                         b.status = 0;
                         s.score++;
                         setScore(s.score);
+                        window.dispatchEvent(new CustomEvent('campus_bite_score', { detail: { score: s.score } }));
                         if (s.score === BRICK_ROWS * BRICK_COLS) {
                             setGameState('WON');
                         }

@@ -1,5 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
+import { sendPushNotification } from './pushService';
+import { supabase } from '../config/supabase';
 
 let io: SocketIOServer | null = null;
 
@@ -46,14 +48,40 @@ export const getIO = () => {
     return io;
 };
 
-export const notifyOrderUpdate = (userId: string, orderId: any, status: string) => {
+export const notifyOrderUpdate = async (userId: string, orderId: any, status: string) => {
+    const message = `Your order #${String(orderId).slice(-4)} is now ${status.toUpperCase()}!`;
+    
     if (io) {
         console.log(`Emitting order_update to user ${userId} for order ${orderId}`);
         io.to(userId).emit('order_update', {
             orderId,
             status,
-            message: `Your order #${orderId} is now ${status.toUpperCase()}!`
+            message
         });
+    }
+
+    try {
+        const { data: user } = await supabase
+            .from('users')
+            .select('push_subscription')
+            .eq('id', userId)
+            .single();
+
+        if (user && user.push_subscription) {
+            await sendPushNotification(user.push_subscription, {
+                title: 'Order Status Update',
+                body: message,
+                icon: '/icon-192x192.png',
+                badge: '/icon-192x192.png',
+                tag: 'order-update',
+                data: { url: '/orders' }
+            });
+            console.log(`Push notification sent to user ${userId}`);
+        }
+    } catch (err: any) {
+        if (!err.message?.includes('push_subscription')) {
+             console.error('Failed to send push notification:', err.message);
+        }
     }
 };
 

@@ -27,13 +27,16 @@ const OwnerDashboard = React.lazy(() => import('./pages/owner/OwnerDashboard'));
 const MenuManagement = React.lazy(() => import('./pages/owner/MenuManagement'));
 const OwnerAnalytics = React.lazy(() => import('./pages/owner/OwnerAnalytics'));
 const OwnerOrderHistory = React.lazy(() => import('./pages/owner/OwnerOrderHistory'));
+const KitchenDisplay = React.lazy(() => import('./pages/owner/KitchenDisplay'));
 
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 
 import { FiLogOut, FiUser, FiZap, FiShoppingBag, FiMoon, FiSun, FiShoppingCart, FiServer, FiAward, FiCompass } from 'react-icons/fi';
 import { useCart } from './hooks/context/CartContext';
-import { ToastProvider } from './hooks/context/ToastContext';
+import { ToastProvider, useToast } from './hooks/context/ToastContext';
 import { ThemeProvider, useTheme } from './hooks/context/ThemeContext';
+import api from './services/api';
+import confetti from 'canvas-confetti';
 import ProfileModal from './components/common/ProfileModal';
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
@@ -42,6 +45,8 @@ const ContactUs = React.lazy(() => import('./pages/public/ContactUs'));
 const PrivacyPolicy = React.lazy(() => import('./pages/public/PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('./pages/public/TermsOfService'));
 const GameHub = React.lazy(() => import('./components/student/GameHub'));
+const SecretPage = React.lazy(() => import('./pages/public/SecretPage'));
+const BadgeHints = React.lazy(() => import('./pages/public/BadgeHints'));
 
 import { useSocket } from './hooks/useSocket';
 
@@ -109,7 +114,18 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
 
                 {user ? (
                     <div className="flex items-center gap-1">
-                        <button onClick={() => setIsProfileOpen(true)} className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden bg-brand-500/10 border-2 border-[var(--bg-card)] shadow-sm flex items-center justify-center transition-transform">
+                        <button 
+                            onClick={(e) => {
+                                if (e.detail === 2) {
+                                    setIsProfileOpen(false);
+                                    window.location.href = '/hints';
+                                } else {
+                                    setIsProfileOpen(true);
+                                }
+                            }} 
+                            className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full overflow-hidden bg-brand-500/10 border-2 border-[var(--bg-card)] shadow-sm flex items-center justify-center transition-transform"
+                            title="Double click for intel"
+                        >
                             {user?.profilePic ? (
                                 <img src={user.profilePic} alt={user?.name || ''} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                             ) : (
@@ -135,6 +151,41 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
     useSocket(); // Initialize real-time listeners
 
+    const secretClicks = React.useRef(0);
+
+    const handleSecretClick = React.useCallback(() => {
+        secretClicks.current += 1;
+        if (secretClicks.current >= 2) {
+            window.location.href = '/secret';
+            secretClicks.current = 0; // reset just in case
+        }
+    }, []);
+
+    const [claimingArcade, setClaimingArcade] = React.useState(false);
+    const { showToast } = useToast();
+    const { updateUser } = useAuth();
+    
+    const handleArcadeClick = React.useCallback(async () => {
+        if (!user || user.role !== 'STUDENT' || user.hasArcadeBadge || claimingArcade) return;
+        setClaimingArcade(true);
+        try {
+            await api.post('/users/badge', { type: 'arcade' });
+            const end = Date.now() + 2000;
+            const colors = ['#ff007f', '#00e5ff', '#ffeb3b', '#cc00ff'];
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors: colors });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors: colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+            if (updateUser) updateUser({ ...user, hasArcadeBadge: true });
+            if (showToast) showToast('🕹️ Arcade King Badge Unlocked! (+40 XP)', 'success');
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setClaimingArcade(false);
+        }
+    }, [user, claimingArcade, showToast, updateUser]);
+
     return (
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
             <Header darkMode={isDark} setDarkMode={toggleTheme} />
@@ -149,7 +200,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                 </React.Suspense>
             )}
 
-            <footer className="py-10 md:py-12 bg-[var(--bg-body)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-20">
+            <footer className="py-10 md:py-12 bg-[var(--bg-body)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-12">
                         <div className="sm:col-span-2">
@@ -167,20 +218,21 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                             <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
                                 {(!user || user?.role === 'STUDENT') && (
                                     <>
-                                        <li><Link to="/" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Daily Feed</Link></li>
-                                        <li><Link to="/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">History</Link></li>
-                                        <li><Link to="/leaderboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">ELITE Board</Link></li>
+                                        <li><Link to="/" className="inline-block transition-all duration-150">Daily Feed</Link></li>
+                                        <li><Link to="/orders/history" className="inline-block transition-all duration-150">History</Link></li>
+                                        <li><Link to="/leaderboard" className="inline-block transition-all duration-150">ELITE Board</Link></li>
                                     </>
                                 )}
                                 {user?.role === 'SHOP_OWNER' && (
                                     <>
-                                        <li><Link to="/owner/dashboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Dashboard</Link></li>
-                                        <li><Link to="/owner/orders/history" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Order History</Link></li>
+                                        <li><Link to="/owner/dashboard" className="inline-block transition-all duration-150">Dashboard</Link></li>
+                                        <li><Link to="/owner/kitchen" className="inline-block transition-all duration-150">Kitchen View</Link></li>
+                                        <li><Link to="/owner/orders/history" className="inline-block transition-all duration-150">Order History</Link></li>
                                     </>
                                 )}
                                 {user?.role === 'ADMIN' && (
                                     <>
-                                        <li><Link to="/admin/dashboard" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Admin Console</Link></li>
+                                        <li><Link to="/admin/dashboard" className="inline-block transition-all duration-150">Admin Console</Link></li>
                                     </>
                                 )}
                             </ul>
@@ -189,19 +241,23 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                         <div>
                             <h4 className="text-[10px] font-black text-brand-500 uppercase tracking-widest mb-5 md:mb-8 opacity-80">Support</h4>
                             <ul className="space-y-3 md:space-y-4 text-sm md:text-base text-[var(--text-primary)] font-bold">
-                                <li><Link to="/help" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Get Help</Link></li>
-                                <li><Link to="/contact" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Talk to us</Link></li>
-                                <li><Link to="/privacy" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Privacy</Link></li>
-                                <li><Link to="/terms" className="inline-block transition-all duration-150 cursor-pointer relative z-30 pointer-events-auto">Rules of Play</Link></li>
+                                <li><Link to="/help" className="inline-block transition-all duration-150">Get Help</Link></li>
+                                <li><Link to="/contact" className="inline-block transition-all duration-150">Talk to us</Link></li>
+                                <li><Link to="/privacy" className="inline-block transition-all duration-150">Privacy</Link></li>
+                                <li><Link to="/terms" className="inline-block transition-all duration-150">Rules of Play</Link></li>
                             </ul>
                         </div>
                     </div>
 
-                    <div className="pt-8 md:pt-10 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
-                        <p className="text-xs sm:text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} Campus Bites. All rights to your appetite.</p>
-                        <div className="flex items-center space-x-3 bg-[var(--bg-card)] px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl border border-[var(--border-color)]">
-                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                            <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none">Kitchens are Live</p>
+                    <div className="relative pt-8 md:pt-10 border-t border-[var(--border-color)] flex flex-col sm:flex-row items-center justify-between gap-4 md:gap-6">
+                        <p className="text-xs sm:text-sm font-black text-[var(--text-muted)] tracking-tight">&copy; {new Date().getFullYear()} Campus Bites. <span className="cursor-pointer hover:text-pink-500 transition-colors duration-500" onClick={handleArcadeClick}>All rights to your appetite.</span></p>
+                        <div 
+                            className="flex items-center space-x-3 bg-[var(--bg-card)] px-4 py-2 sm:px-5 sm:py-2.5 rounded-2xl border border-[var(--border-color)] cursor-pointer hover:border-[#00ff46] hover:bg-[#00ff46]/5 transition-all group select-none"
+                            onClick={handleSecretClick}
+                            title="System status"
+                        >
+                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse group-hover:bg-[#00ff46] group-hover:shadow-[0_0_10px_#00ff46] transition-all"></span>
+                            <p className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-widest leading-none group-hover:text-[#00ff46] transition-colors">Kitchens are Live</p>
                         </div>
                     </div>
                 </div>
@@ -247,8 +303,98 @@ const FullScreenLoader = () => (
     </div>
 );
 
+const useCyberAudioLogic = () => {
+    useEffect(() => {
+        let audioCtx: AudioContext | null = null;
+        let isPlaying = false;
+        let interval: ReturnType<typeof setInterval> | null = null;
+        let masterGain: GainNode | null = null;
+
+        const playCyberpunkTheme = () => {
+            if (isPlaying) return;
+            isPlaying = true;
+            
+            try {
+                audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = 0.15; // keep it subtle
+                masterGain.connect(audioCtx.destination);
+                
+                // Arpeggio notes: E2, B2, E3, G3
+                const baseFreqs = [82.41, 123.47, 164.81, 196.00]; 
+                let step = 0;
+                
+                interval = setInterval(() => {
+                    if (!audioCtx || !masterGain) return;
+                    
+                    const osc = audioCtx.createOscillator();
+                    // Sawtooth for that classic synth grit
+                    osc.type = 'sawtooth'; 
+                    
+                    // Add slight random detune flutter and occasional octave jumps
+                    const octaveMult = (step % 8 === 7) ? 2 : 1;
+                    const detune = 1 + (Math.random() * 0.01 - 0.005);
+                    const freq = baseFreqs[step % baseFreqs.length] * octaveMult * detune;
+                    
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                    
+                    const env = audioCtx.createGain();
+                    env.connect(masterGain);
+                    osc.connect(env);
+                    
+                    env.gain.setValueAtTime(0, audioCtx.currentTime);
+                    env.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.02);
+                    env.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                    
+                    osc.start(audioCtx.currentTime);
+                    osc.stop(audioCtx.currentTime + 0.15);
+                    
+                    step++;
+                }, 140); // Fast 16th notes sequence
+            } catch (err) {
+                console.warn('AudioContext not supported or blocked', err);
+            }
+        };
+
+        const stopCyberpunkTheme = () => {
+            isPlaying = false;
+            if (interval) clearInterval(interval);
+            if (masterGain) {
+                masterGain.gain.exponentialRampToValueAtTime(0.01, (audioCtx?.currentTime || 0) + 0.5);
+            }
+            if (audioCtx) {
+                setTimeout(() => {
+                    audioCtx?.close().catch(() => {});
+                    audioCtx = null;
+                }, 500);
+            }
+        };
+
+        const checkClass = () => {
+            if (document.body.classList.contains('unlocked')) {
+                playCyberpunkTheme();
+            } else {
+                stopCyberpunkTheme();
+            }
+        };
+
+        // Check initially
+        checkClass();
+
+        // Listen for user adding/removing the class
+        const observer = new MutationObserver(checkClass);
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+
+        return () => {
+            observer.disconnect();
+            stopCyberpunkTheme();
+        };
+    }, []);
+};
+
 function App() {
-    const { user, isAuthenticated, isLoading, logout } = useAuth();
+    const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
+    useCyberAudioLogic(); // Check for unlocked terminal class on mount
 
     if (isLoading) {
         return <FullScreenLoader />;
@@ -280,6 +426,9 @@ function App() {
                             <Route path="/contact" element={<Layout><ContactUs /></Layout>} />
                             <Route path="/privacy" element={<Layout><PrivacyPolicy /></Layout>} />
                             <Route path="/terms" element={<Layout><TermsOfService /></Layout>} />
+                            <Route path="/secret" element={<SecretPage />} />
+                            <Route path="/hints" element={<Layout><BadgeHints /></Layout>} />
+
 
                             <Route path="/" element={
                                 isAuthenticated ? (
@@ -345,6 +494,11 @@ function App() {
                                     <Layout><OwnerOrderHistory /></Layout>
                                 </ProtectedRoute>
                             } />
+                            <Route path="/owner/kitchen" element={
+                                <ProtectedRoute allowedRoles={['SHOP_OWNER']}>
+                                    <Layout><KitchenDisplay /></Layout>
+                                </ProtectedRoute>
+                            } />
 
                             <Route path="/admin/dashboard" element={
                                 <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -360,8 +514,25 @@ function App() {
                                     <h2 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight mb-3">Access Denied</h2>
                                     <p className="text-[var(--text-muted)] text-base text-center max-w-md leading-relaxed">Your account doesn't have permission to access this section.</p>
                                     <div className="flex space-x-4 mt-8">
-                                        <Link to="/" className="btn-primary px-8 py-3">Go Home</Link>
-                                        <button onClick={() => { logout(); window.location.href = '/login'; }} className="btn-secondary px-8 py-3 text-red-500 border-red-200  dark:border-red-500/20 dark:">Sign Out</button>
+                                        <button 
+                                            onClick={async () => {
+                                                // Hard sync from DB to fix stale roles
+                                                if (user?.id) {
+                                                    const res = await api.get(`/users/${user.id}`);
+                                                    if (updateUser) updateUser(res.data);
+                                                }
+                                                window.location.href = '/';
+                                            }} 
+                                            className="btn-primary px-8 py-3"
+                                        >
+                                            Try Again / Home
+                                        </button>
+                                        <button 
+                                            onClick={() => { logout(); window.location.href = '/login'; }} 
+                                            className="btn-secondary px-8 py-3 text-red-500 border-red-200 dark:border-red-500/20"
+                                        >
+                                            Sign Out
+                                        </button>
                                     </div>
                                 </div>
                             } />

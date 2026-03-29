@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { FiMapPin, FiStar, FiClock, FiSearch, FiArrowLeft } from 'react-icons/fi';
 import api from '../../services/api';
 import AnnouncementWidget from '../../components/common/AnnouncementWidget';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { FiBell } from 'react-icons/fi';
 
 interface Outlet {
     id: number;
@@ -38,6 +40,7 @@ const RestaurantsPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortBy, setSortBy] = useState<'rating' | 'name'>('rating');
+    const { isSupported, isSubscribed, subscribe } = usePushNotifications();
 
     useEffect(() => {
         const fetchOutlets = async () => {
@@ -90,6 +93,35 @@ const RestaurantsPage = () => {
                     Everything from quick mid-lecture bites to proper dinner spots. Find your favorite booth on campus.
                 </p>
             </div>
+
+            {isSupported && !isSubscribed && (
+                <div className="mb-10 p-6 bg-brand-500/10 border border-brand-500/20 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 animate-none group">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-brand-500 text-white rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                            <FiBell className="w-6 h-6 animate-bounce" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-[var(--text-primary)]">Never miss a status update!</h3>
+                            <p className="text-sm text-[var(--text-muted)] font-medium">Get real-time push notifications when your order is ready.</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={subscribe}
+                        className="w-full md:w-auto px-8 py-3 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-all shadow-lg shadow-brand-500/20 active:scale-95"
+                    >
+                        Enable Notifications
+                    </button>
+                </div>
+            )}
+
+            {isSupported && isSubscribed && (
+                <div className="mb-10 p-4 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500/10 text-green-500 rounded-lg flex items-center justify-center">
+                        <FiBell className="w-4 h-4" />
+                    </div>
+                    <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Push Notifications Active</span>
+                </div>
+            )}
 
             <div className="mb-10">
                 <AnnouncementWidget />

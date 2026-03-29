@@ -93,6 +93,7 @@ const Game2048: React.FC = () => {
             const final = addRandom(nb);
             setScore(s => {
                 const ns = s + gained;
+                window.dispatchEvent(new CustomEvent('campus_bite_score', { detail: { score: ns } }));
                 setBest(b => {
                     if (ns > b) { localStorage.setItem('2048_best', String(ns)); return ns; }
                     return b;

@@ -2,7 +2,7 @@
  
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { FiX, FiMail, FiPhone, FiHash, FiUser, FiEdit3, FiSave, FiLoader, FiCamera, FiMapPin, FiShoppingBag, FiArrowRight } from 'react-icons/fi';
+import { FiX, FiMail, FiPhone, FiHash, FiUser, FiEdit3, FiSave, FiLoader, FiCamera, FiMapPin, FiShoppingBag, FiArrowRight, FiZap, FiStar, FiShield, FiAward } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/context/AuthContext';
 import api from '../../services/api';
@@ -12,6 +12,13 @@ interface ProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
 }
+
+const tierConfig: Record<string, { color: string, icon: any, label: string }> = {
+    'ELECTRIC_BLUE': { color: 'text-brand-500 bg-brand-500/10 border-brand-500/30', icon: FiZap, label: 'Electric Blue' },
+    'GOLD': { color: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30', icon: FiStar, label: 'Gold' },
+    'SILVER': { color: 'text-gray-400 bg-gray-400/10 border-gray-400/30', icon: FiShield, label: 'Silver' },
+    'BRONZE': { color: 'text-amber-700 bg-amber-700/10 border-amber-700/30', icon: FiAward, label: 'Bronze' }
+};
 
 const AVATAR_OPTIONS = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -38,6 +45,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     const [shopAddress, setShopAddress] = useState('');
     const isOwner = user?.role === 'SHOP_OWNER';
     const isAdmin = user?.role === 'ADMIN';
+    const hasAllBadges = user?.hasShadowBadge && user?.hasCaffeineBadge && user?.hasGluttonBadge && user?.hasNightOwlBadge && user?.hasArcadeBadge && user?.hasExplorerBadge && user?.hasProGamerBadge && user?.hasCompletionistBadge;
 
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -45,6 +53,19 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
         enrollmentNumber: user?.enrollmentNumber || (user as any)?.enrollment_number || '',
         profilePic: user?.profilePic || (user as any)?.profile_pic || '',
     });
+
+    // CRITICAL FIX: Refresh user data every time the modal is opened
+    // This handles admin overrides (like revokes) that happen in other tabs
+    useEffect(() => {
+        if (isOpen && user?.id) {
+            api.get(`/users/${user.id}?t=${Date.now()}`).then(res => {
+                if (res.data) {
+                    console.log('[DEBUG] Fresh profile loaded, syncing state...');
+                    updateUser(res.data);
+                }
+            }).catch(e => console.error('Failed cross-tab profile sync:', e));
+        }
+    }, [isOpen, user?.id, updateUser]);
 
     useEffect(() => {
         if (isOwner && user) {
@@ -102,7 +123,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                 if (e.target === e.currentTarget) onClose();
             }}
         >
-            <div className="bg-[var(--bg-card)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-none flex flex-col max-h-[90vh]">
+            <div className={`bg-[var(--bg-card)] w-full max-w-md rounded-3xl overflow-hidden shadow-2xl animate-none flex flex-col max-h-[90vh] ${hasAllBadges ? 'animate-profile-glow border-2' : ''}`}>
                 <div className="h-28 bg-brand-500 relative flex-shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-600 to-brand-700"></div>
                     <button
@@ -144,8 +165,58 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                             ) : (
                                 <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">{user.name}</h2>
                             )}
-                            <div className="inline-flex items-center px-3 py-1 bg-brand-500/10 text-brand-600 dark:text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-brand-500/10">
-                                {roleBadge}
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                <div className="inline-flex items-center px-3 py-1 bg-brand-500/10 text-brand-600 dark:text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-brand-500/10">
+                                    {roleBadge}
+                                </div>
+                                {user.role === 'STUDENT' && (
+                                    <>
+                                        <div className={`inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${tierConfig[user.tier || 'BRONZE'].color}`}>
+                                            {React.createElement(tierConfig[user.tier || 'BRONZE'].icon, { className: "w-3 h-3 mr-1" })}
+                                            {tierConfig[user.tier || 'BRONZE'].label}
+                                        </div>
+                                        {user.hasShadowBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-[#1a1a1a] text-[#00ff46] text-[10px] font-bold uppercase tracking-wider rounded-lg border border-[#00ff46]/40 shadow-[0_0_10px_rgba(0,255,70,0.15)] glitch-hover">
+                                                👾 Shadow Agent
+                                            </div>
+                                        )}
+                                        {user.hasCaffeineBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-amber-950/20 text-amber-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-amber-500/30">
+                                                ☕ Caffeine Addict
+                                            </div>
+                                        )}
+                                        {user.hasGluttonBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-red-950/20 text-red-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-red-500/30">
+                                                🍔 The Glutton
+                                            </div>
+                                        )}
+                                        {user.hasNightOwlBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-indigo-950/20 text-indigo-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-indigo-500/30">
+                                                🌙 Night Owl
+                                            </div>
+                                        )}
+                                        {user.hasArcadeBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-pink-950/20 text-pink-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-pink-500/30">
+                                                🕹️ Arcade King
+                                            </div>
+                                        )}
+                                        {user.hasExplorerBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-emerald-950/20 text-emerald-500 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-500/30">
+                                                🕵️ Urban Explorer
+                                            </div>
+                                        )}
+                                        {user.hasProGamerBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-cyan-950/20 text-cyan-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-cyan-500/30">
+                                                🏆 Pro Gamer
+                                            </div>
+                                        )}
+                                        {user.hasCompletionistBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-purple-950/20 text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.15)]">
+                                                🎮 The Gamer
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

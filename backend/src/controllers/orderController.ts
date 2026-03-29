@@ -113,6 +113,7 @@ const formatOrderWithItems = (orderData: any) => {
         totalAmount: parseFloat(orderData.total_amount),
         notes: orderData.notes,
         scheduledAt: orderData.scheduled_at,
+        preparingAt: orderData.preparing_at,
         createdAt: orderData.created_at,
         status: orderData.status,
         payment_status: orderData.payment_status,
@@ -337,6 +338,9 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             status: requestedStatus,
             verified_by: req.user?.id 
         };
+        if (requestedStatus === 'preparing') {
+            updatePayload.preparing_at = new Date().toISOString();
+        }
         if (requestedStatus === 'completed') {
             updatePayload.delivered_at = new Date().toISOString();
         }

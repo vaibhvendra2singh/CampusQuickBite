@@ -6,6 +6,10 @@ import FlappyGame from './games/FlappyGame';
 import BreakoutGame from './games/BreakoutGame';
 import MemoryGame from './games/MemoryGame';
 import TicTacToeGame from './games/TicTacToeGame';
+import { useAuth } from '../../hooks/context/AuthContext';
+import { useToast } from '../../hooks/context/ToastContext';
+import api from '../../services/api';
+import confetti from 'canvas-confetti';
 
 type GameId = 'snake' | '2048' | 'flappy' | 'breakout' | 'memory' | 'tictactoe';
 
@@ -102,6 +106,37 @@ export const GameHubInline: React.FC = () => (
 const GameHub: React.FC = () => {
     const [open, setOpen] = useState(false);
     const [openGames, setOpenGames] = useState<OpenGame[]>([]);
+    
+    const { user, updateUser } = useAuth();
+    const { showToast } = useToast();
+    const [claimingPro, setClaimingPro] = useState(false);
+    const [claimingComp, setClaimingComp] = useState(false);
+
+    useEffect(() => {
+        const handleScore = async (e: any) => {
+            const score = e.detail?.score || 0;
+            if (score > 10 && user && !user.hasProGamerBadge && !claimingPro) {
+                setClaimingPro(true);
+                try {
+                    await api.post('/users/badge', { type: 'pro_gamer' });
+                    // Star blast animation for Pro Gamer
+                    const defaults = { spread: 360, ticks: 50, gravity: 0, decay: 0.94, startVelocity: 30, colors: ['#00e5ff', '#ffeb3b', '#cc00ff'] };
+                    confetti({ ...defaults, particleCount: 40, scalar: 1.2, shapes: ['star'] });
+                    confetti({ ...defaults, particleCount: 10, scalar: 0.75, shapes: ['circle'] });
+                    
+                    updateUser({ ...user, hasProGamerBadge: true });
+                    showToast('🏆 Pro Gamer Badge Unlocked! (+40 XP)', 'success');
+                } catch (err) {
+                    console.error('Pro Gamer Badge Error:', err);
+                } finally {
+                    setClaimingPro(false);
+                }
+            }
+        };
+
+        window.addEventListener('campus_bite_score', handleScore as EventListener);
+        return () => window.removeEventListener('campus_bite_score', handleScore as EventListener);
+    }, [user, claimingPro, updateUser, showToast]);
 
     useEffect(() => {
         const handler = () => setOpen(o => !o);
@@ -110,6 +145,41 @@ const GameHub: React.FC = () => {
     }, []);
 
     const openGame = (id: GameId) => {
+        if (user && !user.hasCompletionistBadge && !claimingComp) {
+            const playedKey = `played_games_${user.id}`;
+            let played: string[] = [];
+            try { played = JSON.parse(localStorage.getItem(playedKey) || '[]'); } catch(e){}
+            if (!played.includes(id)) {
+                played.push(id);
+                localStorage.setItem(playedKey, JSON.stringify(played));
+                if (played.length >= GAMES.length) {
+                    setClaimingComp(true);
+                    api.post('/users/badge', { type: 'completionist' }).then(() => {
+                        // Multi-firework prolonged celebration
+                        const duration = 3 * 1000;
+                        const animationEnd = Date.now() + duration;
+                        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 99999 };
+                        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+                        
+                        const interval: any = setInterval(function() {
+                            const timeLeft = animationEnd - Date.now();
+                            if (timeLeft <= 0) return clearInterval(interval);
+                            const particleCount = 50 * (timeLeft / duration);
+                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+                        }, 250);
+
+                        updateUser({ ...user, hasCompletionistBadge: true });
+                        showToast('🎮 The Gamer Badge Unlocked! Played all games. (+100 XP)', 'success');
+                        setClaimingComp(false);
+                    }).catch(err => {
+                        console.error('Completionist Badge Error:', err);
+                        setClaimingComp(false);
+                    });
+                }
+            }
+        }
+
         setOpenGames(prev => {
             if (prev.some(g => g.id === id)) return prev;
             return [...prev, { id, key: Date.now() }];

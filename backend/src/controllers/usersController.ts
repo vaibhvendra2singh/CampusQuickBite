@@ -4,6 +4,18 @@ import { AuthRequest } from '../middleware/auth';
 import { notifyAccountStatus } from '../services/socketService';
 import { normalizeRole, displayRole, ROLES } from '../utils/roles';
 
+type BadgeType = 'shadow' | 'caffeine' | 'glutton' | 'night_owl' | 'arcade' | 'explorer' | 'pro_gamer' | 'completionist';
+const BADGE_CONFIG: Record<BadgeType, { column: string, xp: number }> = {
+    shadow: { column: 'has_shadow_badge', xp: 50 },
+    caffeine: { column: 'has_caffeine_badge', xp: 20 },
+    glutton: { column: 'has_glutton_badge', xp: 30 },
+    night_owl: { column: 'has_night_owl_badge', xp: 20 },
+    arcade: { column: 'has_arcade_badge', xp: 40 },
+    explorer: { column: 'has_explorer_badge', xp: 50 },
+    pro_gamer: { column: 'has_pro_gamer_badge', xp: 40 },
+    completionist: { column: 'has_completionist_badge', xp: 100 }
+};
+
 export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
@@ -61,7 +73,17 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             role: displayRole(data.role),
             phoneNumber: data.phone_number,
             enrollmentNumber: data.enrollment_number,
-            profilePic: data.profile_pic
+            profilePic: data.profile_pic,
+            xp: data.xp || 0,
+            tier: data.tier || 'BRONZE',
+            hasShadowBadge: data.has_shadow_badge || false,
+            hasCaffeineBadge: data.has_caffeine_badge || false,
+            hasGluttonBadge: data.has_glutton_badge || false,
+            hasNightOwlBadge: data.has_night_owl_badge || false,
+            hasArcadeBadge: data.has_arcade_badge || false,
+            hasExplorerBadge: data.has_explorer_badge || false,
+            hasProGamerBadge: data.has_pro_gamer_badge || false,
+            hasCompletionistBadge: data.has_completionist_badge || false
         });
 
     } catch (error) {
@@ -70,31 +92,39 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
     }
 };
 
-export const getLeaderboard = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { data, error } = await supabase
-            .from('users')
-            .select('id, name, xp, tier, profile_pic')
-            .eq('role', 'student')
-            .order('xp', { ascending: false })
-            .limit(10);
-
-        if (error) {
-            if (error.message.includes('Could not find the column')) {
-                res.status(200).json([]);
+    export const getLeaderboard = async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { data, error } = await supabase
+                .from('users')
+                .select('id, name, xp, tier, profile_pic, has_shadow_badge, has_caffeine_badge, has_glutton_badge, has_night_owl_badge, has_arcade_badge, has_explorer_badge, has_pro_gamer_badge, has_completionist_badge')
+                .eq('role', 'student')
+                .order('xp', { ascending: false })
+                .limit(10);
+    
+            if (error) {
+                if (error.message.includes('Could not find the column')) {
+                    res.status(200).json([]);
+                    return;
+                }
+                res.status(500).json({ error: error.message });
                 return;
             }
-            res.status(500).json({ error: error.message });
-            return;
-        }
-
-        const leaderboard = (data || []).map(u => ({
-            id: u.id,
-            name: u.name,
-            xp: u.xp || 0,
-            tier: u.tier || 'BRONZE',
-            profilePic: u.profile_pic || ''
-        }));
+    
+            const leaderboard = (data || []).map(u => ({
+                id: u.id,
+                name: u.name,
+                xp: u.xp || 0,
+                tier: u.tier || 'BRONZE',
+                profilePic: u.profile_pic || '',
+                hasShadowBadge: u.has_shadow_badge || false,
+                hasCaffeineBadge: u.has_caffeine_badge || false,
+                hasGluttonBadge: u.has_glutton_badge || false,
+                hasNightOwlBadge: u.has_night_owl_badge || false,
+                hasArcadeBadge: u.has_arcade_badge || false,
+                hasExplorerBadge: u.has_explorer_badge || false,
+                hasProGamerBadge: u.has_pro_gamer_badge || false,
+                hasCompletionistBadge: u.has_completionist_badge || false
+            }));
 
         res.status(200).json(leaderboard);
     } catch (error) {
@@ -122,7 +152,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
             id: u.id,
             name: u.name,
             email: u.email,
-            role: u.role,
+            role: displayRole(u.role),
             phoneNumber: u.phone_number,
             enrollmentNumber: u.enrollment_number,
             profilePic: u.profile_pic,
@@ -240,7 +270,7 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
 
         const { data, error } = await supabase
             .from('users')
-            .select('id, name, email, role, is_frozen, is_banned')
+            .select('*')
             .eq('id', id)
             .single();
 
@@ -253,12 +283,240 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             id: data.id,
             name: data.name,
             email: data.email,
-            role: data.role,
+            role: displayRole(data.role),
             isFrozen: data.is_frozen || false,
-            isBanned: data.is_banned || false
+            isBanned: data.is_banned || false,
+            adminInsightsResetAt: data.admin_insights_reset_at,
+            xp: data.xp || 0,
+            tier: data.tier || 'BRONZE',
+            profilePic: data.profile_pic,
+            hasShadowBadge: data.has_shadow_badge || false,
+            hasCaffeineBadge: data.has_caffeine_badge || false,
+            hasGluttonBadge: data.has_glutton_badge || false,
+            hasNightOwlBadge: data.has_night_owl_badge || false,
+            hasArcadeBadge: data.has_arcade_badge || false,
+            hasExplorerBadge: data.has_explorer_badge || false,
+            hasProGamerBadge: data.has_pro_gamer_badge || false,
+            hasCompletionistBadge: data.has_completionist_badge || false
         });
     } catch (error) {
         console.error('Get user by id error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
+export const resetAdminInsights = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const id = req.user?.id;
+        
+        if (!id || req.user?.role !== 'admin') {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        const now = new Date().toISOString();
+        const { error } = await supabase
+            .from('users')
+            .update({ admin_insights_reset_at: now })
+            .eq('id', id);
+
+        if (error) {
+            res.status(500).json({ error: error.message });
+            return;
+        }
+
+        res.status(200).json({ message: 'Insights reset successfully', resetAt: now });
+    } catch (error) {
+        console.error('Reset admin insights error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+export const resetAllStudentXP = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const id = req.user?.id;
+        
+        if (!id || req.user?.role !== 'admin') {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        const { error } = await supabase
+            .from('users')
+            .update({ xp: 0, tier: 'BRONZE' })
+            .eq('role', 'student');
+
+        if (error) {
+            res.status(500).json({ error: error.message });
+            return;
+        }
+
+        res.status(200).json({ message: 'All student XP reset successfully' });
+    } catch (error) {
+        console.error('Reset all student XP error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+export const nukeDatabase = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const id = req.user?.id;
+        
+        if (!id || req.user?.role !== 'admin') {
+            res.status(403).json({ error: 'Forbidden' });
+            return;
+        }
+
+        await supabase.from('cart_items').delete().neq('id', 0);
+        await supabase.from('order_items').delete().neq('id', 0);
+        await supabase.from('orders').delete().neq('id', 0);
+        await supabase.from('transactions').delete().neq('id', 0);
+        await supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).eq('role', 'student');
+        await supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin');
+
+        res.status(200).json({ message: 'Database successfully nuked. All orders, sales, and XP records have been cleared.' });
+    } catch (error) {
+        console.error('Nuke database error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/** 🎭 Universal Gamification Badge Granting. Idempotent. */
+export const grantBadge = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const userId = req.user?.id;
+        const { type } = req.body;
+        
+        if (!userId) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+         if (!type || !BADGE_CONFIG[type as BadgeType]) {
+             res.status(400).json({ error: 'Invalid badge type' });
+             return;
+         }
+
+        const badgeDef = BADGE_CONFIG[type as BadgeType];
+
+        const { data: userRow, error: fetchErr } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (fetchErr || !userRow) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const user = userRow as any;
+
+        if (user.role !== 'student') {
+            res.status(403).json({ error: 'Badges are only available for students' });
+            return;
+        }
+
+        if (user[badgeDef.column]) {
+            res.status(409).json({ message: 'Badge already claimed', alreadyClaimed: true });
+            return;
+        }
+
+        const newXp = (user.xp || 0) + badgeDef.xp;
+        let newTier = user.tier || 'BRONZE';
+        if (newXp >= 200) newTier = 'ELECTRIC_BLUE';
+        else if (newXp >= 100) newTier = 'GOLD';
+        else if (newXp >= 40) newTier = 'SILVER';
+
+        const updatePayload: any = { xp: newXp, tier: newTier };
+        updatePayload[badgeDef.column] = true;
+
+        const { error: updateErr } = await supabase
+            .from('users')
+            .update(updatePayload)
+            .eq('id', userId);
+
+        if (updateErr) {
+            console.error('Shadow badge grant error:', updateErr);
+            res.status(500).json({ error: 'Failed to grant badge' });
+            return;
+        }
+
+        console.log(`[SHADOW] 🎭 User ${userId} claimed Shadow Badge. New XP: ${newXp}`);
+        res.status(200).json({ message: 'Shadow Member badge granted', xpGranted: 50, newXp, newTier });
+    } catch (error) {
+        console.error('Grant shadow badge error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+export const revokeAllBadges = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        if (!id) {
+            res.status(400).json({ error: 'User ID is required' });
+            return;
+        }
+
+        const badgeResetPayload: any = {
+            has_shadow_badge: false,
+            has_caffeine_badge: false,
+            has_glutton_badge: false,
+            has_night_owl_badge: false,
+            has_arcade_badge: false,
+            has_explorer_badge: false,
+            has_pro_gamer_badge: false,
+            has_completionist_badge: false,
+            xp: 0,
+            tier: 'BRONZE',
+        };
+
+        const { error } = await supabase
+            .from('users')
+            .update(badgeResetPayload)
+            .eq('id', id);
+
+        // Re-fetch the updated user to return to the admin (important for sync)
+        const { data: updatedUserData, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError || !updatedUserData) {
+            console.error('Revoke success but fetch fail:', fetchError);
+            res.status(200).json({ message: 'Revoked, but failed to fetch updated state.' });
+            return;
+        }
+
+        const formattedUser = {
+            id: updatedUserData.id,
+            name: updatedUserData.name,
+            email: updatedUserData.email,
+            role: displayRole(updatedUserData.role),
+            isFrozen: updatedUserData.is_frozen || false,
+            isBanned: updatedUserData.is_banned || false,
+            xp: updatedUserData.xp || 0,
+            tier: updatedUserData.tier || 'BRONZE',
+            profilePic: updatedUserData.profile_pic,
+            hasShadowBadge: updatedUserData.has_shadow_badge || false,
+            hasCaffeineBadge: updatedUserData.has_caffeine_badge || false,
+            hasGluttonBadge: updatedUserData.has_glutton_badge || false,
+            hasNightOwlBadge: updatedUserData.has_night_owl_badge || false,
+            hasArcadeBadge: updatedUserData.has_arcade_badge || false,
+            hasExplorerBadge: updatedUserData.has_explorer_badge || false,
+            hasProGamerBadge: updatedUserData.has_pro_gamer_badge || false,
+            hasCompletionistBadge: updatedUserData.has_completionist_badge || false
+        };
+
+        console.log(`[ADMIN] 🚫 Admin revoked all badges for user ${id}`);
+        res.status(200).json({ 
+            message: 'All badges and XP have been revoked successfully.',
+            user: formattedUser
+        });
+    } catch (error) {
+        console.error('Revoke all badges error:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+

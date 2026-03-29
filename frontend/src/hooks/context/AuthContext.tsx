@@ -17,6 +17,16 @@ export interface User {
     profilePic?: string;
     isFrozen?: boolean;
     isBanned?: boolean;
+    hasShadowBadge?: boolean;
+    hasCaffeineBadge?: boolean;
+    hasGluttonBadge?: boolean;
+    hasNightOwlBadge?: boolean;
+    hasArcadeBadge?: boolean;
+    hasExplorerBadge?: boolean;
+    hasProGamerBadge?: boolean;
+    hasCompletionistBadge?: boolean;
+    xp?: number;
+    tier?: string;
 }
 
 interface AuthContextType {
@@ -52,15 +62,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     return;
                 }
 
-                api.get('/cart').then(() => {
+                api.get(`/users/${payload.id}?t=${Date.now()}`).then(res => {
                     setToken(storedToken);
-                    setUser(JSON.parse(storedUser));
+                    setUser(res.data);
+                    localStorage.setItem('user', JSON.stringify(res.data));
                 }).catch((err: any) => {
+                    console.error('Initial user fetch failed:', err);
                     if (err.response?.status === 401 || err.response?.status === 403) {
-                        console.log('Token rejected by backend, clearing session...');
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                     } else {
+                        // Fallback to stored user if API is just down
                         setToken(storedToken);
                         setUser(JSON.parse(storedUser));
                     }

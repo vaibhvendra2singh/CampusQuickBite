@@ -1,6 +1,36 @@
-
+import { useState } from 'react';
+import { useAuth } from '../../hooks/context/AuthContext';
+import { useToast } from '../../hooks/context/ToastContext';
+import api from '../../services/api';
+import confetti from 'canvas-confetti';
 
 const TermsOfService = () => {
+    const { user, updateUser } = useAuth();
+    const { showToast } = useToast();
+    const [claiming, setClaiming] = useState(false);
+
+    const handleCoffeeClick = async () => {
+        if (!user) {
+            showToast("Log in to collect this hidden badge!", "info");
+            return;
+        }
+        if (claiming || user?.hasCaffeineBadge || user.role !== 'STUDENT') return;
+        setClaiming(true);
+        try {
+            await api.post('/users/badge', { type: 'caffeine' });
+            updateUser({ ...user, hasCaffeineBadge: true });
+            const colors = ['#8B4513', '#A0522D', '#CD853F', '#DEB887', '#F5DEB3'];
+            confetti({ particleCount: 250, spread: 360, origin: { x: 0.5, y: 0.5 }, startVelocity: 40, colors });
+            setTimeout(() => confetti({ particleCount: 200, spread: 360, origin: { x: 0.5, y: 0.5 }, startVelocity: 60, colors }), 200);
+            setTimeout(() => confetti({ particleCount: 150, spread: 360, origin: { x: 0.5, y: 0.5 }, startVelocity: 80, colors }), 400);
+            showToast("☕ Caffeine Addict Badge Unlocked!", "success");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setClaiming(false);
+        }
+    };
+
  return (
  <div className="max-w-4xl mx-auto py-10 px-4 animate-none">
  <div className="mb-10 text-center">
@@ -58,8 +88,11 @@ const TermsOfService = () => {
 
  <section>
  <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-4">Limitation of Liability</h2>
- <p className="text-[var(--text-muted)] leading-relaxed">
+ <p className="text-[var(--text-muted)] leading-relaxed mb-6">
  CampusBite provides the ordering platform but does not prepare food.
+ </p>
+ <p className="text-[10px] text-[var(--text-muted)] opacity-30 hover:opacity-100 uppercase tracking-[0.2em] leading-loose mt-12 text-center max-w-[800px] mx-auto border-t border-red-900/20 pt-8 transition-all duration-700 font-bold">
+ This document constitutes an inescapable blood-pact between you and CampusBite. Continued use signifies total surrender of your dietary autonomy. We reserve the full right to alter your reality in the shadows, without your prior knowledge. By staring this deeply into the abyss of our legal text, you've completely drained your soul—perhaps a <span onClick={handleCoffeeClick} className="cursor-pointer hover:text-[#ff3c00] hover:drop-shadow-[0_0_10px_#ff3c00] transition-all duration-500 underline decoration-wavy decoration-red-900">coffee</span> will revive what is left of you. We hold zero liability for the horrors of the queue; survival out there is completely on you.
  </p>
  </section>
  </div>

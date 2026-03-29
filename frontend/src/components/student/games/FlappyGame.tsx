@@ -172,6 +172,7 @@ const FlappyGame: React.FC = () => {
                 p.passed = true;
                 s.score++;
                 setScore(s.score);
+                window.dispatchEvent(new CustomEvent('campus_bite_score', { detail: { score: s.score } }));
                 if (s.score > s.bestScore) {
                     s.bestScore = s.score;
                     setBest(s.score);

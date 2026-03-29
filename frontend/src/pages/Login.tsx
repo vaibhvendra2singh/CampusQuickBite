@@ -7,6 +7,30 @@ import { useAuth } from '../hooks/context/AuthContext';
 import { FiMail, FiLock, FiArrowRight, FiAlertOctagon, FiHash } from 'react-icons/fi';
 import { FadeIn } from '../components/animations/FadeIn';
 
+// 🎩 Developer Easter Egg — 7 clicks on the logo
+const DEV_ASCII = [
+    '%c',
+    ' ██████╗ ███████╗██╗   ██╗    ███╗   ███╗ ██████╗ ██████╗ ███████╗',
+    '██╔══██╗██╔════╝██║   ██║    ████╗ ████║██╔═══██╗██╔══██╗██╔════╝',
+    '██║  ██║█████╗  ██║   ██║    ██╔████╔██║██║   ██║██║  ██║█████╗  ',
+    '██║  ██║██╔══╝  ╚██╗ ██╔╝    ██║╚██╔╝██║██║   ██║██║  ██║██╔══╝  ',
+    '██████╔╝███████╗ ╚████╔╝     ██║ ╚═╝ ██║╚██████╔╝██████╔╝███████╗',
+    '╚═════╝ ╚══════╝  ╚═══╝      ╚═╝     ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝',
+    '',
+    '  You found the developer Easter Egg. 🎩',
+    '  INVITE CODE: CB-SHADOW-7X-ALPHA',
+    '  Share with care. The kitchen is watching.',
+    '',
+    '  ► hint: visit /secret for more',
+].join('\n');
+
+const triggerDevEasterEgg = () => {
+    console.clear();
+    console.log(DEV_ASCII, 'color:#00ff46;font-family:monospace;font-size:11px;line-height:1.5');
+    console.log('%c👾 Invite Code: CB-SHADOW-7X-ALPHA', 'color:#00ff46;font-size:16px;font-weight:bold;font-family:monospace');
+    console.log('%c► hint: try visiting /secret', 'color:#00ff4680;font-size:12px;font-family:monospace');
+};
+
 const ENROLLMENT_REGEX = /^[a-zA-Z0-9]{8,12}$/;
 
 const validateEnrollment = (value: string): string => {
@@ -27,10 +51,32 @@ const Login = () => {
     const [enrollmentTouched, setEnrollmentTouched] = useState(false);
     const [error, setError] = useState('');
     const [banNotice, setBanNotice] = useState('');
+    const [logoFlash, setLogoFlash] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const { login } = useAuth();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        let keys = '';
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only listen to alphanumeric characters to build the phrase
+            if (/^[a-z0-9]$/i.test(e.key)) {
+                keys += e.key.toLowerCase();
+                if (keys.length > 20) keys = keys.slice(-20);
+                
+                if (keys.endsWith('shadow')) {
+                    triggerDevEasterEgg();
+                    setLogoFlash(true);
+                    setTimeout(() => setLogoFlash(false), 1200);
+                    keys = ''; // reset so it doesn't trigger repeatedly
+                }
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         const saved = localStorage.getItem('enrollmentNumber');
@@ -119,8 +165,19 @@ const Login = () => {
                 <div className="hidden lg:flex w-1/2 flex-col justify-between p-16 xl:p-20 relative overflow-hidden">
                     <div className="relative z-10 flex flex-col h-full">
                         <FadeIn delay={0.1} direction="up">
-                            <div className="mb-10" style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
-                                <span style={{ color: 'var(--color-brand-500)' }}>Campus</span>Bites
+                            <div
+                                className="mb-10"
+                                style={{
+                                    fontSize: '1.2rem', fontWeight: 900,
+                                    letterSpacing: '-0.03em',
+                                    color: logoFlash ? '#00ff46' : 'var(--text-primary)',
+                                    cursor: 'default',
+                                    textShadow: logoFlash ? '0 0 20px #00ff46, 0 0 40px #00ff4660' : 'none',
+                                    transition: 'color 0.15s, text-shadow 0.15s',
+                                    userSelect: 'none',
+                                }}
+                            >
+                                <span style={{ color: logoFlash ? '#00ff46' : 'var(--color-brand-500)' }}>Campus</span>Bites
                             </div>
                             <h1 className="text-5xl xl:text-6xl font-black text-slate-800 dark:text-white tracking-tight leading-[1.1] mb-6 drop-shadow-md">
                                 Campus<br />

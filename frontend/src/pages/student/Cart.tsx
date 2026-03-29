@@ -5,9 +5,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 import { useCart } from '../../hooks/context/CartContext';
 import { useAuth } from '../../hooks/context/AuthContext';
-import { FiArrowLeft, FiClock, FiMessageSquare, FiPlus, FiMinus, FiShoppingBag, FiAlertTriangle, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiClock, FiMessageSquare, FiPlus, FiMinus, FiShoppingBag, FiAlertTriangle, FiTrash2, FiMoon } from 'react-icons/fi';
 import { useToast } from '../../hooks/context/ToastContext';
 import { FadeIn } from '../../components/animations/FadeIn';
+
+import confetti from 'canvas-confetti';
 
 const CAMPUS_TIMESLOTS = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
@@ -27,6 +29,60 @@ const Cart = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
     const [orderNotes, setOrderNotes] = useState('');
+    const [claimingGlutton, setClaimingGlutton] = useState(false);
+    const [claimingNightOwl, setClaimingNightOwl] = useState(false);
+
+    useEffect(() => {
+        if (items.length >= 10 && user?.id && user.role === 'STUDENT' && !user?.hasGluttonBadge && !claimingGlutton) {
+            setClaimingGlutton(true);
+            showToast("We're gonna need a bigger tray...", "info");
+            api.post('/users/badge', { type: 'glutton' }).then(() => {
+                const count = 250;
+                const defaults = { origin: { y: 0.7 } };
+                const fire = (particleRatio: number, opts: any) => {
+                    confetti(Object.assign({}, defaults, opts, {
+                        particleCount: Math.floor(count * particleRatio)
+                    }));
+                };
+                fire(0.25, { spread: 26, startVelocity: 55, colors: ['#facc15', '#f59e0b', '#dc2626'] });
+                fire(0.2, { spread: 60, colors: ['#facc15', '#f59e0b', '#dc2626'] });
+                fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ['#facc15', '#f59e0b', '#dc2626'] });
+                fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2, colors: ['#facc15', '#f59e0b', '#dc2626'] });
+                fire(0.1, { spread: 120, startVelocity: 45, colors: ['#facc15', '#f59e0b', '#dc2626'] });
+                showToast("🍔 The Glutton Badge Unlocked!", "success");
+                updateUser({ ...user, hasGluttonBadge: true });
+            }).catch(console.error).finally(() => setClaimingGlutton(false));
+        }
+    }, [items.length, user, claimingGlutton, showToast, updateUser]);
+
+    const handleNightOwlClick = async () => {
+        if (!user || user.role !== 'STUDENT' || user.hasNightOwlBadge || claimingNightOwl) return;
+        setClaimingNightOwl(true);
+        try {
+            await api.post('/users/badge', { type: 'night_owl' });
+            confetti({
+                particleCount: 150,
+                angle: 270,
+                spread: 180,
+                startVelocity: 15,
+                origin: { y: -0.1, x: 0.5 },
+                gravity: 0.3,
+                ticks: 400,
+                shapes: ['star', 'circle'],
+                scalar: 0.8,
+                colors: ['#312e81', '#4338ca', '#818cf8', '#ffffff'] // Dark purple, indigo, white
+            });
+            updateUser({ ...user, hasNightOwlBadge: true });
+            showToast("🌙 Night Owl Badge Unlocked! (+20 XP)", "success");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setClaimingNightOwl(false);
+        }
+    };
+
+    const nowHour = new Date().getHours();
+    const isLateNight = nowHour >= 1 && nowHour < 4;
 
     useEffect(() => {
         if (user?.id) {
@@ -112,9 +168,14 @@ const Cart = () => {
                     <p className="text-[var(--text-muted)] text-lg mb-8 max-w-md mx-auto">
                         Looks like you haven't added anything to your cart yet. Discover your next favorite meal!
                     </p>
-                    <button onClick={() => navigate('/restaurants')} className="btn-primary px-8 py-3 text-lg shadow-xl shadow-brand-500/20  transition-all">
+                    <button onClick={() => navigate('/restaurants')} className="btn-primary px-8 py-3 text-lg shadow-xl shadow-brand-500/20 hover:scale-[1.02] transition-all">
                         Browse Restaurants
                     </button>
+                    {isLateNight && (
+                        <div className="absolute bottom-6 right-6 opacity-10 hover:opacity-100 transition-opacity duration-500 cursor-pointer" onClick={handleNightOwlClick}>
+                            <FiMoon className="w-6 h-6 text-indigo-400" />
+                        </div>
+                    )}
                 </div>
             </div>
             </FadeIn>

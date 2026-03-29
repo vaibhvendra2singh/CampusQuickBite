@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
-import { FiMapPin, FiArrowRight, FiStar, FiSearch } from 'react-icons/fi';
+import { useAuth } from '../../hooks/context/AuthContext';
+import { useToast } from '../../hooks/context/ToastContext';
+import { FiMapPin, FiArrowRight, FiStar, FiSearch, FiAlertOctagon } from 'react-icons/fi';
 import { FadeIn } from '../../components/animations/FadeIn';
+import confetti from 'canvas-confetti';
 
 interface TopFoodItem {
     id: number;
@@ -167,7 +170,49 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
     );
 });
 
-const CompactRestaurantList = ({ outlets, title, description }: { outlets: Outlet[], title: string, description?: string }) => {
+const CompactRestaurantList = ({ outlets, title, description, searchTerm }: { outlets: Outlet[], title: string, description?: string, searchTerm?: string }) => {
+    const { user, updateUser } = useAuth();
+    const { showToast } = useToast();
+    const [claiming, setClaiming] = React.useState(false);
+
+    const handleArea51Click = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        if (!user) {
+            showToast('Log in first to explore classified areas.', 'info');
+            return;
+        }
+        if (claiming || user?.hasExplorerBadge || user.role !== 'STUDENT') return;
+        setClaiming(true);
+        try {
+            await api.post('/users/badge', { type: 'explorer' });
+            
+            // Hacker matrix rain effect
+            const end = Date.now() + 2500;
+            const colors = ['#00ff00', '#113311', '#55ff55'];
+            (function frame() {
+                confetti({
+                    particleCount: 8,
+                    angle: 270,
+                    spread: 180,
+                    origin: { x: Math.random(), y: 0 },
+                    colors: colors,
+                    shapes: ['square'],
+                    scalar: 0.8,
+                    gravity: 0.8,
+                    ticks: 200,
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            updateUser({ ...user, hasExplorerBadge: true });
+            showToast('🚨 SECURITY BREACH... wait, you unlocked the 🕵️ Urban Explorer Badge!', 'success');
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setClaiming(false);
+        }
+    };
+
     return (
         <div className="mb-16 sm:mb-24 mt-10 sm:mt-16 max-w-4xl mx-auto px-2 sm:px-4 md:px-0">
             <div className="mb-6 sm:mb-10">
@@ -179,6 +224,41 @@ const CompactRestaurantList = ({ outlets, title, description }: { outlets: Outle
                 {outlets.map((outlet) => (
                     <CompactRestaurantListItem key={outlet.id} outlet={outlet} />
                 ))}
+
+                {(searchTerm?.toLowerCase().includes('area 51') || searchTerm?.toLowerCase().includes('classified') || searchTerm?.toLowerCase().includes('staff') || searchTerm?.toLowerCase().includes('area51')) && (
+                <div onClick={handleArea51Click} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[#0a0f12] border border-red-900/50 rounded-[2rem] transition-all duration-150 cursor-pointer relative overflow-hidden hover:border-red-500/80 hover:shadow-[0_0_30px_rgba(255,0,0,0.15)] mt-10">
+                    <div className="w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-red-900 bg-black">
+                        <div className="absolute inset-0 bg-red-950/40 backdrop-blur-md z-10 flex flex-col items-center justify-center p-3 text-center transition-all group-hover:bg-red-900/60">
+                            <FiAlertOctagon className="w-8 h-8 text-red-500 mb-2 animate-pulse" />
+                            <div className="bg-red-500 text-white text-[10px] font-black tracking-[0.2em] px-3 py-1.5 rounded-sm shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                                CLASSIFIED
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div className="flex-1 min-w-0 pr-0 md:pr-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-2xl font-black text-red-50 tracking-tight truncate filter drop-shadow-[0_0_8px_rgba(255,0,0,0.3)]">
+                                Area 51 Kitchen (Staff Only)
+                            </h3>
+                        </div>
+                
+                        <p className="text-red-400/70 text-base mb-4 font-mono text-xs sm:text-sm tracking-tight leading-relaxed">
+                            WARNING: Unauthorized access strictly prohibited. Violators will be expelled.
+                        </p>
+                
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
+                            <span className="text-red-600 font-bold uppercase tracking-widest text-[10px]">Level 4 Clearance Required</span>
+                            <span className="text-red-900 opacity-50">•</span>
+                            <div className="flex items-center gap-1.5 text-red-500/50 transition-colors">
+                                <FiMapPin className="w-4 h-4" />
+                                <span className="truncate filter blur-[2px] select-none">Basement Level 3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                )}
+
             </div>
         </div>
     );
@@ -395,6 +475,7 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
                         outlets={gridOutlets}
                         title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}
                         description={selectedCategory ? "Filtered down to match your craving." : "A curated list of all available kitchens, just for you."}
+                        searchTerm={searchTerm}
                     />
 
                     {gridOutlets.length === 0 && (

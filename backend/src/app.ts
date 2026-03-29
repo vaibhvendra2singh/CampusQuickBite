@@ -16,6 +16,7 @@ import analyticsRoutes from './routes/v1/analyticsRoutes';
 import usersRoutes from './routes/v1/usersRoutes';
 import ownerRoutes from './routes/v1/ownerRoutes';
 import announcementRoutes from './routes/v1/announcementRoutes';
+import pushRoutes from './routes/v1/pushRoutes';
 
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger';
@@ -146,6 +147,7 @@ v1Router.use('/analytics', analyticsRoutes);
 v1Router.use('/users', usersRoutes);
 v1Router.use('/owner', ownerRoutes);
 v1Router.use('/announcements', announcementRoutes);
+v1Router.use('/push', pushRoutes);
 
 app.use('/api/v1', v1Router);
 

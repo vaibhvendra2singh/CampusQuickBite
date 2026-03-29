@@ -8,8 +8,10 @@ import {
     FiPhone, FiMail, FiBarChart2, FiShield, FiRefreshCw, FiActivity,
     FiCheckCircle, FiDatabase, FiAlertCircle, FiArrowRight, FiDownload,
     FiHardDrive, FiUsers, FiBell, FiStar, FiZap, FiSearch, FiLock, FiUnlock,
-    FiPause, FiTrendingUp, FiTrash2
+    FiPause, FiTrendingUp, FiTrash2, FiChevronDown, FiChevronRight, FiExternalLink, FiUserX, FiAlertTriangle
 } from 'react-icons/fi';
+import React from 'react';
+import { createPortal } from 'react-dom';
 import { useToast } from '../../hooks/context/ToastContext';
 import { useAuth } from '../../hooks/context/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,7 +36,7 @@ interface OutletStats {
 
 const AdminDashboard = () => {
     const { showToast } = useToast();
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, updateUser } = useAuth();
     const [activeTab, setActiveTab] = useState<'outlets' | 'users' | 'orders' | 'announcements' | 'reviews'>('outlets');
 
     const [outlets, setOutlets] = useState<Outlet[]>([]);
@@ -58,6 +60,15 @@ const AdminDashboard = () => {
 
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [orderSearch, setOrderSearch] = useState('');
+    const [resetAt, setResetAt] = useState<Date | null>(null);
+    const [showAllTimeOrders, setShowAllTimeOrders] = useState(false);
+    const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+    const [orderOutletFilter, setOrderOutletFilter] = useState('all');
+    const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+    const [selectedStudentForModal, setSelectedStudentForModal] = useState<any | null>(null);
+
+    const [showResetXPModal, setShowResetXPModal] = useState(false);
+    const [nukeStage, setNukeStage] = useState(0); // 0=hidden, 1=warning 1, 2=warning 2
 
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
@@ -129,16 +140,95 @@ const AdminDashboard = () => {
     const fetchGlobalOrders = async () => {
         setIsOrdersLoading(true);
         try {
-            const [ordersRes, statsRes] = await Promise.all([
+            const [ordersRes, statsRes, meRes] = await Promise.all([
                 api.get('/orders'),
-                api.get('/orders/admin/stats/heatmap')
+                api.get('/orders/admin/stats/heatmap'),
+                currentUser?.id ? api.get(`/users/${currentUser.id}`) : Promise.resolve({ data: {} })
             ]);
+            
+            const resetTime = meRes.data?.adminInsightsResetAt ? new Date(meRes.data.adminInsightsResetAt) : null;
+            setResetAt(resetTime);
             setGlobalOrders(ordersRes.data);
             setOrderHeatmap(statsRes.data);
         } catch (error) {
             console.error("Failed to load global orders", error);
         } finally {
             setIsOrdersLoading(false);
+        }
+    };
+
+    const getVisibleOrders = () => {
+        return globalOrders.filter(o => 
+            showAllTimeOrders || !resetAt || new Date(o.createdAt || o.created_at || 0) > resetAt
+        ).filter(o =>
+            !orderSearch ||
+            String(o.id).includes(orderSearch) ||
+            o.outlets?.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+            o.user?.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
+            o.user?.enrollment_number?.toLowerCase().includes(orderSearch.toLowerCase())
+        ).filter(o =>
+            orderStatusFilter === 'all' || o.status?.toLowerCase() === orderStatusFilter
+        ).filter(o =>
+            orderOutletFilter === 'all' || String(o.outlets?.id) === orderOutletFilter || String(o.outlet_id) === orderOutletFilter
+        );
+    };
+
+    const exportOrdersCSV = () => {
+        const visibleOrders = getVisibleOrders();
+        if (visibleOrders.length === 0) { showToast('No orders to export', 'error'); return; }
+        const headers = ['Order ID', 'Date', 'Outlet', 'Student Name', 'Enrollment Number', 'Status', 'Total Amount', 'Items'];
+        const rows = visibleOrders.map((o: any) => [
+            `#${o.id}`,
+            new Date(o.createdAt || o.created_at || Date.now()).toLocaleString(),
+            o.outlets?.name || o.outlet?.name || '',
+            o.user?.name || o.users?.name || '',
+            o.user?.enrollment_number || '',
+            o.status?.toUpperCase(),
+            o.total_amount || o.totalAmount || 0,
+            (o.items || o.order_items || []).map((i: any) => `${i.quantity}x ${i.menuItem?.name || i.menu_items?.name || i.item_name || 'Item'}`).join(' | ')
+        ]);
+        const csv = [headers, ...rows].map(r => r.map((v: any) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `campusbite_ledger_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        showToast(`Exported ${visibleOrders.length} orders to CSV`, 'success');
+    };
+
+    const handleResetAdminInsights = async () => {
+        try {
+            const response = await api.post('/users/admin/reset-insights');
+            setResetAt(new Date(response.data.resetAt));
+            showToast('Admin Dispatcher Insights reset successfully.', 'success');
+        } catch (error) {
+            console.error(error);
+            showToast('Failed to reset insights.', 'error');
+        }
+    };
+
+    const handleResetAllXP = () => setShowResetXPModal(true);
+    const executeResetXP = async () => {
+        try {
+            await api.post('/users/admin/reset-xp');
+            showToast('All Student XP has been successfully reset to zero.', 'success');
+        } catch (err: any) {
+            showToast(err.response?.data?.error || 'Failed to reset student XP', 'error');
+        } finally {
+            setShowResetXPModal(false);
+        }
+    };
+
+    const handleNukeDatabase = () => setNukeStage(1);
+    const executeNukeDatabase = async () => {
+        try {
+            await api.post('/users/admin/nuke-database');
+            showToast('DATABASE COMPLETELY WIPED.', 'success');
+            setTimeout(() => window.location.reload(), 2000); // Reload entire system
+        } catch (err: any) {
+            showToast(err.response?.data?.error || 'Database Wipe Failed', 'error');
+        } finally {
+            setNukeStage(0);
         }
     };
 
@@ -648,15 +738,76 @@ const AdminDashboard = () => {
                         </div>
 
                         <div className="space-y-6">
-                            <div className="flex items-center gap-4">
-                                <h3 className="text-xl font-bold flex items-center">
-                                    <FiShoppingBag className="mr-3 text-brand-500" /> Dispatcher View: Recent Orders
-                                </h3>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                    <h3 className="text-xl font-bold flex items-center">
+                                        <FiShoppingBag className="mr-3 text-brand-500" /> Dispatcher View
+                                    </h3>
+                                    
+                                    <div className="flex items-center gap-2">
+                                        <select 
+                                            className="px-3 py-2 text-xs rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] cursor-pointer focus:outline-brand-500 font-medium"
+                                            value={orderOutletFilter}
+                                            onChange={e => setOrderOutletFilter(e.target.value)}
+                                        >
+                                            <option value="all">All Outlets</option>
+                                            {outlets.map(out => <option key={out.id} value={out.id}>{out.name}</option>)}
+                                        </select>
+
+                                        <select 
+                                            className="px-3 py-2 text-xs rounded-lg border border-[var(--border-color)] bg-[var(--bg-card)] cursor-pointer focus:outline-brand-500 font-medium capitalize"
+                                            value={orderStatusFilter}
+                                            onChange={e => setOrderStatusFilter(e.target.value)}
+                                        >
+                                            <option value="all">All Statuses</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="placed">Placed</option>
+                                            <option value="preparing">Preparing</option>
+                                            <option value="ready">Ready</option>
+                                            <option value="completed">Completed/Delivered</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </select>
+                                        
+                                        <button 
+                                            onClick={exportOrdersCSV}
+                                            className="ml-2 flex flex-shrink-0 items-center px-4 py-2 text-xs font-bold bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition border border-green-200"
+                                        >
+                                            <FiDownload className="mr-2" /> Export Ledger
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 pb-4 border-b border-[var(--border-color)]">
+                                    <div className="flex rounded-lg overflow-hidden border border-brand-100 shadow-sm">
+                                    <button 
+                                        onClick={() => setShowAllTimeOrders(false)}
+                                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${!showAllTimeOrders ? 'bg-brand-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
+                                    >
+                                        Current View
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowAllTimeOrders(true)}
+                                        className={`px-3 py-1.5 text-xs font-bold transition-colors ${showAllTimeOrders ? 'bg-brand-500 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'}`}
+                                    >
+                                        All-Time History
+                                    </button>
+                                </div>
+                                <button 
+                                    onClick={() => {
+                                        if (confirm('Are you sure you want to reset your Dispatcher View? This will hide all current orders from the summary view without permanently deleting any data.')) {
+                                            handleResetAdminInsights();
+                                        }
+                                    }}
+                                    className="ml-2 flex items-center justify-center p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors shadow-sm"
+                                    title="Reset Insights (Shift View)"
+                                >
+                                    <FiRefreshCw className="w-4 h-4" />
+                                </button>
                                 <div className="relative flex-1 max-w-sm ml-auto group">
                                     <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-brand-500 w-4 h-4 transition-colors z-10" />
                                     <input
                                         type="text"
-                                        placeholder="Order ID, Student or Outlet..."
+                                        placeholder="Order ID, Student, Enrollment or Outlet..."
                                         value={orderSearch}
                                         onChange={e => setOrderSearch(e.target.value)}
                                         className="input-field pl-10"
@@ -671,30 +822,42 @@ const AdminDashboard = () => {
                                     )}
                                 </div>
                             </div>
-                            <div className="card-modern p-0 overflow-hidden border border-[var(--border-color)]">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left">
+                        </div>
+                        <div className="card-modern p-0 overflow-hidden border border-[var(--border-color)]">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
                                         <thead className="bg-[var(--bg-card)] border-b border-[var(--border-color)]">
                                             <tr>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Order ID</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Outlet</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Student</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Enroll No</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Status</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">Amount</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[var(--border-color)]">
-                                            {globalOrders.filter(o =>
-                                                !orderSearch ||
-                                                String(o.id).includes(orderSearch) ||
-                                                o.outlets?.name?.toLowerCase().includes(orderSearch.toLowerCase()) ||
-                                                o.user?.name?.toLowerCase().includes(orderSearch.toLowerCase())
-                                            ).map(order => (
-                                                <tr key={order.id} className=" transition-colors">
-                                                    <td className="px-6 py-4 text-sm font-bold text-brand-600">#{order.id.toString().slice(-4)}</td>
+                                            {getVisibleOrders().map(order => (
+                                                <React.Fragment key={order.id}>
+                                                <tr className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/20">
+                                                    <td className="px-6 py-4 text-sm font-bold text-brand-600 cursor-pointer" onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}>
+                                                        <div className="flex items-center gap-2 hover:underline">
+                                                            {expandedOrderId === order.id ? <FiChevronDown className="w-3.5 h-3.5" /> : <FiChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                                                            #{order.id.toString().slice(-4)}
+                                                        </div>
+                                                    </td>
                                                     <td className="px-6 py-4 text-sm font-semibold text-[var(--text-primary)]">{order.outlets?.name}</td>
-                                                    <td className="px-6 py-4 text-sm font-medium text-[var(--text-muted)]">{order.user?.name}</td>
+                                                    <td className="px-6 py-4">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedStudentForModal(order.user || order.users); }}
+                                                            className="text-sm font-bold text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center gap-1.5"
+                                                        >
+                                                            {order.user?.name || 'Unknown'} 
+                                                            <FiExternalLink className="w-3 h-3 opacity-50" />
+                                                        </button>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm font-medium text-slate-500 font-mono tracking-tight">{order.user?.enrollment_number || '-'}</td>
                                                     <td className="px-6 py-4">
                                                         <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-tighter ${order.status === 'completed' ? 'bg-green-100 text-green-700' :
                                                             order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
@@ -725,9 +888,49 @@ const AdminDashboard = () => {
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                {expandedOrderId === order.id && (
+                                                    <tr className="bg-slate-50/50 dark:bg-slate-800/30 border-b border-t border-[var(--border-color)]">
+                                                        <td colSpan={7} className="px-8 py-4">
+                                                            <div className="pl-4 border-l-2 border-brand-500 my-1">
+                                                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Order Summary</p>
+                                                                <ul className="space-y-1.5 text-sm font-medium text-[var(--text-primary)]">
+                                                                    {(order.items || order.order_items || []).map((item: any) => (
+                                                                        <li key={item.id} className="flex items-center text-xs">
+                                                                            <span className="w-8 font-black text-slate-500">{item.quantity}x</span> 
+                                                                            <span>{item.itemName || item.item_name || item.menuItem?.name || item.menu_items?.name || 'Unknown Item'}</span>
+                                                                            <div className="ml-auto flex items-center gap-4">
+                                                                                <span className="text-slate-400 font-mono">@ ₹{parseFloat(item.price || item.menuItems?.price || '0').toFixed(2)}</span>
+                                                                                <span className="font-bold text-slate-700 w-16 text-right">₹{(parseFloat(item.price || item.menuItems?.price || '0') * item.quantity).toFixed(2)}</span>
+                                                                            </div>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                                {order.notes && (
+                                                                    <div className="mt-3 bg-brand-50 text-brand-800 p-2.5 rounded text-xs">
+                                                                        <span className="font-bold mr-2">Note:</span> {order.notes}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                </React.Fragment>
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+                                <div className="bg-slate-50 dark:bg-slate-800/40 p-5 flex justify-between items-center border-t border-[var(--border-color)] text-sm">
+                                    <div className="flex items-center gap-8">
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Count</span>
+                                            <span className="font-bold text-slate-700 dark:text-slate-300 text-lg">{getVisibleOrders().length} Orders</span>
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Revenue</span>
+                                            <span className="font-bold text-green-600 text-lg">₹{getVisibleOrders().reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount || o.total_amount || 0)), 0).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs font-semibold text-slate-400">Showing filtered results</span>
                                 </div>
                             </div>
                         </div>
@@ -1137,7 +1340,21 @@ const AdminDashboard = () => {
                         </span>
                     </div>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex flex-col items-end space-y-3">
+                    <div className="flex items-center space-x-2">
+                        <button
+                            onClick={handleResetAllXP}
+                            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100 transition-colors shadow-sm"
+                        >
+                            Reset Student XP
+                        </button>
+                        <button
+                            onClick={handleNukeDatabase}
+                            className="px-3 py-1.5 text-xs font-bold rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors shadow-sm flex items-center group"
+                        >
+                            <FiAlertCircle className="mr-1.5 group-hover:animate-pulse" /> Nuke Database
+                        </button>
+                    </div>
                     <button
                         onClick={handleRefresh}
                         className="btn-secondary min-w-[120px]"
@@ -1190,7 +1407,7 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {selectedOutlet && (
+            {selectedOutlet && createPortal(
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-none" onClick={() => setSelectedOutlet(null)}>
                     <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 animate-none" onClick={e => e.stopPropagation()}>
                         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
@@ -1280,10 +1497,11 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {isSettingsModalOpen && (
+            {isSettingsModalOpen && createPortal(
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-[var(--bg-card)]/80 backdrop-blur-sm" onClick={() => setIsSettingsModalOpen(false)}></div>
                     <div className="relative w-full max-w-lg bg-[var(--bg-card)] rounded-2xl shadow-xl overflow-hidden animate-none border border-[var(--border-color)]" onClick={e => e.stopPropagation()}>
@@ -1345,7 +1563,162 @@ const AdminDashboard = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
+            )}
+
+            {selectedStudentForModal && createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setSelectedStudentForModal(null)}></div>
+                    <div className="relative w-full max-w-sm bg-[var(--bg-card)] rounded-2xl shadow-xl overflow-hidden border border-[var(--border-color)] animate-none" onClick={e => e.stopPropagation()}>
+                        <div className="p-6 border-b border-[var(--border-color)] flex justify-between items-start">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-600 flex items-center justify-center font-black text-xl uppercase shadow-sm border border-brand-200 dark:border-brand-500/30">
+                                    {selectedStudentForModal.name?.[0] || '?'}
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-[var(--text-primary)] leading-none mb-1">
+                                        {selectedStudentForModal.name}
+                                    </h3>
+                                    <p className="text-xs font-bold text-[var(--text-muted)] font-mono tracking-wider">
+                                        {selectedStudentForModal.enrollment_number || 'No Enroll No'}
+                                    </p>
+                                </div>
+                            </div>
+                            <button onClick={() => setSelectedStudentForModal(null)} className="w-8 h-8 rounded-full bg-[var(--bg-input)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                                <FiX className="w-4 h-4" />
+                            </button>
+                        </div>
+                        <div className="p-6 bg-[var(--bg-body)] space-y-4">
+                            <div className="flex justify-between items-center text-sm border-b border-[var(--border-color)] pb-3">
+                                <span className="font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">Contact</span>
+                                <span className="font-bold text-[var(--text-primary)]">{selectedStudentForModal.email}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm border-b border-[var(--border-color)] pb-3">
+                                <span className="font-bold text-[var(--text-muted)] uppercase tracking-wider text-[10px]">Joined</span>
+                                <span className="font-bold text-[var(--text-primary)]">
+                                    {new Date(selectedStudentForModal.createdAt || selectedStudentForModal.created_at || Date.now()).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                </span>
+                            </div>
+                            <div className="pt-2">
+                                <button 
+                                    onClick={async () => {
+                                        try {
+                                            const isBanned = selectedStudentForModal.isBanned || selectedStudentForModal.is_banned;
+                                            await api.put(`/users/${selectedStudentForModal.id}/status`, { field: 'is_banned', value: !isBanned });
+                                            showToast(`User ${isBanned ? 'unbanned' : 'banned'} successfully`, 'success');
+                                            setSelectedStudentForModal({ ...selectedStudentForModal, is_banned: !isBanned, isBanned: !isBanned });
+                                            fetchGlobalOrders(); 
+                                        } catch (e) {
+                                            showToast('Action failed', 'error');
+                                        }
+                                    }}
+                                    className={`w-full py-3.5 rounded-xl border-2 font-black text-sm uppercase tracking-wider transition-all ${(selectedStudentForModal.isBanned || selectedStudentForModal.is_banned) ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 border-orange-200 dark:border-orange-500/30 hover:bg-orange-100' : 'bg-red-50 dark:bg-red-500/10 text-red-600 border-red-200 dark:border-red-500/30 hover:bg-red-100'}`}
+                                >
+                                    <div className="flex items-center justify-center">
+                                        <FiUserX className="w-5 h-5 mr-2" />
+                                        {(selectedStudentForModal.isBanned || selectedStudentForModal.is_banned) ? 'Lift Account Ban' : 'Ban Account'}
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={async () => {
+                                        if (!window.confirm(`⚠️ Remove ALL badges and reset XP to 0 for "${selectedStudentForModal.name}"? This cannot be undone.`)) return;
+                                        try {
+                                            const response = await api.delete(`/users/${selectedStudentForModal.id}/badges`);
+                                            showToast(`🚫 All badges revoked for ${selectedStudentForModal.name}`, 'success');
+                                            
+                                            // Handle local context sync if admin revoked themselves
+                                            const isSelf = currentUser && String(selectedStudentForModal.id) === String(currentUser.id);
+                                            if (isSelf && updateUser && response.data?.user) {
+                                                console.log('[AdminPanel] Correcting current admin session with fresh badges data from DB...');
+                                                updateUser(response.data.user);
+                                            }
+
+                                            // Re-fetch all lists to stay in sync
+                                            fetchUsers();
+                                            fetchGlobalOrders();
+                                            setSelectedStudentForModal(null);
+                                        } catch (e: any) {
+                                            showToast(e?.response?.data?.error || 'Failed to revoke badges', 'error');
+                                        }
+                                    }}
+                                    className="w-full mt-3 py-3.5 rounded-xl border-2 font-black text-sm uppercase tracking-wider transition-all bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 hover:bg-purple-100 dark:hover:bg-purple-500/20 flex items-center justify-center gap-2"
+                                >
+                                    🏅 Revoke All Badges
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {showResetXPModal && createPortal(
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-none" onClick={() => setShowResetXPModal(false)}>
+                    <div className="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-none" onClick={e => e.stopPropagation()}>
+                        <div className="p-8 text-center bg-orange-50 border-b border-orange-100 dark:bg-orange-500/10 dark:border-orange-500/20">
+                            <FiAlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+                            <h3 className="text-2xl font-black text-orange-900 dark:text-orange-400 mb-2">Reset Student XP</h3>
+                            <p className="text-orange-700/80 text-sm font-semibold">Start of a new season/semester</p>
+                        </div>
+                        <div className="p-8 pb-10">
+                            <p className="text-[var(--text-primary)] font-medium text-center mb-8">
+                                Are you sure you want to reset ALL Student XP to zero? This action marks the start of a new competitive semester and <strong className="text-orange-600">cannot be undone</strong>.
+                            </p>
+                            <div className="flex gap-4">
+                                <button onClick={() => setShowResetXPModal(false)} className="flex-1 py-3 px-4 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+                                <button onClick={executeResetXP} className="flex-1 py-3 px-4 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 shadow-lg shadow-orange-500/30 transition-all">Yes, Reset XP</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {nukeStage > 0 && nukeStage < 3 && createPortal(
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6 bg-red-900/80 backdrop-blur-md animate-none" onClick={() => setNukeStage(0)}>
+                    <div className="bg-[var(--bg-body)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-none border-4 border-red-500/30" onClick={e => e.stopPropagation()}>
+                        <div className="p-8 text-center bg-red-50 border-b border-red-100 dark:bg-red-500/10 dark:border-red-500/20">
+                            <FiAlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-4 animate-pulse" />
+                            <h3 className="text-3xl font-black text-red-600 mb-2">
+                                {nukeStage === 1 ? "SYSTEM WIPE WARNING" : "FINAL WARNING"}
+                            </h3>
+                            <p className="text-red-500/80 text-sm font-black uppercase tracking-widest">Highly Destructive Action</p>
+                        </div>
+                        <div className="p-8 pb-10">
+                            {nukeStage === 1 ? (
+                                <>
+                                    <p className="text-[var(--text-primary)] font-bold text-center mb-6 leading-relaxed">
+                                        You are about to permanently delete <strong className="text-red-500 uppercase">all orders, sales data, cart items, and transactions</strong> across the entire app. Student XP will also be zeroed.
+                                    </p>
+                                    <div className="bg-red-50 dark:bg-red-500/10 p-4 rounded-lg mb-8 border border-red-100 dark:border-red-500/20">
+                                        <p className="text-xs text-red-600 dark:text-red-400 font-bold text-center">Your Menu Items, Outlets, and Users will NOT be deleted.</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <button onClick={() => setNukeStage(0)} className="flex-1 py-4 px-4 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-xl hover:bg-slate-200 transition-colors uppercase">Cancel</button>
+                                        <button onClick={() => setNukeStage(2)} className="flex-1 py-4 px-4 bg-red-500 text-white font-black rounded-xl hover:bg-red-600 shadow-xl shadow-red-500/40 transition-all uppercase">Proceed</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-[var(--text-primary)] font-bold text-center mb-8 leading-relaxed text-lg">
+                                        This is your final warning. Are you absolutely sure you want to completely Nuke everything?
+                                    </p>
+                                    <div className="flex flex-col gap-4">
+                                        <button onClick={executeNukeDatabase} className="w-full py-5 px-4 bg-red-600 text-white text-lg font-black rounded-xl hover:bg-red-700 shadow-xl shadow-red-600/40 transition-all uppercase">
+                                            Yes, Nuke It Completely
+                                        </button>
+                                        <button onClick={() => setNukeStage(0)} className="w-full py-4 px-4 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-xl hover:bg-slate-200 transition-colors uppercase">
+                                            Nevermind, Cancel
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );

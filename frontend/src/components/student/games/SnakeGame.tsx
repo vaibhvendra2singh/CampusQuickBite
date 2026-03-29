@@ -113,6 +113,7 @@ const SnakeGame: React.FC = () => {
         if (head.x === s.food.x && head.y === s.food.y) {
             s.score++;
             setScore(s.score);
+            window.dispatchEvent(new CustomEvent('campus_bite_score', { detail: { score: s.score } }));
             s.food = newFood(s.snake);
         } else {
             s.snake.pop();
