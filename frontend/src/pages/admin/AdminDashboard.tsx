@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import {
     FiPlus, FiMapPin, FiUser, FiSettings, FiX, FiShoppingBag, FiEdit3,
@@ -10,11 +10,13 @@ import {
     FiHardDrive, FiUsers, FiBell, FiStar, FiZap, FiSearch, FiLock, FiUnlock,
     FiPause, FiTrendingUp, FiTrash2, FiChevronDown, FiChevronRight, FiExternalLink, FiUserX, FiAlertTriangle
 } from 'react-icons/fi';
-import React from 'react';
+
 import { createPortal } from 'react-dom';
 import { useToast } from '../../hooks/context/ToastContext';
 import { useAuth } from '../../hooks/context/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import nukeSiren from '../../assets/sounds/nuke_siren.mp3';
+
 
 interface Outlet {
     id: string;
@@ -68,7 +70,39 @@ const AdminDashboard = () => {
     const [selectedStudentForModal, setSelectedStudentForModal] = useState<any | null>(null);
 
     const [showResetXPModal, setShowResetXPModal] = useState(false);
-    const [nukeStage, setNukeStage] = useState(0); // 0=hidden, 1=warning 1, 2=warning 2
+    const [nukeStage, setNukeStage] = useState(0); // 0=hidden, 1=warning 1, 2=warning 2, 3=password
+    const [nukePassword, setNukePassword] = useState('');
+    const [isNukeLoading, setIsNukeLoading] = useState(false);
+    const sirenRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        const audio = new Audio(nukeSiren);
+        audio.loop = true;
+        audio.volume = 0.8;
+        audio.preload = 'auto';
+        sirenRef.current = audio;
+
+        return () => {
+             if (sirenRef.current) {
+                sirenRef.current.pause();
+                sirenRef.current = null;
+             }
+        };
+    }, []);
+
+    useEffect(() => {
+        if (nukeStage === 0 || nukeStage === 3) {
+            // Stop Siren when closed or when on password stage
+            if (sirenRef.current) {
+                sirenRef.current.pause();
+                sirenRef.current.currentTime = 0;
+            }
+        }
+    }, [nukeStage]);
+
+
+
+
 
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
@@ -219,18 +253,52 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleNukeDatabase = () => setNukeStage(1);
+    const handleNukeDatabase = () => {
+        setNukeStage(1);
+        if (sirenRef.current) {
+            sirenRef.current.currentTime = 0;
+            sirenRef.current.play().catch(e => {
+                console.warn('[NUKE_SOUND] UI Click play failed:', e);
+                // Last ditch: recover on next click
+                const retry = () => { sirenRef.current?.play(); document.removeEventListener('click', retry); };
+                document.addEventListener('click', retry);
+            });
+        }
+    };
+
+
+
     const executeNukeDatabase = async () => {
+        if (!nukePassword) {
+            showToast('Administrator password required for manual override.', 'error');
+            return;
+        }
+        setIsNukeLoading(true);
+
+        // PLAY THE BOOM
+        const explosion = new Audio('https://www.myinstants.com/media/sounds/nuclear-explosion.mp3');
+        explosion.preload = 'auto';
+        explosion.crossOrigin = 'anonymous';
+        explosion.volume = 1.0;
+        explosion.play().catch(() => {});
+
+
+
+
         try {
-            await api.post('/users/admin/nuke-database');
+            await api.post('/users/admin/nuke-database', { password: nukePassword });
+
             showToast('DATABASE COMPLETELY WIPED.', 'success');
             setTimeout(() => window.location.reload(), 2000); // Reload entire system
         } catch (err: any) {
             showToast(err.response?.data?.error || 'Database Wipe Failed', 'error');
-        } finally {
             setNukeStage(0);
+        } finally {
+            setIsNukeLoading(false);
+            setNukePassword('');
         }
     };
+
 
     const fetchAnnouncements = async () => {
         try {
@@ -1676,15 +1744,17 @@ const AdminDashboard = () => {
                 document.body
             )}
 
-            {nukeStage > 0 && nukeStage < 3 && createPortal(
-                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6 bg-red-900/80 backdrop-blur-md animate-none" onClick={() => setNukeStage(0)}>
+            {nukeStage > 0 && createPortal(
+                <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 sm:p-6 bg-red-900/80 backdrop-blur-md animate-none" onClick={() => !isNukeLoading && setNukeStage(0)}>
                     <div className="bg-[var(--bg-body)] w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-none border-4 border-red-500/30" onClick={e => e.stopPropagation()}>
                         <div className="p-8 text-center bg-red-50 border-b border-red-100 dark:bg-red-500/10 dark:border-red-500/20">
-                            <FiAlertTriangle className="w-20 h-20 text-red-500 mx-auto mb-4 animate-pulse" />
+                            <FiAlertTriangle className={`w-20 h-20 text-red-500 mx-auto mb-4 ${isNukeLoading ? 'animate-spin' : 'animate-pulse'}`} />
                             <h3 className="text-3xl font-black text-red-600 mb-2">
-                                {nukeStage === 1 ? "SYSTEM WIPE WARNING" : "FINAL WARNING"}
+                                {nukeStage === 1 ? "SYSTEM WIPE WARNING" : nukeStage === 2 ? "FINAL WARNING" : "SECURITY OVERRIDE"}
                             </h3>
-                            <p className="text-red-500/80 text-sm font-black uppercase tracking-widest">Highly Destructive Action</p>
+                            <p className="text-red-500/80 text-sm font-black uppercase tracking-widest">
+                                {isNukeLoading ? 'Executing Wipe...' : 'Highly Destructive Action'}
+                            </p>
                         </div>
                         <div className="p-8 pb-10">
                             {nukeStage === 1 ? (
@@ -1700,18 +1770,51 @@ const AdminDashboard = () => {
                                         <button onClick={() => setNukeStage(2)} className="flex-1 py-4 px-4 bg-red-500 text-white font-black rounded-xl hover:bg-red-600 shadow-xl shadow-red-500/40 transition-all uppercase">Proceed</button>
                                     </div>
                                 </>
-                            ) : (
+                            ) : nukeStage === 2 ? (
                                 <>
                                     <p className="text-[var(--text-primary)] font-bold text-center mb-8 leading-relaxed text-lg">
                                         This is your final warning. Are you absolutely sure you want to completely Nuke everything?
                                     </p>
                                     <div className="flex flex-col gap-4">
-                                        <button onClick={executeNukeDatabase} className="w-full py-5 px-4 bg-red-600 text-white text-lg font-black rounded-xl hover:bg-red-700 shadow-xl shadow-red-600/40 transition-all uppercase">
-                                            Yes, Nuke It Completely
+                                        <button onClick={() => setNukeStage(3)} className="w-full py-5 px-4 bg-red-600 text-white text-lg font-black rounded-xl hover:bg-red-700 shadow-xl shadow-red-600/40 transition-all uppercase">
+                                            Confirm & Proceed to Auth
                                         </button>
                                         <button onClick={() => setNukeStage(0)} className="w-full py-4 px-4 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-xl hover:bg-slate-200 transition-colors uppercase">
                                             Nevermind, Cancel
                                         </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-[var(--text-primary)] font-bold text-center mb-6 leading-relaxed">
+                                        Enter your <strong className="text-slate-900 dark:text-white">Administrator Password</strong> to authorize the manual database override.
+                                    </p>
+                                    <div className="space-y-6">
+                                        <input 
+                                            type="password"
+                                            autoFocus
+                                            placeholder="Admin Password"
+                                            value={nukePassword}
+                                            onChange={(e) => setNukePassword(e.target.value)}
+                                            className="w-full bg-[var(--bg-input)] border-2 border-red-200 dark:border-red-900/30 rounded-xl p-4 text-center text-lg font-black tracking-[0.3em] focus:border-red-500 outline-none transition-all"
+                                            onKeyDown={(e) => e.key === 'Enter' && executeNukeDatabase()}
+                                        />
+                                        <div className="flex gap-4">
+                                            <button 
+                                                disabled={isNukeLoading}
+                                                onClick={() => setNukeStage(0)} 
+                                                className="flex-1 py-4 px-4 bg-slate-100 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-xl hover:bg-slate-200 transition-colors uppercase disabled:opacity-50"
+                                            >
+                                                Abort
+                                            </button>
+                                            <button 
+                                                disabled={isNukeLoading || !nukePassword}
+                                                onClick={executeNukeDatabase} 
+                                                className="flex-1 py-4 px-4 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 shadow-xl shadow-red-600/40 transition-all uppercase flex items-center justify-center gap-3 disabled:opacity-50"
+                                            >
+                                                {isNukeLoading ? <FiRefreshCw className="animate-spin" /> : <FiLock />} Verify & Nuke
+                                            </button>
+                                        </div>
                                     </div>
                                 </>
                             )}

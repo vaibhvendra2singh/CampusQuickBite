@@ -14,7 +14,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [isDark, setIsDark] = useState(() => {
         const saved = localStorage.getItem('campusbite-theme');
         if (saved) return saved === 'dark';
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return true; // Dark mode is the default experience
     });
 
     useEffect(() => {

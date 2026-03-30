@@ -1,10 +1,65 @@
 import React from 'react';
-import { FiLock, FiStar, FiTerminal, FiCoffee, FiMoon, FiPackage, FiMonitor } from 'react-icons/fi';
+import { FiLock, FiStar, FiTerminal, FiCoffee, FiMoon, FiPackage, FiMonitor, FiCopy, FiCheck } from 'react-icons/fi';
 import { useAuth } from '../../hooks/context/AuthContext';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 
 const BadgeHints = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
+    const [copied, setCopied] = React.useState(false);
+
+    // Sync fresh data on mount to catch any recently earned badges
+    React.useEffect(() => {
+        if (user?.id) {
+            api.get(`/users/${user.id}?t=${Date.now()}`).then((res: any) => {
+                if (res.data && updateUser) {
+                    updateUser(res.data);
+                }
+            }).catch((e: any) => console.error('Failed hints sync:', e));
+        }
+    }, [user?.id, updateUser]);
+    const handleCopy = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        const text = "document.body.classList.add('unlocked');";
+        
+        try {
+            // Priority 1: Modern Async Clipboard
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(text);
+                handleSuccess();
+                return;
+            }
+            throw new Error('Clipboard API unavailable');
+        } catch (err) {
+            // Priority 2: Traditional Selection Fallback
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.left = "0";
+                textArea.style.top = "0";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                if (successful) handleSuccess();
+            } catch (fallbackErr) {
+                console.error('All copy methods failed', fallbackErr);
+            }
+        }
+    };
+
+    const handleSuccess = () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     return (
         <div className="max-w-4xl mx-auto py-12 px-4 animate-fade-in relative z-10">
@@ -54,14 +109,18 @@ const BadgeHints = () => {
                     hint="It takes a ridiculously large tray to attempt carrying 10 items at once." 
                     unlocked={user?.hasGluttonBadge} 
                 />
-                <div className="md:col-span-2">
-                    <HintCard 
-                        icon={<FiStar />}
-                        title="The Gamer & Pro Gamer" 
-                        hint="Dominance requires two things: double digits on the scoreboard, and leaving no mini-game untouched." 
-                        unlocked={user?.hasCompletionistBadge && user?.hasProGamerBadge} 
-                    />
-                </div>
+                <HintCard 
+                    icon={<FiTerminal />}
+                    title="The Hacker" 
+                    hint="A developer's console is required. The key lies in the document body. Add the class 'unlocked'." 
+                    unlocked={user?.hasHackerBadge} 
+                />
+                <HintCard 
+                    icon={<FiStar />}
+                    title="Pro Gamer" 
+                    hint="Dominance requires double digits on the scoreboard of any mini-game." 
+                    unlocked={user?.hasProGamerBadge} 
+                />
             </div>
 
             <div className="bg-[var(--glass-bg)] backdrop-blur-xl border border-amber-500/30 rounded-3xl p-8 mb-12 shadow-[0_0_40px_rgba(245,158,11,0.1)]">
@@ -69,23 +128,52 @@ const BadgeHints = () => {
                     <FiStar className="w-6 h-6 fill-amber-500" /> The Ultimate Ascension
                 </h2>
                 <p className="text-[var(--text-primary)] font-medium leading-relaxed">
-                    Collecting every single fragment will cause your student profile and elite leaderboard ranking to pulsate with the fabled 
-                    <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 px-1">Completionist Glow</span>, proving your absolute dominance over the campus. Only the elite reach this stage.
+                    Collecting all 8 fragments will cause your student profile and elite leaderboard ranking to pulsate with the fabled 
+                    <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 via-fuchsia-500 to-amber-500 px-1">Golden Glow</span>, proving your absolute dominance over the campus. Only the elite reach this stage.
                 </p>
             </div>
 
-            <div className="bg-black/80 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                <h2 className="text-xl font-mono font-bold text-green-500 mb-2 glitch-hover">
-                    System Override Detected...
+            <div className={`bg-black/90 backdrop-blur-xl border ${user?.hasHackerBadge ? 'border-emerald-500 shadow-[0_0_30px_rgba(16,185,129,0.2)]' : 'border-green-500/30'} rounded-3xl p-8 relative overflow-hidden group transition-all duration-500`}>
+                <div className={`absolute inset-0 ${user?.hasHackerBadge ? 'bg-emerald-500/10' : 'bg-green-500/5'} opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none`}></div>
+                
+                {user?.hasHackerBadge && (
+                    <div className="absolute top-4 right-6 px-3 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 rounded-full font-mono text-[10px] font-bold tracking-[0.2em] uppercase animate-pulse">
+                        System Compromised
+                    </div>
+                )}
+
+                <h2 className={`text-xl font-mono font-bold ${user?.hasHackerBadge ? 'text-emerald-400' : 'text-green-500'} mb-2 glitch-hover`}>
+                    {user?.hasHackerBadge ? 'Access Granted: Root Console Active' : 'System Override Detected...'}
                 </h2>
                 <p className="font-mono text-green-400/70 text-sm leading-relaxed mb-4">
                     WARNING: There exists a state of total visual system override. A developer's console is required. The key lies in the document body. Add the class <code className="bg-green-900/40 text-green-300 px-2 py-0.5 rounded">'unlocked'</code> to unleash the raw auditory matrix.
                 </p>
-                <div className="p-3 bg-black/50 rounded-lg border border-green-900/50">
-                    <code className="font-mono text-xs text-green-500 selection:bg-green-500 selection:text-black">
+                <div 
+                    onClick={() => handleCopy()}
+                    className="p-4 bg-black/50 rounded-lg border border-green-900/50 flex items-center justify-between gap-4 group/code cursor-pointer hover:bg-green-500/5 transition-all duration-300"
+                >
+                    <code className="font-mono text-xs md:text-sm text-green-500 selection:bg-green-500 selection:text-black tracking-tight pointer-events-none">
                         document.body.classList.add('unlocked');
                     </code>
+                    <button 
+                        className={`p-2 rounded-lg transition-all duration-200 flex items-center gap-2 text-xs font-mono pointer-events-none
+                            ${copied 
+                                ? 'bg-green-500 text-black shadow-[0_0_15px_rgba(34,197,94,0.5)]' 
+                                : 'bg-green-900/40 text-green-500 hover:bg-green-500/20 border border-green-500/30'
+                            }`}
+                    >
+                        {copied ? (
+                            <>
+                                <FiCheck className="w-4 h-4" />
+                                <span className="hidden sm:inline">COPIED</span>
+                            </>
+                        ) : (
+                            <>
+                                <FiCopy className="w-4 h-4" />
+                                <span className="hidden sm:inline">COPY</span>
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
 

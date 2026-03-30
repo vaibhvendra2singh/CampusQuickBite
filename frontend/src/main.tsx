@@ -4,6 +4,9 @@ import App from './App.tsx';
 import './index.css';
 import './styles/immersive.css';
 import { AuthProvider } from './hooks/context/AuthContext';
+import { ThemeProvider } from './hooks/context/ThemeContext';
+import { ToastProvider } from './hooks/context/ToastContext';
+import { CartProvider } from './hooks/context/CartContext';
 import * as Sentry from '@sentry/react';
 
 if (import.meta.env.VITE_SENTRY_DSN) {
@@ -24,8 +27,14 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
  <React.StrictMode>
- <AuthProvider>
- <App />
- </AuthProvider>
+  <AuthProvider>
+   <ThemeProvider>
+    <ToastProvider>
+     <CartProvider>
+      <App />
+     </CartProvider>
+    </ToastProvider>
+   </ThemeProvider>
+  </AuthProvider>
  </React.StrictMode>,
 );

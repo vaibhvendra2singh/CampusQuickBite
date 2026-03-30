@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { FiSearch, FiMapPin, FiStar, FiArrowRight, FiX, FiShield } from 'react-icons/fi';
+import { FadeIn } from '../../components/animations/FadeIn';
+import CampusHeatmap from '../../components/student/CampusHeatmap';
 import { useAuth } from '../../hooks/context/AuthContext';
 import { useToast } from '../../hooks/context/ToastContext';
-import { FiMapPin, FiArrowRight, FiStar, FiSearch, FiAlertOctagon } from 'react-icons/fi';
-import { FadeIn } from '../../components/animations/FadeIn';
+import MatrixRain from '../../components/animations/MatrixRain';
 import confetti from 'canvas-confetti';
 
 interface TopFoodItem {
@@ -39,8 +41,6 @@ const CATEGORIES = [
     { name: 'South Indian', icon: '🍛', color: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200' },
 ];
 
-
-
 const getVendorImage = (outletName: string, id: number | string) => {
     const nameStr = outletName.toLowerCase();
     if (nameStr.includes('maggi')) return '/vendors/img1.jpg';
@@ -58,9 +58,7 @@ const getVendorImage = (outletName: string, id: number | string) => {
     ];
     let hash = 0;
     const strId = String(id);
-    for (let i = 0; i < strId.length; i++) {
-        hash = strId.charCodeAt(i) + ((hash << 5) - hash);
-    }
+    for (let i = 0; i < strId.length; i++) hash = strId.charCodeAt(i) + ((hash << 5) - hash);
     return images[Math.abs(hash) % images.length];
 };
 
@@ -81,7 +79,7 @@ const CategoryPill = ({ category, isSelected, onClick, index }: { category: { na
 
 const CategoryGallery = ({ selectedCategory, onSelectCategory }: { selectedCategory: string | null, onSelectCategory: (name: string) => void }) => {
     return (
-        <div className="relative mb-10 sm:mb-16 px-2 sm:px-4 md:px-0 mt-6 sm:mt-8">
+        <div className="relative mb-10 sm:mb-16 mt-6 sm:mt-8">
             <div className="max-w-xl mb-4 sm:mb-6">
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] tracking-tight font-heading">What are you craving?</h2>
                 <p className="text-[var(--text-muted)] text-base sm:text-lg mt-2 font-medium leading-relaxed">Pick a mood, we'll find the food.</p>
@@ -108,21 +106,12 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
 
     const nameStr = outlet.name.toLowerCase();
     const isLogo = nameStr.includes('maggi') || nameStr.includes('chow') || nameStr.includes('snap') || nameStr.includes('southern');
-
     const brandColor = nameStr.includes('southern') ? 'bg-[#053d18]' : (nameStr.includes('maggi') || nameStr.includes('chow') || nameStr.includes('snap')) ? 'bg-white' : 'bg-[var(--bg-card)]';
 
     return (
-        <Link to={`/outlets/${outlet.id}/menu`} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden">
-
-            <div className={`w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-[var(--border-color)] ${isLogo ? brandColor : 'bg-[var(--bg-card)]'}`}>
+        <Link to={`/outlets/${outlet.id}/menu`} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden hover:border-brand-500 shadow-sm">
+            <div className={`w-full md:w-36 h-36 md:h-32 flex-shrink-0 rounded-2xl overflow-hidden relative border border-[var(--border-color)] ${isLogo ? brandColor : 'bg-[var(--bg-card)]'}`}>
                 <img src={image} loading="lazy" decoding="async" alt={outlet.name} className={`w-full h-full object-cover transition-all duration-150 ${isLogo ? 'object-contain scale-[0.85]' : ''}`} />
-                {!outlet.is_open && (
-                    <div className="absolute inset-0 bg-[var(--bg-card)]/70 backdrop-blur-sm z-10 flex items-center justify-center p-3 text-center">
-                        <div className="bg-[var(--text-primary)] text-[var(--bg-card)] text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
-                            Closed
-                        </div>
-                    </div>
-                )}
             </div>
 
             <div className="flex-1 min-w-0 pr-0 md:pr-6">
@@ -130,189 +119,46 @@ const CompactRestaurantListItem = React.memo(({ outlet }: { outlet: Outlet }) =>
                     <h3 className="text-2xl font-black text-[var(--text-primary)] tracking-tight group- transition-colors truncate">
                         {outlet.name}
                     </h3>
-                    {outlet.average_rating && outlet.average_rating > 4.5 && (
-                        <div className="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1 flex-shrink-0">
-                            <FiStar className="w-3 h-3 fill-amber-500 text-amber-500" />
-                            Favorite
-                        </div>
-                    )}
                 </div>
 
-                <p className="text-[var(--text-secondary)] text-base mb-4 line-clamp-2 md:line-clamp-1">
-                    A familiar spot for {nameStr.includes('maggi') ? 'comfort noodles' : nameStr.includes('southern') ? 'crispy dosas' : 'quick bites'} near {outlet.location}.
-                </p>
-
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
-                    {outlet.average_rating && (
-                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                                <FiStar className="w-3 h-3" />
-                            </span>
-                            <span className="font-bold">{outlet.average_rating.toFixed(1)}</span>
-                        </div>
-                    )}
-                    {outlet.average_rating && <span className="text-[var(--text-muted)] opacity-50">•</span>}
-                    <span className="text-slate-600 dark:text-slate-400 font-bold">{waitTime}</span>
-                    <span className="text-[var(--text-muted)] opacity-50">•</span>
-                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] group- transition-colors">
+                    <div className="flex items-center gap-1.5 text-[var(--text-muted)] group- transition-colors uppercase tracking-widest text-[10px] font-black">
                         <FiMapPin className="w-4 h-4" />
                         <span className="truncate">{outlet.location}</span>
                     </div>
+                    <span className="text-[var(--text-muted)] opacity-50">•</span>
+                    <span className="text-brand-500 dark:text-brand-400 font-black uppercase tracking-widest text-[10px]">{waitTime}</span>
                 </div>
             </div>
 
             <div className="hidden md:flex flex-shrink-0 items-center justify-center">
-                <div className="w-12 h-12 rounded-full border border-[var(--border-color)] flex items-center justify-center text-[var(--text-muted)] group- group- group- transition-all shadow-sm">
-                    <FiArrowRight className="w-5 h-5" />
-                </div>
+                <FiArrowRight className="w-5 h-5 text-[var(--text-muted)] group-hover:text-brand-500 transition-colors" />
             </div>
         </Link>
     );
 });
 
-const CompactRestaurantList = ({ outlets, title, description, searchTerm }: { outlets: Outlet[], title: string, description?: string, searchTerm?: string }) => {
-    const { user, updateUser } = useAuth();
-    const { showToast } = useToast();
-    const [claiming, setClaiming] = React.useState(false);
-
-    const handleArea51Click = async (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (!user) {
-            showToast('Log in first to explore classified areas.', 'info');
-            return;
-        }
-        if (claiming || user?.hasExplorerBadge || user.role !== 'STUDENT') return;
-        setClaiming(true);
-        try {
-            await api.post('/users/badge', { type: 'explorer' });
-            
-            // Hacker matrix rain effect
-            const end = Date.now() + 2500;
-            const colors = ['#00ff00', '#113311', '#55ff55'];
-            (function frame() {
-                confetti({
-                    particleCount: 8,
-                    angle: 270,
-                    spread: 180,
-                    origin: { x: Math.random(), y: 0 },
-                    colors: colors,
-                    shapes: ['square'],
-                    scalar: 0.8,
-                    gravity: 0.8,
-                    ticks: 200,
-                });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
-
-            updateUser({ ...user, hasExplorerBadge: true });
-            showToast('🚨 SECURITY BREACH... wait, you unlocked the 🕵️ Urban Explorer Badge!', 'success');
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setClaiming(false);
-        }
-    };
-
-    return (
-        <div className="mb-16 sm:mb-24 mt-10 sm:mt-16 max-w-4xl mx-auto px-2 sm:px-4 md:px-0">
-            <div className="mb-6 sm:mb-10">
-                <h2 className="text-2xl sm:text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight">{title}</h2>
-                {description && <p className="text-base sm:text-lg text-[var(--text-secondary)]">{description}</p>}
-            </div>
-
-            <div className="flex flex-col gap-5">
-                {outlets.map((outlet) => (
-                    <CompactRestaurantListItem key={outlet.id} outlet={outlet} />
-                ))}
-
-                {(searchTerm?.toLowerCase().includes('area 51') || searchTerm?.toLowerCase().includes('classified') || searchTerm?.toLowerCase().includes('staff') || searchTerm?.toLowerCase().includes('area51')) && (
-                <div onClick={handleArea51Click} className="contain-content group flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-7 p-5 md:p-6 bg-[#0a0f12] border border-red-900/50 rounded-[2rem] transition-all duration-150 cursor-pointer relative overflow-hidden hover:border-red-500/80 hover:shadow-[0_0_30px_rgba(255,0,0,0.15)] mt-10">
-                    <div className="w-full md:w-48 h-48 md:h-36 flex-shrink-0 rounded-2xl overflow-hidden relative border border-red-900 bg-black">
-                        <div className="absolute inset-0 bg-red-950/40 backdrop-blur-md z-10 flex flex-col items-center justify-center p-3 text-center transition-all group-hover:bg-red-900/60">
-                            <FiAlertOctagon className="w-8 h-8 text-red-500 mb-2 animate-pulse" />
-                            <div className="bg-red-500 text-white text-[10px] font-black tracking-[0.2em] px-3 py-1.5 rounded-sm shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-                                CLASSIFIED
-                            </div>
-                        </div>
-                    </div>
-                
-                    <div className="flex-1 min-w-0 pr-0 md:pr-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-2xl font-black text-red-50 tracking-tight truncate filter drop-shadow-[0_0_8px_rgba(255,0,0,0.3)]">
-                                Area 51 Kitchen (Staff Only)
-                            </h3>
-                        </div>
-                
-                        <p className="text-red-400/70 text-base mb-4 font-mono text-xs sm:text-sm tracking-tight leading-relaxed">
-                            WARNING: Unauthorized access strictly prohibited. Violators will be expelled.
-                        </p>
-                
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium">
-                            <span className="text-red-600 font-bold uppercase tracking-widest text-[10px]">Level 4 Clearance Required</span>
-                            <span className="text-red-900 opacity-50">•</span>
-                            <div className="flex items-center gap-1.5 text-red-500/50 transition-colors">
-                                <FiMapPin className="w-4 h-4" />
-                                <span className="truncate filter blur-[2px] select-none">Basement Level 3</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                )}
-
-            </div>
-        </div>
-    );
-};
-
 const GridFoodListItem = React.memo(({ item }: { item: TopFoodItem }) => {
     return (
-        <Link to={`/outlets/${item.outlet_id}/menu`} className="contain-content group flex flex-col justify-between w-[220px] md:w-[260px] flex-shrink-0 p-5 p bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden snap-start">
-
+        <Link to={`/outlets/${item.outlet_id}/menu`} className="contain-content group flex flex-col justify-between w-[220px] md:w-[260px] flex-shrink-0 p-5 bg-[var(--bg-card)] border border-[var(--border-color)]  rounded-[2rem] transition-all duration-150   relative overflow-hidden snap-start hover:border-brand-500">
             <div className="flex justify-between items-start mb-4">
                 <div className="w-16 h-16 flex-shrink-0 rounded-2xl flex items-center justify-center bg-amber-50 dark:bg-amber-900/20 text-3xl shadow-inner border border-amber-100 dark:border-amber-800/50">
-                    {item.is_veg === false ? '🍕' : '🥗'}
+                    {item.is_veg === false ? '🥩' : '🥗'}
                 </div>
-                {item.is_veg !== undefined && (
-                    <div className={`w-4 h-4 border-2 rounded-sm flex items-center justify-center flex-shrink-0 ${item.is_veg ? 'border-green-600' : 'border-red-600'}`}>
-                        <div className={`w-2 h-2 rounded-full ${item.is_veg ? 'bg-green-600' : 'bg-red-600'}`}></div>
-                    </div>
-                )}
             </div>
 
             <div className="flex-1">
                 <h3 className="text-xl font-black text-[var(--text-primary)] tracking-tight group- transition-colors line-clamp-2 leading-tight mb-2">
                     {item.name}
                 </h3>
-
-                <p className="text-[var(--text-secondary)] text-xs mb-4 font-medium line-clamp-1">
-                    From <span className="font-bold text-[var(--text-primary)] group-">{item.outlet_name}</span>
-                </p>
+                <p className="text-[var(--text-muted)] font-black uppercase tracking-widest text-[10px] mb-4">From {item.outlet_name}</p>
             </div>
 
             <div className="flex items-center justify-between border-t border-[var(--border-color)] pt-4 mt-auto">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                    {item.price !== undefined && (
-                        <span className="text-[var(--text-primary)] font-black text-lg tracking-tight">₹{item.price}</span>
-                    )}
-                </div>
-
-                <div className="flex items-center">
-                    {item.average_rating ? (
-                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
-                            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
-                                <FiStar className="w-3 h-3 fill-amber-500 text-amber-500" />
-                            </span>
-                            <span className="font-black text-sm">{item.average_rating.toFixed(1)}</span>
-                        </div>
-                    ) : (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] bg-[var(--bg-input)] px-2.5 py-1.5 rounded-lg">New</span>
-                    )}
-                </div>
-            </div>
-
-            <div className="absolute top-4 right-4 opacity-0 group- transition-opacity duration-150 hidden md:block">
-                <div className="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-lg">
-                    <FiArrowRight className="w-3 h-3" />
+                <span className="text-brand-500 font-extrabold text-lg tracking-tight">₹{item.price}</span>
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                    <FiStar className="w-3 h-3 fill-amber-500 text-amber-500" />
+                    <span className="font-black text-sm">{item.average_rating?.toFixed(1) || '0.0'}</span>
                 </div>
             </div>
         </Link>
@@ -322,171 +168,276 @@ const GridFoodListItem = React.memo(({ item }: { item: TopFoodItem }) => {
 const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [quickFilter, setQuickFilter] = useState<string | null>(null); // NEW: quick filter pill state
-    const resultsRef = useRef<HTMLDivElement>(null);
+    const [isInputFocused, setIsInputFocused] = useState(false);
+    const [quickFilter, setQuickFilter] = useState<string | null>(null);
+    const { user, updateUser } = useAuth();
+    const { showToast } = useToast();
+    const [showMatrix, setShowMatrix] = useState(false);
+    const [isClaimingExplorer, setIsClaimingExplorer] = useState(false);
 
-    useEffect(() => {
-        if (searchTerm && resultsRef.current) {
-            resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+    const isSecretTerm = useMemo(() => {
+        const t = searchTerm.toLowerCase().trim();
+        return t === 'area 51' || t === 'classified' || t === 'staff';
     }, [searchTerm]);
+
+    const handleExplorerClick = async () => {
+        if (!user || user.role !== 'STUDENT' || user.hasExplorerBadge || isClaimingExplorer) return;
+        
+        setIsClaimingExplorer(true);
+        setShowMatrix(true);
+        
+        try {
+            await api.post('/users/badge', { type: 'explorer' });
+            
+            // Visual Celebration
+            const end = Date.now() + 2000;
+            const colors = ['#10b981', '#059669', '#34d399'];
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors: colors });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors: colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            if (updateUser) updateUser({ ...user, hasExplorerBadge: true });
+            if (showToast) showToast('🚨 Urban Explorer Badge Unlocked! (+50 XP)', 'success');
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsClaimingExplorer(false);
+        }
+    };
 
     const topFoodItems = useMemo(() => outlets
         .flatMap(outlet => (outlet.menu_items || []).map(item => ({ ...item, outlet_id: outlet.id, outlet_name: outlet.name })))
         .sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))
         .slice(0, 10), [outlets]);
 
-    const gridOutlets = useMemo(() => {
-        return outlets.filter(o => {
+    const finalOutlets = useMemo(() => outlets.filter(o => {
         const name = o.name.toLowerCase();
-        const menuString = o.menu_items?.map(m => m.name.toLowerCase()).join(' ') || '';
-
-        if (searchTerm) {
-            const st = searchTerm.toLowerCase();
-            if (!name.includes(st) && !o.location.toLowerCase().includes(st) && !menuString.includes(st)) {
-                return false;
-            }
-        }
-
-        if (quickFilter) {
-            if (quickFilter === 'Fast Delivery' && o.current_status === 'BUSY') return false;
-            if (quickFilter === 'Top Rated' && (o.average_rating || 0) < 4.0) return false;
-            if (quickFilter === 'Veg Only') {
-                const servesMeat = o.menu_items?.some(m => m.is_veg === false);
-                if (servesMeat) return false;
-            }
-        }
-
+        const searchTermMatches = !searchTerm || name.includes(searchTerm.toLowerCase()) || o.menu_items?.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        const quickFilterMatches = !quickFilter || (quickFilter === 'Fast Delivery' && o.current_status !== 'BUSY');
+        
+        let categoryMatches = true;
         if (selectedCategory) {
             const cat = selectedCategory.toLowerCase();
-
-            const isMatch = (str: string) => {
-                if (cat === 'pizza') return str.includes('pizza') || str.includes('italian');
-                if (cat === 'chinese' || cat === 'momos') return str.includes('chow') || str.includes('chinese') || str.includes('asian') || str.includes('noodle') || str.includes('momo') || str.includes('manchurian');
-                if (cat === 'south indian') return str.includes('southern') || str.includes('dosa') || str.includes('idli') || str.includes('vada');
-                if (cat === 'burgers') return str.includes('burger') || str.includes('fast');
-                if (cat === 'north indian') return str.includes('dhaba') || str.includes('punjabi') || str.includes('maggi') || str.includes('chole') || str.includes('paratha') || str.includes('tikka');
-                if (cat === 'desserts') return str.includes('sweet') || str.includes('ice') || str.includes('choco') || str.includes('cookie');
-                return false;
+            const keywords: Record<string, string[]> = {
+                'north indian': ['thali', 'paneer', 'roti', 'dal', 'paratha', 'chole', 'kulcha', 'biryani', 'masala'],
+                'south indian': ['dosa', 'idli', 'vada', 'sambar', 'uttapam', 'southern', 'coconut', 'chutney'],
+                'chinese': ['noodles', 'chow', 'manchurian', 'fried rice', 'schezwan', 'chinese', 'dimsum'],
+                'pizza': ['pizza', 'pasta', 'italian', 'cheese', 'garlic bread'],
+                'burgers': ['burger', 'sandwich', 'fries', 'patty', 'bun'],
+                'desserts': ['cake', 'ice cream', 'pastry', 'shake', 'beverage', 'dessert', 'sweet'],
+                'momos': ['momo', 'dimsum', 'dumpling']
             };
-
-            const isKnownMapped = ['pizza', 'chinese', 'momos', 'south indian', 'burgers', 'north indian', 'desserts'].includes(cat);
-            if (isKnownMapped) {
-                if (!isMatch(name) && !isMatch(menuString)) return false;
-            } else {
-                let hash = 0;
-                const strId = String(o.id);
-                for (let i = 0; i < strId.length; i++) hash = strId.charCodeAt(i) + ((hash << 5) - hash);
-                if (Math.abs(hash) % CATEGORIES.length !== CATEGORIES.findIndex(c => c.name === selectedCategory)) return false;
-            }
+            
+            const catKeywords = keywords[cat] || [cat];
+            const nameMatches = catKeywords.some(k => name.includes(k));
+            const menuMatches = o.menu_items?.some(item => {
+                const iName = item.name.toLowerCase();
+                return catKeywords.some(k => iName.includes(k));
+            });
+            
+            categoryMatches = nameMatches || (menuMatches ?? false);
         }
 
-        return true;
-    });
-    }, [outlets, searchTerm, quickFilter, selectedCategory]);
+        return searchTermMatches && quickFilterMatches && categoryMatches;
+    }), [outlets, searchTerm, quickFilter, selectedCategory]);
 
     return (
-        <>
-            <div className="relative min-h-[80vh] sm:min-h-[85vh] flex flex-col justify-center px-4 sm:px-6 md:px-8 max-w-7xl mx-auto z-10 overscroll-none py-8 sm:py-0">
-                <FadeIn delay={0.1}>
-                    <h1 className="text-[clamp(2.5rem,10vw,7rem)] font-black text-[var(--text-primary)] mb-4 sm:mb-6 drop-shadow-lg leading-[0.95] tracking-tight">
-                        Bigger<br/>than hunger.
-                        <span className="block text-brand-500 opacity-100 mt-2 drop-shadow-md">Closer than a line.</span>
-                    </h1>
-                </FadeIn>
-                
-                <FadeIn delay={0.3}>
-                    <p className="text-base sm:text-lg md:text-xl text-[var(--text-primary)] mb-8 sm:mb-12 max-w-3xl font-bold drop-shadow-md">
-                        Connect with campus vendors so your food is ready when you are.
-                    </p>
-                </FadeIn>
-
-                <FadeIn delay={0.5} className="w-full max-w-2xl relative z-20">
-                    <div className="relative flex items-center bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-[2rem] sm:rounded-[2.5rem] p-1.5 sm:p-2 shadow-2xl focus-within:ring-4 focus-within:ring-brand-500/20 transition-all duration-300">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 flex items-center justify-center rounded-full bg-brand-500 text-white ml-1 sm:ml-2 shadow-lg flex-shrink-0">
-                            <FiSearch className="w-5 h-5 sm:w-6 sm:h-6" />
+        <div className="relative w-full min-h-screen">
+            {showMatrix && <MatrixRain onComplete={() => setShowMatrix(false)} duration={3500} />}
+            
+            {/* RADAR WIDGET - TOTAL LEFT HUD */}
+            <aside className="fixed left-6 top-32 bottom-10 w-[160px] hidden xl:block z-[60] overflow-y-auto custom-scrollbar" style={{ maskImage: 'linear-gradient(to bottom, black 95%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 95%, transparent 100%)' }}>
+                <FadeIn delay={0.2} direction="right">
+                    <div className="bg-[var(--bg-card)]/30 backdrop-blur-3xl rounded-[2rem] border border-[var(--border-color)] overflow-hidden shadow-2xl flex flex-col">
+                        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--bg-input)]/40">
+                            <h3 className="text-sm font-black text-[var(--text-primary)] uppercase tracking-[0.2em] opacity-80">Campus Radar</h3>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest opacity-80">Live Signal</span>
+                            </div>
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Craving something? Search here..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] px-3 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 text-base sm:text-lg md:text-xl font-bold"
-                        />
-                        {searchTerm && (
-                            <button onClick={() => setSearchTerm('')} className="pr-4 sm:pr-6 text-[var(--text-muted)] transition-colors font-bold uppercase tracking-widest text-xs sm:text-sm flex-shrink-0">
-                                Clear
-                            </button>
+                        <div className="p-2 flex-1">
+                            <CampusHeatmap outlets={outlets} compact />
+                        </div>
+                    </div>
+                </FadeIn>
+            </aside>
+
+            {/* MAIN CONTENT AREA - CENTERED */}
+            <main className="w-full max-w-4xl mx-auto px-4 py-12 sm:py-20 relative z-10">
+                {/* Hero Header */}
+                <div className="w-full text-center mb-16">
+                    <FadeIn delay={0.1}>
+                        <h1 className="text-[clamp(2.5rem,8vw,5.5rem)] font-black text-[var(--text-primary)] leading-[0.9] tracking-tighter mb-6">
+                            Bigger than hunger.<br />
+                            <span className="text-brand-500 drop-shadow-md">Closer than a line.</span>
+                        </h1>
+                        <p className="text-xl text-[var(--text-muted)] font-medium max-w-2xl mx-auto leading-relaxed">
+                            Skip the wait. Real-time patterns, instant clicks, and zero friction for SRM campus.
+                        </p>
+                    </FadeIn>
+                </div>
+
+                {/* Search Bar - Center Aligned */}
+                <div className="w-full max-w-2xl mx-auto mb-20">
+                    <div className={`relative flex flex-col bg-[var(--bg-card)]/40 backdrop-blur-2xl border border-[var(--border-color)] p-2 shadow-2xl transition-all duration-500 overflow-hidden ${searchTerm ? 'rounded-[2.5rem]' : 'rounded-full'}`}>
+                        <div className="flex items-center w-full">
+                            <div className="w-14 h-14 flex items-center justify-center rounded-full bg-brand-500 text-white ml-2 shadow-xl shadow-brand-500/20 group-hover:scale-105 transition-transform">
+                                <FiSearch className="w-6 h-6" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search restaurants or dishes..."
+                                value={searchTerm}
+                                onFocus={() => setIsInputFocused(true)}
+                                onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full bg-transparent border-none outline-none text-[var(--text-primary)] px-6 py-6 text-xl font-bold placeholder:text-[var(--text-secondary)] placeholder:opacity-50"
+                            />
+                            {searchTerm && (
+                                <button onClick={() => setSearchTerm('')} className="mr-6 p-2 hover:bg-brand-500/10 rounded-full text-[var(--text-muted)] transition-colors">
+                                    <FiX className="w-6 h-6" />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Real-time Integrated Results - PUSHING CONTENT DOWN */}
+                        {searchTerm && isInputFocused && (
+                            <div className="w-full p-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                                <div className="h-px bg-gradient-to-r from-transparent via-[var(--border-color)] to-transparent mb-6 opacity-50" />
+                                
+                                <div className="grid grid-cols-1 gap-3 max-h-[500px] overflow-y-auto px-2 custom-scrollbar pb-6">
+                                    {/* Secret Kitchen Section */}
+                                    {isSecretTerm && (
+                                        <div className="mb-4">
+                                            <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-4 px-4">Restricted Personnel Only</p>
+                                            <div 
+                                                onClick={handleExplorerClick}
+                                                className="flex items-center gap-5 p-4 bg-red-500/10 dark:bg-red-500/5 hover:bg-red-500/20 border border-red-500/30 hover:border-red-500 rounded-3xl transition-all group cursor-pointer animate-pulse-subtle shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                                            >
+                                                <div className="w-14 h-14 flex-shrink-0 bg-red-500 rounded-2xl p-2.5 shadow-lg flex items-center justify-center text-white">
+                                                    <FiShield className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="font-black text-lg text-red-500 uppercase tracking-tight">Area 51 Kitchen (Staff Only)</p>
+                                                        <FiArrowRight className="text-red-500 group-hover:translate-x-1 transition-transform" />
+                                                    </div>
+                                                    <p className="text-xs text-red-500 font-bold tracking-tight">CLASSIFIED ASSET • [RESTRICTED ACCESS]</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Restaurants Section */}
+                                    {finalOutlets.length > 0 && (
+                                        <div className="mb-4">
+                                            <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] mb-4 px-4">Venues Found</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {finalOutlets.slice(0, 4).map(o => (
+                                                    <Link key={o.id} to={`/outlets/${o.id}/menu`} className="flex items-center gap-5 p-4 bg-white/5 dark:bg-black/20 hover:bg-brand-500/10 border border-transparent hover:border-brand-500/20 rounded-3xl transition-all group">
+                                                        <div className="w-14 h-14 flex-shrink-0 bg-white rounded-2xl p-2.5 shadow-md overflow-hidden flex items-center justify-center">
+                                                            <img 
+                                                                src={getVendorImage(o.name, o.id)} 
+                                                                alt={o.name}
+                                                                className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
+                                                            />
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center justify-between">
+                                                                <p className="font-black text-lg text-[var(--text-primary)] group-hover:text-brand-500 transition-colors uppercase tracking-tight">{o.name}</p>
+                                                                <FiArrowRight className="text-brand-500 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all" />
+                                                            </div>
+                                                            <p className="text-xs text-[var(--text-muted)] font-bold tracking-tight">{o.location} • {o.current_status === 'BUSY' ? '⚠️ High Traffic' : '⚡ Instant Orders'}</p>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Food Items Section */}
+                                    {(() => {
+                                        const foodResults = outlets.flatMap(o => (o.menu_items || []).filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())).map(i => ({ ...i, outlet_id: o.id, outlet_name: o.name }))).slice(0, 6);
+                                        return foodResults.length > 0 ? (
+                                            <div>
+                                                <p className="text-[10px] font-black text-brand-500 uppercase tracking-[0.2em] mb-4 px-4">Menu Items</p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    {foodResults.map(item => (
+                                                        <Link key={`${item.outlet_id}-${item.id}`} to={`/outlets/${item.outlet_id}/menu`} className="flex items-center gap-4 p-4 bg-white/5 dark:bg-black/20 hover:bg-brand-500/10 border border-transparent hover:border-brand-500/20 rounded-3xl transition-all group">
+                                                            <div className="w-12 h-12 bg-white rounded-xl p-2 shadow-inner flex items-center justify-center">
+                                                                <span className="text-xl">🍟</span>
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-[var(--text-primary)] leading-tight">{item.name}</p>
+                                                                <p className="text-[10px] text-brand-500 font-black uppercase tracking-widest mt-1">₹{item.price} • {item.outlet_name}</p>
+                                                            </div>
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : null;
+                                    })()}
+                                </div>
+                            </div>
                         )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-3 mt-6 ml-2">
-                        {['Fast Delivery ⚡', 'Top Rated ⭐', 'Veg Only 🥬'].map(filter => {
-                            const internalFilter = filter.replace(/ ⭐| ⚡| 🥬/, '');
-                            const isActive = quickFilter === internalFilter;
-
+                    <div className="flex justify-center gap-3 mt-10">
+                        {['Fast Delivery ⚡', 'Top Rated ⭐'].map(filter => {
+                            const filterVal = filter.split(' ')[0];
+                            const isActive = quickFilter === filterVal;
                             return (
                                 <button
                                     key={filter}
-                                    onClick={() => setQuickFilter(isActive ? null : internalFilter)}
-                                    className={`px-6 py-3 rounded-[2rem] text-sm font-bold tracking-wide transition-all duration-300 ${isActive
-                                        ? 'bg-brand-500 text-white shadow-lg rotate-[-2deg] scale-105'
-                                        : 'bg-[var(--glass-bg)] backdrop-blur-md text-[var(--text-primary)] border border-[var(--glass-border)]  dark: '
-                                        }`}
+                                    onClick={() => setQuickFilter(isActive ? null : filterVal)}
+                                    className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 flex items-center gap-3 ${isActive ? 'bg-brand-500 text-white border-brand-500 shadow-2xl shadow-brand-500/40 ring-4 ring-brand-500/10' : 'bg-white/5 border border-[var(--border-color)] text-[var(--text-muted)] hover:border-brand-500/50 hover:bg-brand-500/5 backdrop-blur-sm'}`}
                                 >
-                                    {filter} {isActive && <span className="ml-1 opacity-70">×</span>}
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : 'bg-brand-500'} animate-pulse`} />
+                                    {filter}
                                 </button>
                             );
                         })}
                     </div>
-                </FadeIn>
-            </div>
-
-            <FadeIn delay={0.2} direction="up" fullWidth>
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem] pt-12 sm:pt-16 md:pt-20 pb-8 sm:pb-10 mt-8 sm:mt-10 shadow-[0_-20px_40px_rgba(0,0,0,0.05)] dark:shadow-[0_-20px_40px_rgba(0,0,0,0.2)]">
-                    <CategoryGallery
-                        selectedCategory={selectedCategory}
-                        onSelectCategory={(name) => setSelectedCategory(name === selectedCategory ? null : name)}
-                    />
                 </div>
-            </FadeIn>
 
-            {topFoodItems.length > 0 && (
-                <FadeIn delay={0.1} fullWidth>
-            <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 mt-4 sm:mt-6 mb-4 sm:mb-6 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem] py-8 sm:py-10">
-                        <div className="mb-8 sm:mb-12">
-                            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[var(--text-primary)] tracking-tighter mb-4">Campus<br/>Favorites</h2>
-                        </div>
-
-                        <div className="flex gap-6 w-full overflow-x-auto pb-12 pt-4 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 -mx-4">
-                            {topFoodItems.map((item) => (
-                                <div key={`${item.outlet_id}-${item.id}`} className="snap-center drop-shadow-2xl">
-                                    <GridFoodListItem item={item as TopFoodItem} />
-                                </div>
+                {/* Favorites Shelf */}
+                {topFoodItems.length > 0 && (
+                    <div className="w-full mb-20">
+                        <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight mb-8">Trending Near You</h2>
+                        <div className="flex gap-4 overflow-x-auto pb-6 snap-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {topFoodItems.map(item => (
+                                <GridFoodListItem key={`${item.outlet_id}-${item.id}`} item={item as TopFoodItem} />
                             ))}
                         </div>
                     </div>
-                </FadeIn>
-            )}
+                )}
 
-            <FadeIn delay={0.1} fullWidth>
-                <div ref={resultsRef} className="max-w-7xl mx-auto px-3 sm:px-4 md:px-8 mt-4 sm:mt-6 pb-20 sm:pb-32 pt-10 sm:pt-16 z-20 relative bg-[var(--bg-card)]/40 backdrop-blur-sm rounded-[3rem] sm:rounded-[4rem]">
-                    <CompactRestaurantList
-                        outlets={gridOutlets}
-                        title={selectedCategory ? `Spots for ${selectedCategory}` : "Explore all venues"}
-                        description={selectedCategory ? "Filtered down to match your craving." : "A curated list of all available kitchens, just for you."}
-                        searchTerm={searchTerm}
-                    />
-
-                    {gridOutlets.length === 0 && (
-                        <div className="text-center py-24">
-                            <p className="text-2xl font-bold text-[var(--text-muted)]">No vendors found in this orbit.</p>
-                            <button onClick={() => { setSelectedCategory(null); setQuickFilter(null); setSearchTerm(''); }} className="mt-8 px-8 py-4 bg-brand-500 rounded-full text-white font-black  transition-transform shadow-xl">Reset Scanners</button>
-                        </div>
-                    )}
+                {/* Categories */}
+                <div className="w-full mb-20">
+                    <CategoryGallery selectedCategory={selectedCategory} onSelectCategory={(name) => setSelectedCategory(selectedCategory === name ? null : name)} />
                 </div>
-            </FadeIn>
-        </>
+
+                {/* Restaurant List */}
+                <div className="w-full">
+                    <h2 className="text-2xl font-black text-[var(--text-primary)] tracking-tight mb-10">Explore All Venues</h2>
+                    <div className="flex flex-col gap-6 w-full">
+                        {finalOutlets.map(o => (
+                            <CompactRestaurantListItem key={o.id} outlet={o} />
+                        ))}
+                    </div>
+                </div>
+
+                {finalOutlets.length === 0 && (
+                    <div className="text-center py-20">
+                        <p className="text-2xl font-black text-[var(--text-muted)]">No vendors found in this orbit.</p>
+                        <button onClick={() => { setSearchTerm(''); setQuickFilter(null); setSelectedCategory(null); }} className="mt-8 px-8 py-3 bg-brand-500 rounded-full text-white font-black hover:scale-105 transition-transform shadow-xl">Reset Scanners</button>
+                    </div>
+                )}
+            </main>
+        </div>
     );
 };
 
@@ -497,60 +448,21 @@ const OutletList = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const outletRes = await api.get('/outlets');
-                const sortedOutlets = [...outletRes.data].reverse();
-                setOutlets(sortedOutlets);
-            } catch (error) {
-                console.error("Failed to fetch outlets", error);
-            } finally {
-                setIsLoading(false);
-            }
+                const res = await api.get('/outlets');
+                setOutlets([...res.data].reverse());
+            } catch (err) { console.error(err); }
+            finally { setIsLoading(false); }
         };
         fetchData();
-        const intervalId = setInterval(fetchData, 30000);
-        return () => clearInterval(intervalId);
+        const interval = setInterval(fetchData, 30000);
+        return () => clearInterval(interval);
     }, []);
 
-    if (isLoading) {
-        return (
-            <div className="space-y-12 animate-pulse mt-4 max-w-[1240px] mx-auto px-4">
-                <div className="h-8 bg-[var(--bg-card)] rounded-lg w-64 mb-6 border border-[var(--border-color)]"></div>
-                <div className="flex gap-6 overflow-hidden pb-4">
-                    {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="w-24 h-24 md:w-36 md:h-36 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex-shrink-0"></div>)}
-                </div>
-
-                <div className="my-10 h-px w-full bg-[var(--border-color)]"></div>
-
-                <div className="h-8 bg-[var(--bg-card)] rounded-lg w-80 mb-6 border border-[var(--border-color)]"></div>
-                <div className="flex gap-6 overflow-hidden">
-                    {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="w-[320px] aspect-[4/3] rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)] flex-shrink-0"></div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    if (outlets.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-none max-w-[1240px] mx-auto min-h-[50vh]">
-                <div className="w-24 h-24 bg-[var(--bg-input)] rounded-[2rem] rounded-tl-sm flex items-center justify-center mb-8 rotate-3">
-                    <FiMapPin className="w-10 h-10 text-[var(--text-secondary)]" />
-                </div>
-                <h2 className="text-3xl md:text-4xl font-extrabold text-[var(--text-primary)] mb-4 font-heading tracking-tight">Looks a bit empty here</h2>
-                <p className="text-[var(--text-secondary)] text-lg max-w-md mx-auto leading-relaxed">
-                    We're currently setting up the campus dining network. Hang tight, good food is on the horizon.
-                </p>
-            </div>
-        );
-    }
+    if (isLoading) return <div className="pt-40 text-center font-black animate-pulse text-[var(--text-muted)] tracking-widest uppercase">Scanning Campus...</div>;
 
     return (
-        <div className="animate-none space-y-4 pb-10 mt-4 max-w-[1240px] mx-auto px-2">
+        <div className="pb-20 animate-none">
             <HomepageSections outlets={outlets} />
-            <div className="text-center pt-4 pb-10">
-                <p className="text-[var(--text-muted)] font-medium">You've reached the end of the list</p>
-            </div>
         </div>
     );
 };

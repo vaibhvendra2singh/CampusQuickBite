@@ -247,6 +247,9 @@ export const updateOutletStatus = async (req: AuthRequest, res: Response): Promi
             return;
         }
 
+        // CLEAR CACHE - This was missing!
+        await cacheDel(CacheKey.outlets(), CacheKey.outletById(id as string));
+
         res.status(200).json(data);
     } catch (error) {
         console.error('Update outlet status error:', error);

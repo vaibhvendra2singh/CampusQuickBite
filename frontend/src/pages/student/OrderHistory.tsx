@@ -37,7 +37,7 @@ const TIMELINE_STEPS = [
 ];
 
 const OrderHistory = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { showToast } = useToast();
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +97,23 @@ const OrderHistory = () => {
         a.href = receiptUrl;
         a.download = `CampusBite_Receipt_${expandedOrder || 'order'}.png`;
         a.click();
+    };
+
+    const handleNightOwl = async () => {
+        const hour = new Date().getHours();
+        if (hour >= 1 && hour < 4 && user && !user.hasNightOwlBadge) {
+            try {
+                await api.post('/users/badge', { type: 'night_owl' });
+                if (updateUser) updateUser({ ...user, hasNightOwlBadge: true });
+                showToast('🌙 Night Owl Badge Unlocked! Late night hunger is real. (+20 XP)', 'success');
+            } catch (err: any) {
+                if (err.response?.status === 409 && updateUser) {
+                    updateUser({ ...user, hasNightOwlBadge: true });
+                }
+            }
+        } else if (hour < 1 || hour >= 4) {
+            showToast("The moon isn't quite right. Try again deep in the night (1 AM - 4 AM).", 'info');
+        }
     };
 
     if (isLoading) {
@@ -311,7 +328,10 @@ const OrderHistory = () => {
 
                 {orders.length === 0 && (
                     <div className="py-24 text-center bg-[var(--bg-card)] rounded-[3rem] border-2 border-[var(--border-color)] border-dashed">
-                        <div className="w-20 h-20 bg-brand-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-8 text-brand-500 rotate-12 group- transition-">
+                        <div 
+                            onClick={handleNightOwl}
+                            className="w-20 h-20 bg-brand-500/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-8 text-brand-500 rotate-12 group transition-all hover:scale-110 hover:rotate-0 cursor-pointer active:scale-95"
+                        >
                             <FiPackage className="w-10 h-10" />
                         </div>
                         <h3 className="text-3xl font-black text-[var(--text-primary)] mb-3 tracking-tight">Blank Page?</h3>

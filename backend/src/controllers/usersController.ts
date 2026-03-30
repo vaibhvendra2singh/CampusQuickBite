@@ -3,17 +3,20 @@ import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import { notifyAccountStatus } from '../services/socketService';
 import { normalizeRole, displayRole, ROLES } from '../utils/roles';
+import bcrypt from 'bcryptjs';
 
-type BadgeType = 'shadow' | 'caffeine' | 'glutton' | 'night_owl' | 'arcade' | 'explorer' | 'pro_gamer' | 'completionist';
-const BADGE_CONFIG: Record<BadgeType, { column: string, xp: number }> = {
-    shadow: { column: 'has_shadow_badge', xp: 50 },
-    caffeine: { column: 'has_caffeine_badge', xp: 20 },
-    glutton: { column: 'has_glutton_badge', xp: 30 },
-    night_owl: { column: 'has_night_owl_badge', xp: 20 },
-    arcade: { column: 'has_arcade_badge', xp: 40 },
-    explorer: { column: 'has_explorer_badge', xp: 50 },
-    pro_gamer: { column: 'has_pro_gamer_badge', xp: 40 },
-    completionist: { column: 'has_completionist_badge', xp: 100 }
+
+type BadgeType = 'shadow' | 'caffeine' | 'glutton' | 'night_owl' | 'arcade' | 'explorer' | 'pro_gamer' | 'completionist' | 'hacker';
+const BADGE_CONFIG: Record<BadgeType, { column: string, xp: number, label: string }> = {
+    shadow: { column: 'has_shadow_badge', xp: 50, label: 'Shadow Member' },
+    caffeine: { column: 'has_caffeine_badge', xp: 20, label: 'Caffeine Addict' },
+    glutton: { column: 'has_glutton_badge', xp: 30, label: 'The Glutton' },
+    night_owl: { column: 'has_night_owl_badge', xp: 20, label: 'Night Owl' },
+    arcade: { column: 'has_arcade_badge', xp: 40, label: 'Arcade King' },
+    explorer: { column: 'has_explorer_badge', xp: 50, label: 'Urban Explorer' },
+    pro_gamer: { column: 'has_pro_gamer_badge', xp: 40, label: 'Pro Gamer' },
+    completionist: { column: 'has_completionist_badge', xp: 100, label: 'The Gamer' },
+    hacker: { column: 'has_hacker_badge', xp: 75, label: 'The Hacker' }
 };
 
 export const updateUserProfile = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -83,7 +86,8 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             hasArcadeBadge: data.has_arcade_badge || false,
             hasExplorerBadge: data.has_explorer_badge || false,
             hasProGamerBadge: data.has_pro_gamer_badge || false,
-            hasCompletionistBadge: data.has_completionist_badge || false
+            hasCompletionistBadge: data.has_completionist_badge || false,
+            hasHackerBadge: data.has_hacker_badge || false
         });
 
     } catch (error) {
@@ -96,7 +100,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
         try {
             const { data, error } = await supabase
                 .from('users')
-                .select('id, name, xp, tier, profile_pic, has_shadow_badge, has_caffeine_badge, has_glutton_badge, has_night_owl_badge, has_arcade_badge, has_explorer_badge, has_pro_gamer_badge, has_completionist_badge')
+                .select('id, name, xp, tier, profile_pic, has_shadow_badge, has_caffeine_badge, has_glutton_badge, has_night_owl_badge, has_arcade_badge, has_explorer_badge, has_pro_gamer_badge, has_completionist_badge, has_hacker_badge')
                 .eq('role', 'student')
                 .order('xp', { ascending: false })
                 .limit(10);
@@ -123,7 +127,8 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
                 hasArcadeBadge: u.has_arcade_badge || false,
                 hasExplorerBadge: u.has_explorer_badge || false,
                 hasProGamerBadge: u.has_pro_gamer_badge || false,
-                hasCompletionistBadge: u.has_completionist_badge || false
+                hasCompletionistBadge: u.has_completionist_badge || false,
+                hasHackerBadge: u.has_hacker_badge || false
             }));
 
         res.status(200).json(leaderboard);
@@ -290,6 +295,8 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             xp: data.xp || 0,
             tier: data.tier || 'BRONZE',
             profilePic: data.profile_pic,
+            enrollmentNumber: data.enrollment_number,
+            phoneNumber: data.phone_number,
             hasShadowBadge: data.has_shadow_badge || false,
             hasCaffeineBadge: data.has_caffeine_badge || false,
             hasGluttonBadge: data.has_glutton_badge || false,
@@ -297,7 +304,8 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             hasArcadeBadge: data.has_arcade_badge || false,
             hasExplorerBadge: data.has_explorer_badge || false,
             hasProGamerBadge: data.has_pro_gamer_badge || false,
-            hasCompletionistBadge: data.has_completionist_badge || false
+            hasCompletionistBadge: data.has_completionist_badge || false,
+            hasHackerBadge: data.has_hacker_badge || false
         });
     } catch (error) {
         console.error('Get user by id error:', error);
@@ -361,20 +369,54 @@ export const resetAllStudentXP = async (req: AuthRequest, res: Response): Promis
 export const nukeDatabase = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const id = req.user?.id;
-        
+        const { password } = req.body;
+
         if (!id || req.user?.role !== 'admin') {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }
 
-        await supabase.from('cart_items').delete().neq('id', 0);
-        await supabase.from('order_items').delete().neq('id', 0);
-        await supabase.from('orders').delete().neq('id', 0);
-        await supabase.from('transactions').delete().neq('id', 0);
-        await supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).eq('role', 'student');
-        await supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin');
+        if (!password) {
+            res.status(400).json({ error: 'Administrator password is required' });
+            return;
+        }
 
-        res.status(200).json({ message: 'Database successfully nuked. All orders, sales, and XP records have been cleared.' });
+        // Verify Admin Password
+        const { data: adminUser, error: fetchErr } = await supabase
+            .from('users')
+            .select('password')
+            .eq('id', id)
+            .single();
+
+        if (fetchErr || !adminUser) {
+            res.status(500).json({ error: 'Verification system offline' });
+            return;
+        }
+
+        const isMatch = await bcrypt.compare(password, adminUser.password);
+        if (!isMatch) {
+            res.status(401).json({ error: 'Incorrect administrator password' });
+            return;
+        }
+
+        // Proceed with Wipe
+        const results = await Promise.all([
+            supabase.from('cart_items').delete().neq('id', 0),
+            supabase.from('order_items').delete().neq('id', 0),
+            supabase.from('orders').delete().neq('id', 0),
+            supabase.from('transactions').delete().neq('id', 0),
+            supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).eq('role', 'student'),
+            supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin')
+        ]);
+
+        const anyError = results.some(r => r.error);
+        if (anyError) {
+            console.error('[NUKE_ERROR] Database wipe failed:', results);
+            res.status(500).json({ error: 'Database wipe critical error' });
+            return;
+        }
+
+        res.status(200).json({ message: 'DATABASE SUCCESSFULLY PURGED' });
     } catch (error) {
         console.error('Nuke database error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -442,8 +484,13 @@ export const grantBadge = async (req: AuthRequest, res: Response): Promise<void>
             return;
         }
 
-        console.log(`[SHADOW] 🎭 User ${userId} claimed Shadow Badge. New XP: ${newXp}`);
-        res.status(200).json({ message: 'Shadow Member badge granted', xpGranted: 50, newXp, newTier });
+        console.log(`[GAMIFICATION] 🎭 User ${userId} claimed ${badgeDef.label} Badge. New XP: ${newXp}`);
+        res.status(200).json({ 
+            message: `${badgeDef.label} Badge Granted (+${badgeDef.xp} XP)`, 
+            xpGranted: badgeDef.xp, 
+            newXp, 
+            newTier 
+        });
     } catch (error) {
         console.error('Grant shadow badge error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -467,6 +514,7 @@ export const revokeAllBadges = async (req: AuthRequest, res: Response): Promise<
             has_explorer_badge: false,
             has_pro_gamer_badge: false,
             has_completionist_badge: false,
+            has_hacker_badge: false,
             xp: 0,
             tier: 'BRONZE',
         };
@@ -499,6 +547,8 @@ export const revokeAllBadges = async (req: AuthRequest, res: Response): Promise<
             xp: updatedUserData.xp || 0,
             tier: updatedUserData.tier || 'BRONZE',
             profilePic: updatedUserData.profile_pic,
+            enrollmentNumber: updatedUserData.enrollment_number,
+            phoneNumber: updatedUserData.phone_number,
             hasShadowBadge: updatedUserData.has_shadow_badge || false,
             hasCaffeineBadge: updatedUserData.has_caffeine_badge || false,
             hasGluttonBadge: updatedUserData.has_glutton_badge || false,
@@ -506,7 +556,8 @@ export const revokeAllBadges = async (req: AuthRequest, res: Response): Promise<
             hasArcadeBadge: updatedUserData.has_arcade_badge || false,
             hasExplorerBadge: updatedUserData.has_explorer_badge || false,
             hasProGamerBadge: updatedUserData.has_pro_gamer_badge || false,
-            hasCompletionistBadge: updatedUserData.has_completionist_badge || false
+            hasCompletionistBadge: updatedUserData.has_completionist_badge || false,
+            hasHackerBadge: updatedUserData.has_hacker_badge || false
         };
 
         console.log(`[ADMIN] 🚫 Admin revoked all badges for user ${id}`);

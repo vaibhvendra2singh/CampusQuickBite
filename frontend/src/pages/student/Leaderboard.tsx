@@ -18,17 +18,18 @@ interface LeaderboardUser {
     hasExplorerBadge?: boolean;
     hasProGamerBadge?: boolean;
     hasCompletionistBadge?: boolean;
+    hasHackerBadge?: boolean;
 }
 
 const BADGE_STYLING: Record<string, { label: string, color: string, border: string, bg: string }> = {
+    hasHackerBadge: { label: '🖥️ Hacker', color: '#10b981', border: 'rgba(16, 185, 129, 0.6)', bg: 'rgba(16, 185, 129, 0.1)' },
     hasShadowBadge: { label: 'Shadow Agent', color: '#00ff46', border: 'rgba(0, 255, 70, 0.4)', bg: '#1a1a1a' },
     hasCaffeineBadge: { label: '☕ Caffeine Addict', color: '#DEB887', border: 'rgba(222, 184, 135, 0.4)', bg: '#2b1d0e' },
     hasGluttonBadge: { label: '🍔 Glutton', color: '#facc15', border: 'rgba(250, 204, 21, 0.4)', bg: '#27190b' },
     hasNightOwlBadge: { label: '🌙 Night Owl', color: '#818cf8', border: 'rgba(129, 140, 248, 0.4)', bg: '#1e1b4b' },
     hasArcadeBadge: { label: '🕹️ Arcade King', color: '#00e5ff', border: 'rgba(0, 229, 255, 0.4)', bg: '#161b22' },
     hasExplorerBadge: { label: '🕵️ Urban Explorer', color: '#4ade80', border: 'rgba(74, 222, 128, 0.4)', bg: '#052c0a' },
-    hasProGamerBadge: { label: '🏆 Pro Gamer', color: '#cc00ff', border: 'rgba(204, 0, 255, 0.4)', bg: '#1c0226' },
-    hasCompletionistBadge: { label: '🎮 The Gamer', color: '#ffffff', border: 'rgba(255, 255, 255, 0.4)', bg: '#4c1d95' }
+    hasProGamerBadge: { label: '🏆 Pro Gamer', color: '#cc00ff', border: 'rgba(204, 0, 255, 0.4)', bg: '#1c0226' }
 };
 
 const tierConfig: Record<string, { color: string, icon: any, label: string }> = {
@@ -80,7 +81,7 @@ const Leaderboard = () => {
                         const tier = tierConfig[user.tier] || tierConfig['BRONZE'];
                         const TierIcon = tier.icon;
                         const isTop = index === 0;
-                        const hasAllBadges = user.hasShadowBadge && user.hasCaffeineBadge && user.hasGluttonBadge && user.hasNightOwlBadge && user.hasArcadeBadge && user.hasExplorerBadge && user.hasProGamerBadge && user.hasCompletionistBadge;
+                        const hasAllBadges = user.hasShadowBadge && user.hasCaffeineBadge && user.hasGluttonBadge && user.hasNightOwlBadge && user.hasArcadeBadge && user.hasExplorerBadge && user.hasProGamerBadge && user.hasHackerBadge;
 
                         return (
                             <div key={user.id} className={`group flex items-center p-5 rounded-2xl border transition-all duration-150 ${isTop ? 'bg-brand-50 dark:bg-brand-500/5 border-brand-500/50 shadow-md' : 'bg-[var(--bg-card)] border-[var(--border-color)]'} ${hasAllBadges ? 'animate-profile-glow border-2 z-10 relative' : ''}`}>

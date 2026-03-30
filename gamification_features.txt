@@ -25,25 +25,19 @@
 7. Pro Gamer Badge (🏆) | +40 XP
 - How to get it: Achieve a score greater than 10 in any of the available mini-games (Snake, 2048, Flappy Bird, Breakout, etc.).
 
-8. The Gamer / Completionist Badge (🎮) | +100 XP
-- How to get it: Open and play every single one of the 6 mini-games in the Game Hub at least once. Triggers a massive, 3-second firework finale.
-
 ## 🚀 Advanced Gamification & Technical Features
 
-9. The "Cyberpunk/Hacker" Theme (Visual & Audio) 🎧
+8. The "Cyberpunk/Hacker" Theme (Visual & Audio) 🎧
 - Deep developer Easter egg. If a user opens their browser's Developer Console and types:
   `document.body.classList.add('unlocked')`
 - Visually: The entire website instantly transforms into a glitchy, green/black matrix cyberpunk theme.
 - Audio: A hidden `MutationObserver` detects this class and immediately triggers an `AudioContext` synthesizer that plays a fast, buzzing cyberpunk arpeggio loop directly in the browser!
 
-10. The Multi-Tasking "Mini-OS" Game Hub 🖥️
+9. The Multi-Tasking "Mini-OS" Game Hub 🖥️
 - Games spawn in movable, floating windows instead of simple modals. Users can open multiple games at once, drag them around, and play simultaneously while waiting for their order.
 
-11. The Secret Portal Button ⏱️
+10. The Secret Portal Button ⏱️
 - In the footer, the "Kitchens are Live" server status indicator is actually a portal. Double-clicking it instantly teleports the user to the hacker terminal (`/secret`).
 
-12. Completionist "Glow" Profile ✨
-- If a student collects all 8 badges, their profile card applies an exclusive `.animate-profile-glow` CSS class, making their profile physically pulse with a slow, breathing golden/rainbow aura on the Leaderboard.
-
-13. Dynamic Tier Hierarchy System 🏅
+11. Dynamic Tier Hierarchy System 🏅
 - Tracks user tiers based on XP thresholds (Bronze -> Silver -> Gold -> Electric Blue). This determines their ranking color on the Elite Leaderboard, encouraging them to order more and play games to rank up.

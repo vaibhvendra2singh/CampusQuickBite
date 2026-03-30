@@ -316,6 +316,7 @@ const Cart = () => {
                             />
                         </div>
                     </div>
+
                 </div>
 
                 <div className="w-full lg:w-[400px] flex-shrink-0">

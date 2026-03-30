@@ -25,6 +25,7 @@ export interface User {
     hasExplorerBadge?: boolean;
     hasProGamerBadge?: boolean;
     hasCompletionistBadge?: boolean;
+    hasHackerBadge?: boolean;
     xp?: number;
     tier?: string;
 }
@@ -53,15 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (storedToken && storedUser) {
             try {
                 const payload = JSON.parse(atob(storedToken.split('.')[1]));
-                const isExpired = payload.exp * 1000 < Date.now();
-                if (isExpired) {
-                    console.log('Stored token is expired, clearing...');
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    setIsLoading(false);
-                    return;
-                }
-
+                // Silently refresh user data from server if token exists
                 api.get(`/users/${payload.id}?t=${Date.now()}`).then(res => {
                     setToken(storedToken);
                     setUser(res.data);
@@ -69,10 +62,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }).catch((err: any) => {
                     console.error('Initial user fetch failed:', err);
                     if (err.response?.status === 401 || err.response?.status === 403) {
+                        // Server explicitly rejected the token — force logout
                         localStorage.removeItem('token');
                         localStorage.removeItem('user');
                     } else {
-                        // Fallback to stored user if API is just down
+                        // Network error or server down — restore from cache so user stays logged in
                         setToken(storedToken);
                         setUser(JSON.parse(storedUser));
                     }

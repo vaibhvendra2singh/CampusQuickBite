@@ -110,12 +110,11 @@ const GameHub: React.FC = () => {
     const { user, updateUser } = useAuth();
     const { showToast } = useToast();
     const [claimingPro, setClaimingPro] = useState(false);
-    const [claimingComp, setClaimingComp] = useState(false);
 
     useEffect(() => {
         const handleScore = async (e: any) => {
             const score = e.detail?.score || 0;
-            if (score > 10 && user && !user.hasProGamerBadge && !claimingPro) {
+            if (score >= 10 && user && !user.hasProGamerBadge && !claimingPro) {
                 setClaimingPro(true);
                 try {
                     await api.post('/users/badge', { type: 'pro_gamer' });
@@ -126,7 +125,10 @@ const GameHub: React.FC = () => {
                     
                     updateUser({ ...user, hasProGamerBadge: true });
                     showToast('🏆 Pro Gamer Badge Unlocked! (+40 XP)', 'success');
-                } catch (err) {
+                } catch (err: any) {
+                    if (err.response?.status === 409) {
+                        updateUser({ ...user, hasProGamerBadge: true });
+                    }
                     console.error('Pro Gamer Badge Error:', err);
                 } finally {
                     setClaimingPro(false);
@@ -145,41 +147,6 @@ const GameHub: React.FC = () => {
     }, []);
 
     const openGame = (id: GameId) => {
-        if (user && !user.hasCompletionistBadge && !claimingComp) {
-            const playedKey = `played_games_${user.id}`;
-            let played: string[] = [];
-            try { played = JSON.parse(localStorage.getItem(playedKey) || '[]'); } catch(e){}
-            if (!played.includes(id)) {
-                played.push(id);
-                localStorage.setItem(playedKey, JSON.stringify(played));
-                if (played.length >= GAMES.length) {
-                    setClaimingComp(true);
-                    api.post('/users/badge', { type: 'completionist' }).then(() => {
-                        // Multi-firework prolonged celebration
-                        const duration = 3 * 1000;
-                        const animationEnd = Date.now() + duration;
-                        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 99999 };
-                        const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-                        
-                        const interval: any = setInterval(function() {
-                            const timeLeft = animationEnd - Date.now();
-                            if (timeLeft <= 0) return clearInterval(interval);
-                            const particleCount = 50 * (timeLeft / duration);
-                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-                            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-                        }, 250);
-
-                        updateUser({ ...user, hasCompletionistBadge: true });
-                        showToast('🎮 The Gamer Badge Unlocked! Played all games. (+100 XP)', 'success');
-                        setClaimingComp(false);
-                    }).catch(err => {
-                        console.error('Completionist Badge Error:', err);
-                        setClaimingComp(false);
-                    });
-                }
-            }
-        }
-
         setOpenGames(prev => {
             if (prev.some(g => g.id === id)) return prev;
             return [...prev, { id, key: Date.now() }];

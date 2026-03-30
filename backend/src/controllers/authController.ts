@@ -147,15 +147,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const payload = { id: profileData.id, role: profileData.role, name: profileData.name, email: profileData.email };
         
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '365d' });
         
-        const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '7d' });
+        const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '30d' });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
         });
 
         sendSuccess(res, {
@@ -220,7 +220,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
             }
 
             const payload = { id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email };
-            const newToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+            const newToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '365d' });
 
             sendSuccess(res, { token: newToken }, 'Token refreshed');
         });

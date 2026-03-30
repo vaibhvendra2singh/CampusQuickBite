@@ -9,8 +9,8 @@ function ScrollToTop() {
     return null;
 }
 import { useAuth } from './hooks/context/AuthContext';
+import type { User } from './hooks/context/AuthContext';
 const GameHubButton = React.lazy(() => import('./components/student/GameHub').then(m => ({ default: m.GameHubInline })));
-import { CartProvider } from './hooks/context/CartContext';
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
@@ -33,8 +33,8 @@ const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 
 import { FiLogOut, FiUser, FiZap, FiShoppingBag, FiMoon, FiSun, FiShoppingCart, FiServer, FiAward, FiCompass } from 'react-icons/fi';
 import { useCart } from './hooks/context/CartContext';
-import { ToastProvider, useToast } from './hooks/context/ToastContext';
-import { ThemeProvider, useTheme } from './hooks/context/ThemeContext';
+import { useToast } from './hooks/context/ToastContext';
+import { useTheme } from './hooks/context/ThemeContext';
 import api from './services/api';
 import confetti from 'canvas-confetti';
 import ProfileModal from './components/common/ProfileModal';
@@ -47,6 +47,7 @@ const TermsOfService = React.lazy(() => import('./pages/public/TermsOfService'))
 const GameHub = React.lazy(() => import('./components/student/GameHub'));
 const SecretPage = React.lazy(() => import('./pages/public/SecretPage'));
 const BadgeHints = React.lazy(() => import('./pages/public/BadgeHints'));
+const CommandPalette = React.lazy(() => import('./components/common/CommandPalette'));
 
 import { useSocket } from './hooks/useSocket';
 
@@ -190,17 +191,20 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
             <Header darkMode={isDark} setDarkMode={toggleTheme} />
 
-            <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 md:px-12 pt-24 sm:pt-28 md:pt-32 pb-16 relative z-10 transition-all duration-150">
+
+
+            <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 md:px-12 pb-16 pt-24 sm:pt-28 md:pt-32 relative z-0 isolation-auto transition-all duration-150">
                 {children}
             </main>
 
             {user?.role === 'STUDENT' && (
                 <React.Suspense fallback={null}>
                     <GameHub />
+                    <CommandPalette />
                 </React.Suspense>
             )}
 
-            <footer className="py-10 md:py-12 bg-[var(--bg-body)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-10">
+            <footer className="py-10 md:py-12 bg-[var(--bg-footer)] border-t-[6px] md:border-t-[8px] border-brand-500 relative z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 mb-10 md:mb-12">
                         <div className="sm:col-span-2">
@@ -303,7 +307,9 @@ const FullScreenLoader = () => (
     </div>
 );
 
-const useCyberAudioLogic = () => {
+const useCyberAudioLogic = (user: User | null, updateUser: (u: User) => void, showToast: (m: string, s: 'success' | 'error' | 'info') => void) => {
+    const isAwarding = React.useRef(false);
+
     useEffect(() => {
         let audioCtx: AudioContext | null = null;
         let isPlaying = false;
@@ -328,10 +334,8 @@ const useCyberAudioLogic = () => {
                     if (!audioCtx || !masterGain) return;
                     
                     const osc = audioCtx.createOscillator();
-                    // Sawtooth for that classic synth grit
                     osc.type = 'sawtooth'; 
                     
-                    // Add slight random detune flutter and occasional octave jumps
                     const octaveMult = (step % 8 === 7) ? 2 : 1;
                     const detune = 1 + (Math.random() * 0.01 - 0.005);
                     const freq = baseFreqs[step % baseFreqs.length] * octaveMult * detune;
@@ -348,9 +352,8 @@ const useCyberAudioLogic = () => {
                     
                     osc.start(audioCtx.currentTime);
                     osc.stop(audioCtx.currentTime + 0.15);
-                    
                     step++;
-                }, 140); // Fast 16th notes sequence
+                }, 140);
             } catch (err) {
                 console.warn('AudioContext not supported or blocked', err);
             }
@@ -370,18 +373,39 @@ const useCyberAudioLogic = () => {
             }
         };
 
+        const handleHackerBadge = async () => {
+            if (!user || user.role !== 'STUDENT' || user.hasHackerBadge || isAwarding.current) return;
+            isAwarding.current = true;
+            try {
+                await api.post('/users/badge', { type: 'hacker' });
+                // Visual Celebration
+                const end = Date.now() + 1500;
+                const colors = ['#00ff46', '#00e5ff', '#3b82f6'];
+                (function frame() {
+                    confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.8 }, colors: colors });
+                    confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.8 }, colors: colors });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+
+                updateUser({ ...user, hasHackerBadge: true });
+                showToast('💻 The Hacker Badge Unlocked! System Decrypted (+75 XP)', 'success');
+            } catch (err) {
+                console.error('Failed to grant Hacker badge:', err);
+            } finally {
+                isAwarding.current = false;
+            }
+        };
+
         const checkClass = () => {
             if (document.body.classList.contains('unlocked')) {
                 playCyberpunkTheme();
+                handleHackerBadge();
             } else {
                 stopCyberpunkTheme();
             }
         };
 
-        // Check initially
         checkClass();
-
-        // Listen for user adding/removing the class
         const observer = new MutationObserver(checkClass);
         observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
@@ -389,29 +413,27 @@ const useCyberAudioLogic = () => {
             observer.disconnect();
             stopCyberpunkTheme();
         };
-    }, []);
+    }, [user, updateUser, showToast]);
 };
 
 function App() {
     const { user, isAuthenticated, isLoading, logout, updateUser } = useAuth();
-    useCyberAudioLogic(); // Check for unlocked terminal class on mount
+    const { showToast } = useToast();
+    useCyberAudioLogic(user, updateUser, showToast); // Check for unlocked terminal class on mount
 
     if (isLoading) {
         return <FullScreenLoader />;
     }
 
     return (
-        <ThemeProvider>
-            <ToastProvider>
-                <CartProvider>
-                    <div className="html-overlay min-h-screen flex flex-col">
-                        <React.Suspense fallback={null}>
-                            <Scene />
-                        </React.Suspense>
-                        <Router>
-                            <ScrollToTop />
-                            <React.Suspense fallback={<FullScreenLoader />}>
-                                    <Routes>
+        <div className="html-overlay min-h-screen flex flex-col">
+            <React.Suspense fallback={null}>
+                <Scene />
+            </React.Suspense>
+            <Router>
+                <ScrollToTop />
+                <React.Suspense fallback={<FullScreenLoader />}>
+                        <Routes>
                                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
                             <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
                             <Route path="/verify-email" element={<VerifyEmail />} />
@@ -537,14 +559,10 @@ function App() {
                                 </div>
                             } />
 
-                                    <Route path="*" element={<Navigate to="/" replace />} />
-                                    </Routes>
-                                </React.Suspense>
-                        </Router>
-                    </div>
-                </CartProvider>
-            </ToastProvider>
-        </ThemeProvider>
+                    </Routes>
+                </React.Suspense>
+            </Router>
+        </div>
     );
 }
 

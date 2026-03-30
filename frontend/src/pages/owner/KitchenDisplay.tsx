@@ -7,20 +7,31 @@ import { useAuth } from '../../hooks/context/AuthContext';
 import { useToast } from '../../hooks/context/ToastContext';
 import { FiArrowLeft, FiClock, FiAlertTriangle, FiCheck, FiRefreshCw, FiZap, FiActivity } from 'react-icons/fi';
 
-/** Kitchen-distinct 3-tone descending alert: E5 → C5 → G4 */
+/** Classic Service Bell 'Ding' Effect (High-pitched metallic ring) */
 const playKitchenAlert = () => {
     try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        [[659, 0], [523, 0.2], [392, 0.4]].forEach(([freq, delay]) => {
+        
+        // Bell hit frequencies (E6 and B6) create a striking metallic dissonance
+        const frequencies = [1318.51, 1975.53, 2637.02];
+        
+        frequencies.forEach((freq) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            osc.connect(gain); gain.connect(ctx.destination);
-            osc.type = 'triangle';
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            osc.type = 'sine';
             osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.28, ctx.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
-            osc.start(ctx.currentTime + delay);
-            osc.stop(ctx.currentTime + delay + 0.4);
+            
+            // Sharp transient hit, long ring out
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+            
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 1.5);
         });
     } catch { /* audio not supported */ }
 };
@@ -443,6 +454,11 @@ const KitchenDisplay = () => {
                                     {readyOrders.length} Ready
                                 </span>
                             )}
+                            
+                            <div className="hidden md:flex px-3 py-2 bg-slate-500/10 border border-slate-500/20 rounded-xl text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider items-center cursor-help" title="Click anywhere on the dashboard once to allow your browser to play the audio alerts.">
+                                🔔 Click page for audio
+                            </div>
+
 
                             <button
                                 onClick={() => fetchData()}
@@ -461,6 +477,8 @@ const KitchenDisplay = () => {
                     </div>
                 </div>
             </div>
+
+
 
             <div className="max-w-screen-2xl mx-auto pt-6">
                 {orders.length === 0 ? (

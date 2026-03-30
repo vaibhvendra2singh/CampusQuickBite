@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX, FiMail, FiPhone, FiHash, FiUser, FiEdit3, FiSave, FiLoader, FiCamera, FiMapPin, FiShoppingBag, FiArrowRight, FiZap, FiStar, FiShield, FiAward } from 'react-icons/fi';
@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/context/AuthContext';
 import api from '../../services/api';
 import { useToast } from '../../hooks/context/ToastContext';
+
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -39,13 +40,14 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
     const { user, updateUser } = useAuth();
     const navigate = useNavigate();
     const { showToast } = useToast();
+
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showAvatarPicker, setShowAvatarPicker] = useState(false);
     const [shopAddress, setShopAddress] = useState('');
     const isOwner = user?.role === 'SHOP_OWNER';
     const isAdmin = user?.role === 'ADMIN';
-    const hasAllBadges = user?.hasShadowBadge && user?.hasCaffeineBadge && user?.hasGluttonBadge && user?.hasNightOwlBadge && user?.hasArcadeBadge && user?.hasExplorerBadge && user?.hasProGamerBadge && user?.hasCompletionistBadge;
+    const hasAllBadges = user?.hasShadowBadge && user?.hasCaffeineBadge && user?.hasGluttonBadge && user?.hasNightOwlBadge && user?.hasArcadeBadge && user?.hasExplorerBadge && user?.hasProGamerBadge && user?.hasHackerBadge;
 
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -118,7 +120,7 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-none"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-none"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose();
             }}
@@ -133,8 +135,8 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                         <FiX className="w-5 h-5" />
                     </button>
 
-                    <div className="absolute bottom-0 left-6 translate-y-1/2 z-10">
-                        <div className="p-1 bg-[var(--bg-card)] rounded-full">
+                    <div className="absolute bottom-0 left-6 translate-y-[150%] z-10">
+                        <div className="p-1 bg-[var(--bg-card)] rounded-full text-left">
                             <div className="w-20 h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center relative shadow-sm group">
                                 {(isEditing ? formData.profilePic : user.profilePic) ? (
                                     <img loading="lazy" decoding="async" src={isEditing ? formData.profilePic : user.profilePic} alt={user.name} className="w-full h-full object-cover transition-all duration-150" />
@@ -151,9 +153,9 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pt-14 pb-8 px-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto pt-12 pb-8 px-6 custom-scrollbar">
                     <div className="flex items-start justify-between mb-8">
-                        <div className="space-y-1 text-left">
+                        <div className="space-y-1 text-left pl-28">
                             {isEditing ? (
                                 <input
                                     type="text"
@@ -210,9 +212,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                                 🏆 Pro Gamer
                                             </div>
                                         )}
-                                        {user.hasCompletionistBadge && (
-                                            <div className="inline-flex items-center px-3 py-1 bg-purple-950/20 text-purple-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-purple-500/30 shadow-[0_0_10px_rgba(168,85,247,0.15)]">
-                                                🎮 The Gamer
+
+                                        {user.hasHackerBadge && (
+                                            <div className="inline-flex items-center px-3 py-1 bg-emerald-950/20 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-emerald-500/40 shadow-[0_0_10px_rgba(52,211,153,0.15)] glitch-hover">
+                                                🖥️ The Hacker
                                             </div>
                                         )}
                                     </>
@@ -249,10 +252,10 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                         />
                                     </div>
                                 ) : (
-                                    <InfoRow 
-                                        icon={FiHash} 
-                                        label="Enrollment ID" 
-                                        value={user.enrollmentNumber || (user as any).enrollment_number || 'Not Registered'} 
+                                    <InfoRow
+                                        icon={FiHash}
+                                        label="Enrollment ID"
+                                        value={user.enrollmentNumber || (user as any).enrollment_number || 'Not Registered'}
                                     />
                                 )
                             )}
@@ -268,27 +271,31 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                     />
                                 </div>
                             ) : (
-                                <InfoRow 
-                                    icon={FiPhone} 
-                                    label="Mobile" 
-                                    value={user.phoneNumber || (user as any).phone_number || 'Add Phone'} 
+                                <InfoRow
+                                    icon={FiPhone}
+                                    label="Mobile"
+                                    value={user.phoneNumber || (user as any).phone_number || 'Add Phone'}
                                 />
                             )}
                         </div>
 
                         {!isEditing && !isAdmin && !isOwner && (
-                            <button
-                                onClick={() => { onClose(); navigate('/orders/history'); }}
-                                className="w-full flex items-center justify-between p-5 bg-slate-900 dark:bg-brand-500 text-white rounded-2xl  shadow-lg shadow-black/10 transition-all group ]"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                                        <FiShoppingBag className="w-5 h-5" />
+                            <>
+
+
+                                <button
+                                    onClick={() => { onClose(); navigate('/orders/history'); }}
+                                    className="w-full flex items-center justify-between p-5 bg-slate-900 dark:bg-brand-500 text-white rounded-2xl shadow-lg shadow-black/10 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                                            <FiShoppingBag className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-[11px] font-bold uppercase tracking-wider">History</span>
                                     </div>
-                                    <span className="text-[11px] font-bold uppercase tracking-wider">History</span>
-                                </div>
-                                <FiArrowRight className=" transition-" />
-                            </button>
+                                    <FiArrowRight className="transition-transform group-hover:translate-x-1" />
+                                </button>
+                            </>
                         )}
                     </div>
 
