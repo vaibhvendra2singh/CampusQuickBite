@@ -88,8 +88,33 @@ const buildReq = (body: object, params: object = {}, user: object = {}): Partial
 });
 
 // ─── createOrder() ────────────────────────────────────────────────────────────
+const resetMocks = () => {
+    jest.clearAllMocks();
+    // Clear queued mockResolvedValueOnce values
+    mockSingle.mockReset();
+    mockMaybeSingle.mockReset();
+    mockRpc.mockReset();
+    // Re-apply factory implementation
+    mockFrom.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        neq: jest.fn().mockReturnThis(),
+        gte: jest.fn().mockReturnThis(),
+        lte: jest.fn().mockReturnThis(),
+        in: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        range: jest.fn().mockReturnThis(),
+        ilike: jest.fn().mockReturnThis(),
+        insert: jest.fn().mockReturnThis(),
+        update: jest.fn().mockReturnThis(),
+        single: mockSingle,
+        maybeSingle: mockMaybeSingle,
+    }));
+};
+
 describe('OrderController.createOrder', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 400 when outletId is missing', async () => {
         // User check
@@ -110,7 +135,7 @@ describe('OrderController.createOrder', () => {
         await createOrder(req as AuthRequest, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(403);
-        expect(res.json).toHaveBeenCalledWith({ error: 'ACCOUNT_BANNED' });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCOUNT_BANNED' }));
     });
 
     test('returns 403 when user is frozen', async () => {
@@ -121,7 +146,7 @@ describe('OrderController.createOrder', () => {
         await createOrder(req as AuthRequest, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(403);
-        expect(res.json).toHaveBeenCalledWith({ error: 'ACCOUNT_FROZEN' });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCOUNT_FROZEN' }));
     });
 
     test('returns 400 when items array is empty', async () => {
@@ -149,7 +174,7 @@ describe('OrderController.createOrder', () => {
 
 // ─── updateOrderStatus() ─────────────────────────────────────────────────────
 describe('OrderController.updateOrderStatus', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     const buildOwnerReq = (status: string, currentStatus = 'pending') =>
         buildReq({ status }, { id: 'order-1' }, { id: 'owner-1', role: 'owner' });
@@ -227,7 +252,7 @@ describe('OrderController.updateOrderStatus', () => {
 
 // ─── cancelOrder() ───────────────────────────────────────────────────────────
 describe('OrderController.cancelOrder', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 404 when order does not exist', async () => {
         mockSingle.mockResolvedValueOnce({ data: null, error: { message: 'not found' } });
@@ -269,7 +294,7 @@ describe('OrderController.cancelOrder', () => {
 
 // ─── generateOrderToken() ─────────────────────────────────────────────────────
 describe('OrderController.generateOrderToken', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 404 when order is not found', async () => {
         mockSingle.mockResolvedValueOnce({ data: null, error: { message: 'not found' } });

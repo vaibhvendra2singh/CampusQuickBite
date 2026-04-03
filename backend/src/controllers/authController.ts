@@ -7,12 +7,13 @@ import { displayRole, ROLES } from '../utils/roles';
 import { sendPasswordResetEmail, sendSignupOTPEmail } from '../services/emailService';
 import { sendSuccess, sendError } from '../utils/response';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
 
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not defined in environment variables');
-}
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET is not defined in environment variables');
+    return secret;
+};
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -147,7 +148,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         const payload = { id: profileData.id, role: profileData.role, name: profileData.name, email: profileData.email };
         
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '365d' });
+        const token = jwt.sign(payload, getJwtSecret(), { expiresIn: '365d' });
         
         const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '30d' });
 
@@ -220,7 +221,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
             }
 
             const payload = { id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email };
-            const newToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '365d' });
+            const newToken = jwt.sign(payload, getJwtSecret(), { expiresIn: '365d' });
 
             sendSuccess(res, { token: newToken }, 'Token refreshed');
         });

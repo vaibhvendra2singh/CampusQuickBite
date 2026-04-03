@@ -45,7 +45,7 @@ jest.mock('../src/middleware/validate', () => ({
 
 process.env.JWT_SECRET = 'test-secret-at-least-32-chars-long';
 
-import paymentRoutes from '../src/routes/paymentRoutes';
+import paymentRoutes from '../src/routes/v1/paymentRoutes';
 
 // ─── Build Test App ───────────────────────────────────────────────────────────
 const app = express();

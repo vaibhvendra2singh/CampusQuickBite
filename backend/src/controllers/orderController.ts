@@ -7,10 +7,11 @@ import { notifyOrderUpdate } from '../services/socketService';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response';
 import { auditLog } from '../utils/auditLog';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is not defined in environment variables');
-}
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET is not defined in environment variables');
+    return secret;
+};
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
@@ -483,7 +484,7 @@ export const generateOrderToken = async (req: AuthRequest, res: Response): Promi
 
         const token = jwt.sign(
             { orderId: order.id },
-            JWT_SECRET!,
+            getJwtSecret(),
             { expiresIn: '30m' } // Increased to 30m for better UX
         );
 
@@ -509,7 +510,7 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
 
         let decoded: any;
         try {
-            decoded = jwt.verify(token, JWT_SECRET!);
+            decoded = jwt.verify(token, getJwtSecret());
             console.log('Token successfully decoded:', decoded);
         } catch (err) {
             console.error('Token verification failed:', err);

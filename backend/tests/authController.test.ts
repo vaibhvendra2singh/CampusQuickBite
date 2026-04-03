@@ -43,6 +43,7 @@ jest.mock('../src/services/emailService', () => ({
 }));
 
 jest.mock('../src/services/logger', () => ({
+    __esModule: true,
     default: {
         info: jest.fn(),
         warn: jest.fn(),
@@ -60,6 +61,8 @@ import { register, login, verifyOtp, forgotPassword } from '../src/controllers/a
 const buildRes = (): Partial<Response> => ({
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
+    cookie: jest.fn(),
+    clearCookie: jest.fn(),
 });
 
 const buildReq = (body: object, extras: object = {}): Partial<Request> => ({
@@ -69,8 +72,28 @@ const buildReq = (body: object, extras: object = {}): Partial<Request> => ({
 });
 
 // ─── register() ──────────────────────────────────────────────────────────────
+// Re-init helper: jest.resetAllMocks is needed in Jest 30 to clear queued mockResolvedValueOnce values
+const resetMocks = () => {
+    jest.clearAllMocks();
+    // Clear queued mockResolvedValueOnce on the Supabase single mock
+    mockSupabaseSingle.mockReset();
+    // Re-apply the from() factory since mockReset above doesn't touch it
+    mockSupabaseFrom.mockImplementation(() => ({
+        select: mockSupabaseSelect,
+        eq: mockSupabaseEq,
+        insert: mockSupabaseInsert,
+        update: mockSupabaseUpdate,
+        single: mockSupabaseSingle,
+        maybeSingle: mockSupabaseSingle,
+    }));
+    mockSupabaseSelect.mockReturnThis();
+    mockSupabaseEq.mockReturnThis();
+    mockSupabaseInsert.mockReturnThis();
+    mockSupabaseUpdate.mockReturnThis();
+};
+
 describe('AuthController.register', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 400 when required fields are missing', async () => {
         const req = buildReq({ email: 'test@college.edu', password: 'pass123' }); // name missing
@@ -111,7 +134,7 @@ describe('AuthController.register', () => {
 
 // ─── login() ─────────────────────────────────────────────────────────────────
 describe('AuthController.login', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 400 when credentials are missing', async () => {
         const req = buildReq({ email: '' });
@@ -142,7 +165,7 @@ describe('AuthController.login', () => {
         await login(req as Request, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: 'ACCOUNT_BANNED' });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCOUNT_BANNED' }));
     });
 
     test('returns 401 when email is not verified', async () => {
@@ -156,7 +179,7 @@ describe('AuthController.login', () => {
         await login(req as Request, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: 'ACCOUNT_NOT_VERIFIED' });
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'ACCOUNT_NOT_VERIFIED' }));
     });
 
     test('returns 401 when password does not match', async () => {
@@ -195,13 +218,16 @@ describe('AuthController.login', () => {
         await login(req as Request, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ token: 'mock-jwt-token' }));
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+            success: true,
+            data: expect.objectContaining({ token: 'mock-jwt-token' }),
+        }));
     });
 });
 
 // ─── verifyOtp() ─────────────────────────────────────────────────────────────
 describe('AuthController.verifyOtp', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 400 when email or otp is missing', async () => {
         const req = buildReq({ email: 'user@x.com' }); // otp missing
@@ -272,7 +298,10 @@ describe('AuthController.verifyOtp', () => {
         mockSupabaseFrom.mockReturnValueOnce({
             select: mockSupabaseSelect,
             eq: mockSupabaseEq,
+            insert: mockSupabaseInsert,
+            update: mockSupabaseUpdate,
             single: mockSupabaseSingle,
+            maybeSingle: mockSupabaseSingle,
         });
         mockSupabaseSingle.mockResolvedValueOnce({
             data: {
@@ -294,7 +323,7 @@ describe('AuthController.verifyOtp', () => {
 
 // ─── forgotPassword() ────────────────────────────────────────────────────────
 describe('AuthController.forgotPassword', () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => resetMocks());
 
     test('returns 400 when no email provided', async () => {
         const req = buildReq({});
