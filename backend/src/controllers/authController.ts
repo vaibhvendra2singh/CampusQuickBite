@@ -146,7 +146,12 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
         logger.info(`Login successful: ${email}`, { userId: profileData.id, role: profileData.role, ip: req.ip });
 
-        const payload = { id: profileData.id, role: profileData.role, name: profileData.name, email: profileData.email };
+        const payload = { 
+            id: profileData.id, 
+            role: displayRole(profileData.role), 
+            name: profileData.name, 
+            email: profileData.email 
+        };
         
         const token = jwt.sign(payload, getJwtSecret(), { expiresIn: '365d' });
         
@@ -206,7 +211,7 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
                 return;
             }
 
-            const { data: user, error } = await supabase.from('users').select('is_banned').eq('id', decoded.id).single();
+            const { data: user, error } = await supabase.from('users').select('is_banned, role').eq('id', decoded.id).single();
 
             if (error || !user) {
                 res.clearCookie('refreshToken');
@@ -220,7 +225,12 @@ export const refreshAccessToken = async (req: Request, res: Response): Promise<v
                 return;
             }
 
-            const payload = { id: decoded.id, role: decoded.role, name: decoded.name, email: decoded.email };
+            const payload = { 
+                id: decoded.id, 
+                role: displayRole(user?.role || decoded.role), 
+                name: decoded.name, 
+                email: decoded.email 
+            };
             const newToken = jwt.sign(payload, getJwtSecret(), { expiresIn: '365d' });
 
             sendSuccess(res, { token: newToken }, 'Token refreshed');

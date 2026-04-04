@@ -156,12 +156,12 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole === 'student') {
+        if (userRole === 'STUDENT') {
             if (data.user_id !== userId) {
                 sendError(res, 'Unauthorized to view this order', 403);
                 return;
             }
-        } else if (userRole === 'owner') {
+        } else if (userRole === 'SHOP_OWNER') {
             if ((data.outlets as any)?.owner_id !== userId) {
                 sendError(res, 'Unauthorized: This order belongs to a different outlet', 403);
                 return;
@@ -220,7 +220,7 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
         const from = page * size;
         const to = from + size - 1;
 
-        if (userRole !== 'admin') {
+        if (userRole !== 'ADMIN') {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
                 .select('id')
@@ -300,7 +300,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
 
         console.log(`[OrderUpdate] Current status: ${currentStatus}, Outlet owner: ${outletOwnerId}`);
 
-        if (req.user.role === 'owner' && String(outletOwnerId).toLowerCase() !== String(req.user.id).toLowerCase()) {
+        if (req.user.role === 'SHOP_OWNER' && String(outletOwnerId).toLowerCase() !== String(req.user.id).toLowerCase()) {
             console.warn(`[OrderUpdate] Unauthorized attempt! User ${req.user.id} tried to update order owned by ${outletOwnerId}`);
             sendError(res, 'Unauthorized: This order belongs to a different outlet', 403);
             return;
@@ -321,7 +321,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         }
 
         if (!allowedTransitions[currentStatus]?.includes(requestedStatus)) {
-            if (req.user?.role !== 'admin') {
+            if (req.user?.role !== 'ADMIN') {
                 console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
                 sendError(res, 'Invalid state transition', 400);
                 return;
@@ -329,7 +329,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         }
 
         if (['preparing', 'ready', 'completed'].includes(requestedStatus)) {
-            if (currentOrder.payment_status !== 'paid' && req.user?.role !== 'admin') {
+            if (currentOrder.payment_status !== 'paid' && req.user?.role !== 'ADMIN') {
                 sendError(res, 'Cannot process unpaid orders', 400);
                 return;
             }
@@ -413,7 +413,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
         }
 
         const outletOwnerId = (order.outlets as any)?.owner_id;
-        if (userRole !== 'admin' && outletOwnerId !== actorId) {
+        if (userRole !== 'ADMIN' && outletOwnerId !== actorId) {
             sendError(res, 'Unauthorized: You can only cancel orders for your own outlet', 403);
             return;
         }
@@ -473,12 +473,12 @@ export const generateOrderToken = async (req: AuthRequest, res: Response): Promi
             .single();
 
         if (error || !order) {
-            res.status(404).json({ error: 'Order not found' });
+            sendError(res, 'Order not found', 404);
             return;
         }
 
         if (order.status.toLowerCase() !== 'ready') {
-            res.status(400).json({ error: 'Order is not ready for pickup' });
+            sendError(res, 'Order is not ready for pickup', 400);
             return;
         }
 
@@ -488,7 +488,7 @@ export const generateOrderToken = async (req: AuthRequest, res: Response): Promi
             { expiresIn: '30m' } // Increased to 30m for better UX
         );
 
-        res.status(200).json({ token });
+        sendSuccess(res, { token });
     } catch (error) {
         console.error('Generate order token error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -585,7 +585,7 @@ export const verifyOrder = async (req: AuthRequest, res: Response): Promise<void
         res.status(200).json({ message: 'Order verified and completed successfully', orderId });
     } catch (error: any) {
         console.error('Critical verification error:', error);
-        res.status(500).json({ error: 'Verification system error' });
+        sendError(res, 'Verification system error', 500);
     }
 };
 
@@ -596,8 +596,8 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
         const operatorId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole !== 'admin') {
-            res.status(403).json({ error: 'Security: Manual completion is restricted to administrators' });
+        if (userRole !== 'ADMIN') {
+            sendError(res, 'Security: Manual completion is restricted to administrators', 403);
             return;
         }
 
@@ -645,7 +645,7 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
         res.status(200).json({ message: 'Order marked as delivered by Administrator' });
     } catch (error) {
         console.error('Mark as delivered error:', error);
-        res.status(500).json({ error: 'An internal error occurred' });
+        sendError(res, 'An internal error occurred', 500);
     }
 };
 export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -728,7 +728,7 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
         });
     } catch (error: any) {
         console.error('Fetch owner history error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        sendError(res, error.message || 'Internal Server Error', 500);
     }
 };
 
@@ -755,7 +755,7 @@ export const getAllOrders = async (req: AuthRequest, res: Response): Promise<voi
         res.status(200).json((data || []).map(formatOrderWithItems));
     } catch (error: any) {
         console.error('Get all orders error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        sendError(res, error.message || 'Internal Server Error', 500);
     }
 };
 
@@ -784,7 +784,7 @@ export const getGlobalOrderStats = async (req: AuthRequest, res: Response): Prom
         res.status(200).json(stats);
     } catch (error: any) {
         console.error('Get global order stats error:', error);
-        res.status(500).json({ error: error.message || 'Internal Server Error' });
+        sendError(res, error.message || 'Internal Server Error', 500);
     }
 };
 

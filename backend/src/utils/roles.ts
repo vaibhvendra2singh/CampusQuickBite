@@ -4,6 +4,12 @@ export const ROLES = {
     ADMIN: 'admin'
 } as const;
 
+export const DISPLAY_ROLES = {
+    STUDENT: 'STUDENT',
+    SHOP_OWNER: 'SHOP_OWNER',
+    ADMIN: 'ADMIN'
+} as const;
+
 export type UserRole = typeof ROLES[keyof typeof ROLES];
 
 /**
@@ -17,9 +23,10 @@ export const normalizeRole = (role: string): UserRole => {
 };
 
 /**
- * Maps DB role to frontend display role
+ * Maps DB role to frontend display/JWT role
  */
 export const displayRole = (role: string): string => {
-    if (role === ROLES.OWNER) return 'SHOP_OWNER';
-    return role.toUpperCase();
+    if (role === ROLES.OWNER || role === 'SHOP_OWNER') return DISPLAY_ROLES.SHOP_OWNER;
+    if (role === ROLES.ADMIN || role === 'ADMIN') return DISPLAY_ROLES.ADMIN;
+    return DISPLAY_ROLES.STUDENT;
 };

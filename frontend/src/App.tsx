@@ -412,7 +412,7 @@ const useCyberAudioLogic = (user: User | null, updateUser: (u: User) => void, sh
         return () => {
             observer.disconnect();
             stopCyberpunkTheme();
-        };
+};
     }, [user, updateUser, showToast]);
 };
 
@@ -537,17 +537,10 @@ function App() {
                                     <p className="text-[var(--text-muted)] text-base text-center max-w-md leading-relaxed">Your account doesn't have permission to access this section.</p>
                                     <div className="flex space-x-4 mt-8">
                                         <button 
-                                            onClick={async () => {
-                                                // Hard sync from DB to fix stale roles
-                                                if (user?.id) {
-                                                    const res = await api.get(`/users/${user.id}`);
-                                                    if (updateUser) updateUser(res.data);
-                                                }
-                                                window.location.href = '/';
-                                            }} 
+                                            onClick={() => window.location.href = '/'} 
                                             className="btn-primary px-8 py-3"
                                         >
-                                            Try Again / Home
+                                            Take Me Home
                                         </button>
                                         <button 
                                             onClick={() => { logout(); window.location.href = '/login'; }} 

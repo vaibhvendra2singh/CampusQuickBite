@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { supabase } from '../config/supabase';
 import jwt from 'jsonwebtoken';
+import { normalizeRole } from '../utils/roles';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -64,7 +65,8 @@ export const requireRole = (roles: string[]) => {
                 return;
             }
 
-            if (!roles.includes(userData.role)) {
+            const normalizedRequiredRoles = roles.map(r => normalizeRole(r));
+            if (!normalizedRequiredRoles.includes(userData.role)) {
                 res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
                 return;
             }

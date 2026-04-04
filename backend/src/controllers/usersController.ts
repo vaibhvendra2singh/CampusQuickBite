@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { notifyAccountStatus } from '../services/socketService';
 import { normalizeRole, displayRole, ROLES } from '../utils/roles';
 import bcrypt from 'bcryptjs';
+import { sendSuccess, sendError, sendPaginated } from '../utils/response';
 
 
 type BadgeType = 'shadow' | 'caffeine' | 'glutton' | 'night_owl' | 'arcade' | 'explorer' | 'pro_gamer' | 'completionist' | 'hacker';
@@ -25,7 +26,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
         const authenticatedUserId = req.user?.id;
 
         if (String(id) !== String(authenticatedUserId)) {
-            res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
+            sendError(res, 'Forbidden: You can only update your own profile', 403);
             return;
         }
 
@@ -56,7 +57,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
                 .single();
 
             if (fallbackResponse.error) {
-                res.status(500).json({ error: fallbackResponse.error.message });
+                sendError(res, fallbackResponse.error.message, 500);
                 return;
             }
 
@@ -65,11 +66,11 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             data.enrollment_number = enrollmentNumber;
             data.profile_pic = profilePic;
         } else if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json({
+        sendSuccess(res, {
             id: data.id,
             name: data.name,
             email: data.email,
@@ -88,7 +89,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             hasProGamerBadge: data.has_pro_gamer_badge || false,
             hasCompletionistBadge: data.has_completionist_badge || false,
             hasHackerBadge: data.has_hacker_badge || false
-        });
+        }, 'Profile updated successfully');
 
     } catch (error) {
         console.error('Update user profile error:', error);
@@ -106,11 +107,11 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
                 .limit(10);
     
             if (error) {
-                if (error.message.includes('Could not find the column')) {
-                    res.status(200).json([]);
+                if (error.message.includes('Could find the column')) {
+                    sendSuccess(res, [], 'Leaderboard empty');
                     return;
                 }
-                res.status(500).json({ error: error.message });
+                sendError(res, error.message, 500);
                 return;
             }
     
@@ -131,7 +132,7 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
                 hasHackerBadge: u.has_hacker_badge || false
             }));
 
-        res.status(200).json(leaderboard);
+        sendSuccess(res, leaderboard, 'Leaderboard fetched successfully');
     } catch (error) {
         console.error('Get leaderboard error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -149,7 +150,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
         const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
@@ -166,7 +167,7 @@ export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void
             createdAt: u.created_at
         }));
 
-        res.status(200).json(users);
+        sendSuccess(res, users, 'Users fetched successfully');
     } catch (error) {
         console.error('Get all users error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -186,11 +187,11 @@ export const updateUserRole = async (req: AuthRequest, res: Response): Promise<v
             .single();
 
         if (error) {
-            res.status(500).json({ error: error.message });
+            sendError(res, error.message, 500);
             return;
         }
 
-        res.status(200).json({ message: 'User role updated successfully', user: data });
+        sendSuccess(res, data, 'User role updated successfully');
     } catch (error) {
         console.error('Update user role error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -284,7 +285,7 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        res.status(200).json({
+        sendSuccess(res, {
             id: data.id,
             name: data.name,
             email: data.email,
@@ -306,7 +307,7 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             hasProGamerBadge: data.has_pro_gamer_badge || false,
             hasCompletionistBadge: data.has_completionist_badge || false,
             hasHackerBadge: data.has_hacker_badge || false
-        });
+        }, 'User profile fetched successfully');
     } catch (error) {
         console.error('Get user by id error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
