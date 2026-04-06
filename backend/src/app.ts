@@ -26,45 +26,11 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 
 const app = express();
 
-if (process.env.SENTRY_DSN) {
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        integrations: [
-            new ProfilingIntegration(),
-        ],
-        tracesSampleRate: 1.0,
-        profilesSampleRate: 1.0,
-    });
-    app.use(Sentry.Handlers.requestHandler() as any);
-}
-
-app.set('trust proxy', 1); // For rate-limiting behind proxies
-
-if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-        if (req.header('x-forwarded-proto') !== 'https') {
-            res.redirect(`https://${req.header('host')}${req.url}`);
-        } else {
-            next();
-        }
-    });
-}
-
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "img-src": ["'self'", "data:", "https:", "http:"],
-        },
-    },
-    referrerPolicy: { policy: 'same-origin' }
-}));
-
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) return callback(null, true);
     
     // Allow local development
-    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
+    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?$/);
     if (isLocalIP) return callback(null, true);
 
     // Get the configured URLs and strip trailing slashes for comparison
@@ -84,6 +50,41 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true // allow cookies
+}));
+
+if (process.env.SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.SENTRY_DSN,
+        integrations: [
+            new ProfilingIntegration(),
+        ],
+        tracesSampleRate: 1.0,
+        profilesSampleRate: 1.0,
+    });
+    app.use(Sentry.Handlers.requestHandler() as any);
+}
+
+app.set('trust proxy', 1); // For rate-limiting behind proxies
+
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        // Skip redirect for OPTIONS (CORS preflight) or if protocol is already https
+        if (req.method === 'OPTIONS' || req.header('x-forwarded-proto') === 'https') {
+            next();
+        } else {
+            res.redirect(`https://${req.header('host')}${req.url}`);
+        }
+    });
+}
+
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "img-src": ["'self'", "data:", "https:", "http:"],
+        },
+    },
+    referrerPolicy: { policy: 'same-origin' }
 }));
 
 app.use(express.json({ limit: '10kb' }));
