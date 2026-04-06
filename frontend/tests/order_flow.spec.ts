@@ -23,18 +23,48 @@ async function stubOrderFlow(page: Page) {
         });
     });
 
-    // 2. Outlets
-    await page.route('**/api/v1/outlets', async (route) => {
+    // 2. Outlets (List and Details)
+    await page.route('**/api/v1/outlets**', async (route) => {
+        const url = route.request().url();
+        if (url.includes('outlet-1')) {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    success: true,
+                    data: { id: 'outlet-1', name: 'Chai Junction', location: 'Block A', is_open: true, rating: 4.5, image_url: null }
+                }),
+            });
+        } else {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    success: true,
+                    data: [
+                        { id: 'outlet-1', name: 'Chai Junction', location: 'Block A', is_open: true, rating: 4.5, image_url: null },
+                        { id: 'outlet-2', name: 'Pizza Hut Campus', location: 'Block C', is_open: true, rating: 4.2, image_url: null },
+                    ]
+                }),
+            });
+        }
+    });
+
+    // 2b. Cart
+    await page.route('**/api/v1/cart**', async (route) => {
         await route.fulfill({
             status: 200,
             contentType: 'application/json',
-            body: JSON.stringify({
-                success: true,
-                data: [
-                    { id: 'outlet-1', name: 'Chai Junction', location: 'Block A', is_open: true, rating: 4.5, image_url: null },
-                    { id: 'outlet-2', name: 'Pizza Hut Campus', location: 'Block C', is_open: true, rating: 4.2, image_url: null },
-                ]
-            }),
+            body: JSON.stringify({ success: true, data: { items: [], total: 0 } }),
+        });
+    });
+
+    // 2c. Analytics/Recommendations
+    await page.route('**/api/v1/analytics/**', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, data: [] }),
         });
     });
 
