@@ -94,6 +94,7 @@ test.describe('Student Order Flow', () => {
         // Fill login
         await page.fill('input[type="email"]', 'student@campus.edu');
         await page.fill('input[type="password"]', 'SecurePass123');
+        await page.fill('input[placeholder*="enrollment" i]', 'E2026123456');
         await page.click('button[type="submit"]');
 
         // Should land on home/outlets
@@ -107,6 +108,7 @@ test.describe('Student Order Flow', () => {
         // Login first
         await page.fill('input[type="email"]', 'student@campus.edu');
         await page.fill('input[type="password"]', 'SecurePass123');
+        await page.fill('input[placeholder*="enrollment" i]', 'E2026123456');
         await page.click('button[type="submit"]');
 
         // Click on outlet
