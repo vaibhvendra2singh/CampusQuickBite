@@ -12,12 +12,12 @@ async function stubOrderFlow(page: Page) {
             body: JSON.stringify({
                 success: true,
                 message: 'Login successful',
-                data: {
-                    token: 'mock-jwt.header.payload',
+                token: 'mock-jwt.header.payload',
+                user: {
                     id: 'student-1',
                     name: 'Test Student',
                     email: 'student@campus.edu',
-                    role: 'Student'
+                    role: 'STUDENT'
                 }
             }),
         });
