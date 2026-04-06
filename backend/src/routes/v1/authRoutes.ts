@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { 
     register, login, forgotPassword, verifyToken, resetPassword, 
     changePassword, verifyEmail, verifyOtp, resendOtp,
-    refreshAccessToken, logout
+    refreshAccessToken, logout, googleLogin
 } from '../../controllers/authController';
 import { authenticateUser } from '../../middleware/auth';
 import { validate } from '../../middleware/validate';
@@ -96,6 +96,7 @@ router.post('/forgot-password', validate(z.object({ body: forgotPasswordSchema }
 router.post('/verify-token', validate(z.object({ body: verifyTokenSchema })), verifyToken);
 router.post('/reset-password', validate(z.object({ body: resetPasswordSchema })), resetPassword);
 router.post('/change-password', authenticateUser, validate(z.object({ body: changePasswordSchema })), changePassword);
+router.post('/google', validate(z.object({ body: z.object({ token: z.string() }) })), googleLogin);
 
 router.post('/verify-otp', validate(z.object({ body: z.object({ email: z.string().email(), otp: z.string().length(6) }) })), verifyOtp);
 router.post('/resend-otp', validate(z.object({ body: z.object({ email: z.string().email() }) })), resendOtp);

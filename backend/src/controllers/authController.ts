@@ -493,6 +493,109 @@ export const changePassword = async (req: Request, res: Response): Promise<void>
 
         sendSuccess(res, null, 'Password changed successfully!');
     } catch (err) {
-        res.status(500).json({ error: 'Server error' });
+        sendError(res, 'Server error', 500);
+    }
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { token: supabaseToken } = req.body;
+        if (!supabaseToken) {
+            sendError(res, 'No token provided', 400);
+            return;
+        }
+
+        // 1. Verify token with Supabase and get user info
+        const { data: { user: sbUser }, error: sbError } = await supabase.auth.getUser(supabaseToken);
+        
+        if (sbError || !sbUser) {
+            console.error('[GOOGLE_AUTH] Supabase verification failed:', sbError);
+            sendError(res, 'Invalid Google session', 401);
+            return;
+        }
+
+        const email = sbUser.email?.toLowerCase();
+        if (!email) {
+            sendError(res, 'Email not provided by Google', 400);
+            return;
+        }
+
+        // 2. Check if user exists in our DB
+        let { data: profileData, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+
+        // 3. Create user if doesn't exist (Student by default)
+        if (profileError && profileError.code === 'PGRST116') {
+            const tempEnrollment = 'G-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+            
+            const { data: newUser, error: insertError } = await supabase
+                .from('users')
+                .insert([{
+                    name: sbUser.user_metadata?.full_name || sbUser.user_metadata?.name || 'Google User',
+                    email,
+                    role: ROLES.STUDENT,
+                    is_email_verified: true,
+                    profile_pic: sbUser.user_metadata?.avatar_url || '',
+                    enrollment_number: tempEnrollment,
+                    password: 'OAUTH_USER_' + Math.random() // Placeholder to avoid null constraint if any
+                }])
+                .select()
+                .single();
+            
+            if (insertError) {
+                console.error('[GOOGLE_AUTH] DB Insert failed:', insertError);
+                sendError(res, 'Failed to create account: ' + insertError.message, 500);
+                return;
+            }
+            profileData = newUser;
+        } else if (profileError) {
+            sendError(res, 'Database error', 500);
+            return;
+        }
+
+        // 4. Ban check
+        if (profileData.is_banned === true) {
+            sendError(res, 'ACCOUNT_BANNED', 401);
+            return;
+        }
+
+        // 5. Generate application JWT 
+        const payload = { 
+            id: profileData.id, 
+            role: displayRole(profileData.role), 
+            name: profileData.name, 
+            email: profileData.email 
+        };
+        
+        const token = jwt.sign(payload, getJwtSecret(), { expiresIn: '365d' });
+        const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET as string, { expiresIn: '30d' });
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000
+        });
+
+        logger.info(`Google login successful: ${email}`, { userId: profileData.id });
+
+        sendSuccess(res, {
+            token,
+            user: {
+                ...profileData,
+                role: displayRole(profileData.role),
+                phoneNumber: profileData.phone_number || '',
+                enrollmentNumber: profileData.enrollment_number || '',
+                profilePic: profileData.profile_pic || '',
+                xp: profileData.xp || 0,
+                tier: profileData.tier || 'BRONZE'
+            }
+        }, 'Google login successful');
+    } catch (error) {
+        logger.error(`Google login critical error:`, { error, ip: req.ip });
+        sendError(res, 'Internal Server Error');
     }
 };

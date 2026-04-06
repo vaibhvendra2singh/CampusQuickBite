@@ -5,7 +5,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/context/AuthContext';
 import { FiMail, FiLock, FiArrowRight, FiAlertOctagon, FiHash } from 'react-icons/fi';
+import { FcGoogle } from 'react-icons/fc';
 import { FadeIn } from '../components/animations/FadeIn';
+import { supabase } from '../utils/supabase';
 
 // 🎩 Developer Easter Egg — 7 clicks on the logo
 const DEV_ASCII = [
@@ -159,6 +161,23 @@ const Login = () => {
                 : 'border-[var(--border-color)] focus:border-brand-500 focus:ring-brand-500/10'
         }`;
 
+    const handleGoogleLogin = useCallback(async () => {
+        try {
+            setError('');
+            setIsLoading(true);
+            const { error: googleError } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                },
+            });
+            if (googleError) throw googleError;
+        } catch (err: any) {
+            setError(err.message || 'Google sign in failed');
+            setIsLoading(false);
+        }
+    }, []);
+
     return (
         <div className="min-h-screen w-full flex bg-transparent relative overflow-hidden font-sans">
             <div className="flex w-full z-10">
@@ -254,6 +273,25 @@ const Login = () => {
                             )}
 
                             <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+                                <button
+                                    type="button"
+                                    onClick={handleGoogleLogin}
+                                    disabled={isLoading}
+                                    className="w-full flex justify-center items-center py-3 px-4 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-xl text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--glass-border)] transition-all group mb-4"
+                                >
+                                    <FcGoogle className="mr-3 h-5 w-5" />
+                                    Sign in with Google
+                                </button>
+
+                                <div className="relative my-6">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-[var(--border-color)]"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-[var(--glass-bg)] px-2 text-[var(--text-muted)] font-bold tracking-widest">Or continue with</span>
+                                    </div>
+                                </div>
+
                                 {error && (
                                     <div className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm font-medium flex items-center gap-3 border border-red-200 dark:border-red-500/20">
                                         <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>

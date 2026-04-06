@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom';
 import React, { useState, Suspense, useEffect } from 'react';
+import { supabase } from './utils/supabase';
 
 function ScrollToTop() {
     const { pathname } = useLocation();
@@ -52,6 +53,74 @@ const CommandPalette = React.lazy(() => import('./components/common/CommandPalet
 import { useSocket } from './hooks/useSocket';
 
 const Scene = React.lazy(() => import('./canvas/Scene').then(module => ({ default: module.Scene })));
+const AuthCallback = () => {
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    const { showToast } = useToast();
+
+    useEffect(() => {
+        const handleCallback = async () => {
+            try {
+                // Supabase puts tokens in the hash (#access_token=...) sometimes
+                // We'll wait a brief moment for the Supabase client to process it
+                const redirectTo = `${window.location.origin}/auth/callback`;
+                console.log('Redirecting to Google with callback:', redirectTo);
+                
+                const { data, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Supabase Session Error:', error);
+                    showToast('Login failed: ' + error.message, 'error');
+                    navigate('/login');
+                    return;
+                }
+
+                if (data.session) {
+                    console.log('Syncing Google session with backend...');
+                    const response = await api.post('/auth/google', {
+                        token: data.session.access_token
+                    });
+                    
+                    const { user, token } = response.data;
+                    login(user, token);
+                    showToast('Logged in with Google!', 'success');
+                    navigate('/');
+                } else {
+                    // Manual Hash Parser Fallback 
+                    const hash = window.location.hash;
+                    if (hash && hash.includes('access_token=')) {
+                        console.log('Detected hash token, parsing manually...');
+                        const params = new URLSearchParams(hash.substring(1));
+                        const accessToken = params.get('access_token');
+                        
+                        if (accessToken) {
+                            const response = await api.post('/auth/google', {
+                                token: accessToken
+                            });
+                            const { user, token } = response.data;
+                            login(user, token);
+                            showToast('Logged in with Google!', 'success');
+                            navigate('/');
+                            return;
+                        }
+                    }
+                    console.warn('No session found yet - checking URL hash');
+                    if (!hash) {
+                        navigate('/login');
+                    }
+                }
+            } catch (err: any) {
+                console.error('Backend Sync Error:', err);
+                showToast(err.response?.data?.error || 'Failed to sync with account', 'error');
+                navigate('/login');
+            }
+        };
+
+        handleCallback();
+    }, [login, navigate, showToast]);
+
+    return <FullScreenLoader />;
+};
 
 const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) => {
     const { user, logout } = useAuth();
@@ -436,6 +505,7 @@ function App() {
                         <Routes>
                                 <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} />
                             <Route path="/register" element={isAuthenticated ? <Navigate to="/" replace /> : <Register />} />
+                            <Route path="/auth/callback" element={<AuthCallback />} />
                             <Route path="/verify-email" element={<VerifyEmail />} />
                             <Route path="/forgot-password" element={<ForgotPassword />} />
                             <Route path="/change-password" element={
