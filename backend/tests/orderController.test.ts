@@ -51,6 +51,7 @@ jest.mock('jsonwebtoken', () => ({
 }));
 
 jest.mock('../src/services/logger', () => ({
+    __esModule: true,
     default: { info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
@@ -177,7 +178,7 @@ describe('OrderController.updateOrderStatus', () => {
     beforeEach(() => resetMocks());
 
     const buildOwnerReq = (status: string, currentStatus = 'pending') =>
-        buildReq({ status }, { id: 'order-1' }, { id: 'owner-1', role: 'owner' });
+        buildReq({ status }, { id: 'order-1' }, { id: 'owner-1', role: 'SHOP_OWNER' });
 
     test('returns 400 when status is missing', async () => {
         const req = buildReq({}, { id: 'order-1' }, { role: 'owner' });
@@ -205,6 +206,9 @@ describe('OrderController.updateOrderStatus', () => {
             },
             error: null,
         });
+
+        // Mock for the re-fetch (required even if it should fail early, for safety in other tests)
+        mockSingle.mockResolvedValue({ data: {}, error: null });
 
         const req = buildOwnerReq('preparing');
         const res = buildRes();
@@ -325,6 +329,9 @@ describe('OrderController.generateOrderToken', () => {
         await generateOrderToken(req as AuthRequest, res as Response);
 
         expect(res.status).toHaveBeenCalledWith(200);
-        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ token: 'mock-order-token' }));
+        // Match the wrapper: { data: { token: ... } }
+        expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ 
+            data: expect.objectContaining({ token: 'mock-order-token' }) 
+        }));
     });
 });
