@@ -139,10 +139,17 @@ const Cart = () => {
                 amount: order.total_amount
             });
             const rzpOrder = rzpOrderRes.data;
+            const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
+            if (!rzpKey || rzpKey === 'rzp_test_placeholder') {
+                showToast('Razorpay key not found. Using test cash payment.', 'info');
+                await handleCashPayment(order.id, order.total_amount);
+                return;
+            }
 
             // 3. Open the Razorpay Modal
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder', // rzp_test_... from your dashboard
+                key: rzpKey,
                 amount: rzpOrder.amount,
                 currency: "INR",
                 name: "CampusBite",
@@ -194,6 +201,24 @@ const Cart = () => {
             } else {
                 setError(errorMsg || 'Failed to start payment. Please try again.');
             }
+            setIsProcessing(false);
+        }
+    };
+
+    const handleCashPayment = async (orderId: string, amount: number) => {
+        try {
+            const verifyRes = await api.post('/payments/cash', {
+                orderId,
+                amount
+            });
+
+            if (verifyRes.data.success) {
+                clearCart();
+                showToast('Order placed! Please pay at the counter.', 'success');
+                navigate(`/orders/${orderId}/status`);
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Cash payment failed.');
             setIsProcessing(false);
         }
     };
@@ -399,8 +424,32 @@ const Cart = () => {
                                     Processing...
                                 </span>
                             ) : (
-                                'Proceed to Checkout'
+                                'Pay Online (Razorpay)'
                             )}
+                        </button>
+
+                        <button
+                            onClick={async () => {
+                                if (!outletId || items.length === 0) return;
+                                setIsProcessing(true);
+                                try {
+                                    const orderPayload: any = {
+                                        outletId,
+                                        items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+                                        notes: orderNotes
+                                    };
+                                    if (isScheduled && selectedTime) orderPayload.scheduledTime = parseTimeTo24h(selectedTime);
+                                    const orderRes = await api.post('/orders', orderPayload);
+                                    await handleCashPayment(orderRes.data.id, orderRes.data.total_amount);
+                                } catch (err: any) {
+                                    setError(err.response?.data?.error || 'Failed to place order');
+                                    setIsProcessing(false);
+                                }
+                            }}
+                            disabled={isProcessing || user?.isFrozen}
+                            className="w-full mt-3 py-3 rounded-xl font-bold text-sm border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-input)] transition-all flex items-center justify-center"
+                        >
+                            Pay with Cash / COD
                         </button>
 
                         <div className="mt-6 text-center">
