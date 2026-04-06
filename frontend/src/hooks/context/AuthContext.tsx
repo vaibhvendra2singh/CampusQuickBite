@@ -28,6 +28,7 @@ export interface User {
     hasHackerBadge?: boolean;
     xp?: number;
     tier?: string;
+    walletBalance?: number;
 }
 
 interface AuthContextType {

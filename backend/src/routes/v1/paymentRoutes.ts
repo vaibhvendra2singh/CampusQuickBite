@@ -40,8 +40,16 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
         });
 
     } catch (error: any) {
-        console.error('Razorpay Order Error:', error);
-        res.status(500).json({ error: 'Failed to create Razorpay order' });
+        console.error(' [RAZORPAY_FAILURE] Failed to create order:', {
+            message: error.message,
+            description: error.description,
+            error: error.error, // Razorpay might return an 'error' object inside the error
+            stack: error.stack
+        });
+        res.status(500).json({ 
+            error: 'Failed to create Razorpay order', 
+            details: error.message 
+        });
     }
 });
 
@@ -68,6 +76,12 @@ router.post('/razorpay/verify', authenticateUser as any, async (req: AuthRequest
                 return res.status(500).json({ error: 'Payment verified but failed to save.' });
             }
 
+            // ─── CLEAR CART ONLY ON SUCCESS ─────────────────────────────────
+            const userId = req.user?.id;
+            if (userId) {
+                await supabase.from('cart_items').delete().eq('user_id', userId);
+            }
+
             return res.status(200).json({ success: true, message: "Payment verified successfully" });
         } else {
             return res.status(400).json({ error: "Invalid payment signature" });
@@ -75,44 +89,6 @@ router.post('/razorpay/verify', authenticateUser as any, async (req: AuthRequest
     } catch (error: any) {
         console.error('Verification Error:', error);
         res.status(500).json({ error: 'Failed to verify payment' });
-    }
-});
-
-// 3. Existing Cash Route (Old route converted to a specific path)
-router.post('/cash', authenticateUser as any, validate(z.object({ body: paymentSchema })), async (req: AuthRequest, res: Response) => {
-    try {
-        const { orderId, amount } = req.body;
-        const userId = req.user?.id;
-
-        const { data: order, error: orderError } = await supabase
-            .from('orders')
-            .select('user_id, total_amount, payment_status')
-            .eq('id', orderId)
-            .single();
-
-        if (orderError || !order) {
-            return res.status(404).json({ error: 'Order not found' });
-        }
-
-        if (order.user_id !== userId) {
-            return res.status(403).json({ error: 'Unauthorized' });
-        }
-
-        const { error: updateError } = await supabase
-            .from('orders')
-            .update({ payment_status: 'paid' })
-            .eq('id', orderId);
-
-        if (updateError) return res.status(500).json({ error: 'Failed to update order status' });
-
-        res.status(200).json({
-            success: true,
-            message: 'Payment recorded via cash',
-            transactionId: `CASH-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
-        });
-
-    } catch (error: any) {
-        res.status(500).json({ error: error.message || 'Payment failed' });
     }
 });
 

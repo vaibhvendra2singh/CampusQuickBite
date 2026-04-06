@@ -27,6 +27,9 @@ interface Order {
     status: string;
     paymentStatus?: string;
     createdAt: string;
+    preparingAt?: string;
+    deliveredAt?: string;
+    readyAt?: string;
 }
 
 const TIMELINE_STEPS = [
@@ -67,8 +70,14 @@ const OrderHistory = () => {
     }, [user]);
 
     const TIMELINE_STEPS_LOWER = ['pending', 'preparing', 'ready', 'completed'];
-    const getStatusIndex = (status: string) => {
-        if (status?.toUpperCase() === 'CANCELLED') return -1;
+    const getStatusIndex = (order: Order) => {
+        const { status, preparingAt, readyAt, deliveredAt } = order;
+        if (status?.toUpperCase() === 'CANCELLED') {
+            if (deliveredAt) return 3;
+            if (readyAt) return 2;
+            if (preparingAt) return 1;
+            return 0;
+        }
         return TIMELINE_STEPS_LOWER.indexOf(status?.toLowerCase());
     };
 
@@ -143,7 +152,7 @@ const OrderHistory = () => {
 
             <div className="space-y-10">
                 {orders.map((order) => {
-                    const currentStepIdx = getStatusIndex(order.status);
+                    const currentStepIdx = getStatusIndex(order);
                     const isCancelled = order.status?.toUpperCase() === 'CANCELLED';
                     const isExpanded = expandedOrder === order.id;
                     const isCompleted = order.status?.toUpperCase() === 'COMPLETED';
@@ -193,7 +202,12 @@ const OrderHistory = () => {
                                             <div>
                                                 <p className="font-black text-lg tracking-tight leading-none mb-1">Order cancelled</p>
                                                 {(order.paymentStatus || (order as { payment_status?: string }).payment_status)?.toUpperCase() === 'PAID' && (
-                                                    <p className="text-xs font-bold opacity-80 uppercase tracking-widest">Refund on its way.</p>
+                                                    <p className="text-xs font-bold opacity-80 uppercase tracking-widest text-brand-500">Refund on its way.</p>
+                                                )}
+                                                {(order.paymentStatus || (order as { payment_status?: string }).payment_status)?.toUpperCase() === 'REFUNDED' && (
+                                                    <p className="text-xs font-black uppercase tracking-widest text-emerald-500 flex items-center gap-1.5">
+                                                        <FiCheckCircle className="w-3.5 h-3.5" /> Refunded to Wallet
+                                                    </p>
                                                 )}
                                             </div>
                                         </div>
@@ -250,23 +264,25 @@ const OrderHistory = () => {
                                         </button>
                                     </div>
 
-                                    {isExpanded && !isCancelled && (
+                                    {isExpanded && (
                                         <div className="mt-8 pt-8 border-t-2 border-[var(--border-color)] border-dashed animate-none">
                                             <div className="space-y-6">
-                                                {TIMELINE_STEPS.map((step, idx) => {
-                                                    const isActive = idx <= currentStepIdx;
-                                                    const isCurrent = idx === currentStepIdx;
+                                                {(isCancelled ? [...TIMELINE_STEPS.slice(0, currentStepIdx + 1), { key: 'CANCELLED', label: 'Order Cancelled', icon: '❌', description: 'This order was cancelled' }] : TIMELINE_STEPS).map((step, idx, arr) => {
+                                                    const isCancelledStep = step.key === 'CANCELLED';
+                                                    const isActive = isCancelledStep ? true : idx <= currentStepIdx;
+                                                    const isCurrent = isCancelledStep ? true : idx === currentStepIdx;
+                                                    
                                                     return (
                                                         <div key={step.key} className="flex items-start group/step">
                                                             <div className="flex flex-col items-center mr-6">
                                                                 <div className={`w-10 h-10 flex items-center justify-center text-xl rounded-2xl transition-all duration-150 border-2 ${isActive
-                                                                    ? isCurrent ? 'bg-brand-500 border-brand-500 text-white shadow-xl shadow-brand-500/30 scale-110' : 'bg-brand-500/20 border-brand-500/40 text-brand-500'
+                                                                    ? isCurrent ? (isCancelledStep ? 'bg-red-500 border-red-500 text-white' : 'bg-brand-500 border-brand-500 text-white shadow-xl shadow-brand-500/30 scale-110') : 'bg-brand-500/20 border-brand-500/40 text-brand-500'
                                                                     : 'bg-[var(--bg-input)] border-[var(--border-color)] text-[var(--text-muted)]'
                                                                     }`}>
                                                                     <span>{step.icon}</span>
                                                                 </div>
-                                                                {idx < TIMELINE_STEPS.length - 1 && (
-                                                                    <div className={`w-1 h-10 mt-2 rounded-full transition-all duration-150 ${isActive ? 'bg-brand-500 shadow-sm shadow-brand-500/50' : 'bg-[var(--border-color)]'}`}></div>
+                                                                {idx < arr.length - 1 && (
+                                                                    <div className={`w-1 h-10 mt-2 rounded-full transition-all duration-150 ${isActive ? (isCancelledStep ? 'bg-red-500' : 'bg-brand-500 shadow-sm shadow-brand-500/50') : 'bg-[var(--border-color)]'}`}></div>
                                                                 )}
                                                             </div>
                                                             <div className="pt-1.5">
@@ -274,11 +290,14 @@ const OrderHistory = () => {
                                                                     <p className={`font-black text-lg tracking-tight ${isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>
                                                                         {step.label}
                                                                     </p>
-                                                                    {isCurrent && (
+                                                                    {isCurrent && !isCancelledStep && (
                                                                         <span className="px-3 py-1 bg-brand-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-brand-500/20 animate-pulse">Live</span>
                                                                     )}
+                                                                    {isCancelledStep && (
+                                                                        <span className="px-3 py-1 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg shadow-red-500/20">Final</span>
+                                                                    )}
                                                                 </div>
-                                                                <p className={`text-sm font-bold mt-1 ${isActive ? 'text-brand-500' : 'text-[var(--text-muted)]'}`}>{step.description}</p>
+                                                                <p className={`text-sm font-bold mt-1 ${isCancelledStep ? 'text-red-500' : (isActive ? 'text-brand-500' : 'text-[var(--text-muted)]')}`}>{step.description}</p>
                                                             </div>
                                                         </div>
                                                     );

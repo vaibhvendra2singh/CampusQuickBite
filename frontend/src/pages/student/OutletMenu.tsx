@@ -91,22 +91,21 @@ const OutletMenu = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [menuRes, outletRes] = await Promise.all([
+                const [menuRes, outletRes, recsRes] = await Promise.all([
                     api.get(`/menu/${outletId}`),
-                    api.get(`/outlets/${outletId}`)
+                    api.get(`/outlets/${outletId}`),
+                    user ? api.get('/analytics/recommendations/personal').catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
                 ]);
+
                 setMenuItems(menuRes.data);
                 setOutlet(outletRes.data);
 
-                if (user) {
-                    try {
-                        const recsRes = await api.get('/analytics/recommendations/personal');
-                        const outletItemsMap = new Map(menuRes.data.map((i: MenuItem) => [i.id, i]));
-                        const mappedRecs = recsRes.data
-                            .map((r: { id: number }) => outletItemsMap.get(r.id))
-                            .filter(Boolean);
-                        setPersonalRecs(mappedRecs as MenuItem[]);
-                    } catch { console.error("Recs error"); }
+                if (user && recsRes.data.length > 0) {
+                    const outletItemsMap = new Map(menuRes.data.map((i: MenuItem) => [i.id, i]));
+                    const mappedRecs = recsRes.data
+                        .map((r: { id: number }) => outletItemsMap.get(r.id))
+                        .filter(Boolean);
+                    setPersonalRecs(mappedRecs as MenuItem[]);
                 }
 
             } catch (error) {

@@ -68,6 +68,7 @@ if [ -f ".env" ]; then
 fi
 
 cp .env backend/.env 2>/dev/null || true
+cp .env frontend/.env 2>/dev/null || true
 ok "Secrets configured"
 
 # ── 3. Runtime Check ─────────────────────────────────────────

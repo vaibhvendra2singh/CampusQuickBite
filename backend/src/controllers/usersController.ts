@@ -88,7 +88,8 @@ export const updateUserProfile = async (req: AuthRequest, res: Response): Promis
             hasExplorerBadge: data.has_explorer_badge || false,
             hasProGamerBadge: data.has_pro_gamer_badge || false,
             hasCompletionistBadge: data.has_completionist_badge || false,
-            hasHackerBadge: data.has_hacker_badge || false
+            hasHackerBadge: data.has_hacker_badge || false,
+            walletBalance: data.wallet_balance || 0
         }, 'Profile updated successfully');
 
     } catch (error) {
@@ -306,7 +307,8 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
             hasExplorerBadge: data.has_explorer_badge || false,
             hasProGamerBadge: data.has_pro_gamer_badge || false,
             hasCompletionistBadge: data.has_completionist_badge || false,
-            hasHackerBadge: data.has_hacker_badge || false
+            hasHackerBadge: data.has_hacker_badge || false,
+            walletBalance: data.wallet_balance || 0
         }, 'User profile fetched successfully');
     } catch (error) {
         console.error('Get user by id error:', error);

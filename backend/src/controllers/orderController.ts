@@ -16,13 +16,13 @@ const getJwtSecret = () => {
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
         const userId = req.user?.id;
-        const { outletId, items, notes, scheduledTime } = req.body;
+        const { outletId, items, notes, scheduledTime, paymentMethod } = req.body;
 
         if (!userId || !outletId) {
             sendError(res, 'User ID and Outlet ID are required', 400);
             return;
         }
-
+        
         const { data: user, error: userError } = await supabase
             .from('users')
             .select('is_frozen, is_banned')
@@ -52,9 +52,10 @@ export const createOrder = async (req: AuthRequest, res: Response): Promise<void
         const { data: orderData, error: rpcError } = await supabase.rpc('create_order_v2', {
             p_user_id: userId,
             p_outlet_id: outletId,
-            p_items: items.map(i => ({ menu_item_id: i.menuItemId, quantity: parseInt(i.quantity as any) })),
+            p_items: items.map((i: any) => ({ menu_item_id: i.menuItemId, quantity: parseInt(i.quantity as any) })),
             p_notes: notes || null,
-            p_scheduled_at: scheduledTime || null
+            p_scheduled_at: scheduledTime || null,
+            p_payment_method: paymentMethod || 'cash'
         });
 
         if (rpcError) {
@@ -115,6 +116,7 @@ const formatOrderWithItems = (orderData: any) => {
         notes: orderData.notes,
         scheduledAt: orderData.scheduled_at,
         preparingAt: orderData.preparing_at,
+        readyAt: orderData.ready_at,
         createdAt: orderData.created_at,
         status: orderData.status,
         payment_status: orderData.payment_status,
@@ -194,6 +196,7 @@ export const getOrdersByUser = async (req: AuthRequest, res: Response): Promise<
                 )
             `, { count: 'exact' })
             .eq('user_id', userId)
+            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -245,6 +248,9 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
                 )
             `, { count: 'exact' })
             .eq('outlet_id', outletId)
+            // AUTHORIZATION FILTER: Show if PAID or if it's a CASH order
+            // (Note: Using .or for complex filtering since we want to avoid ghost online orders)
+            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -279,6 +285,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             .select(`
                 status, 
                 payment_status,
+                total_amount,
                 user_id, 
                 outlet_id, 
                 outlets!outlet_id (owner_id)
@@ -335,26 +342,42 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             }
         }
 
-        const updatePayload: any = { 
-            status: requestedStatus,
-            verified_by: req.user?.id 
-        };
-        if (requestedStatus === 'preparing') {
-            updatePayload.preparing_at = new Date().toISOString();
-        }
-        if (requestedStatus === 'completed') {
-            updatePayload.delivered_at = new Date().toISOString();
-        }
+        if (requestedStatus === 'cancelled') {
+            const { data: rpcResult, error: rpcError } = await supabase.rpc('cancel_order_with_stock', {
+                p_order_id: id,
+                p_actor_id: req.user.id
+            });
 
-        const { error: updateError } = await supabase
-            .from('orders')
-            .update(updatePayload)
-            .eq('id', id);
+            if (rpcError) {
+                console.error('[OrderUpdate] Cancellation RPC failed:', rpcError);
+                sendError(res, 'Failed to cancel and restore stock');
+                return;
+            }
+        } else {
+            const updatePayload: any = { 
+                status: requestedStatus,
+                verified_by: req.user?.id 
+            };
+            if (requestedStatus === 'preparing') {
+                updatePayload.preparing_at = new Date().toISOString();
+            }
+            if (requestedStatus === 'ready') {
+                updatePayload.ready_at = new Date().toISOString();
+            }
+            if (requestedStatus === 'completed') {
+                updatePayload.delivered_at = new Date().toISOString();
+            }
 
-        if (updateError) {
-            console.error('[OrderUpdate] Database update failed:', updateError);
-            sendError(res, 'Failed to update order status');
-            return;
+            const { error: updateError } = await supabase
+                .from('orders')
+                .update(updatePayload)
+                .eq('id', id);
+
+            if (updateError) {
+                console.error('[OrderUpdate] Database update failed:', updateError);
+                sendError(res, 'Failed to update order status');
+                return;
+            }
         }
 
         const { data: updatedOrder, error: reFetchError } = await supabase
@@ -374,6 +397,30 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
             console.warn('[OrderUpdate] Success but re-fetch failed:', reFetchError);
             sendSuccess(res, { id, status: requestedStatus }, 'Status updated (refresh for full details)');
             return;
+        }
+
+        // ─── Refund Logic: If order is PAID and status is now CANCELLED ──────────
+        if (requestedStatus === 'cancelled' && currentOrder.payment_status === 'paid') {
+            const amount = parseFloat(currentOrder.total_amount || '0');
+            if (amount > 0) {
+                console.log(`[Refund] Order #${id} is being cancelled. Refunding ₹${amount} to user ${currentOrder.user_id}`);
+                
+                await supabase.rpc('increment_wallet', { 
+                    user_uuid: currentOrder.user_id, 
+                    amount_to_add: amount 
+                });
+
+                await supabase.from('orders').update({ payment_status: 'refunded' }).eq('id', id);
+
+                await auditLog({
+                    action: 'PAYMENT_REFUND_ISSUED',
+                    actorId: req.user.id,
+                    actorRole: req.user.role,
+                    targetId: String(updatedOrder.id),
+                    targetType: 'order',
+                    details: { userId: currentOrder.user_id, amount, reason: 'ORDER_CANCELLED_BY_OWNER' }
+                });
+            }
         }
 
         notifyOrderUpdate(updatedOrder.user_id, updatedOrder.id, updatedOrder.status);
@@ -403,7 +450,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
 
         const { data: order, error: orderError } = await supabase
             .from('orders')
-            .select('id, status, payment_status, outlets!inner(owner_id)')
+            .select('id, user_id, status, payment_status, total_amount, outlets!inner(owner_id)')
             .eq('id', id)
             .single();
 
@@ -424,21 +471,52 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        const updateData: any = {
-            status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
-            cancelled_by: actorId
-        };
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('cancel_order_with_stock', {
+            p_order_id: id,
+            p_actor_id: actorId
+        });
 
-        const { error: updateError } = await supabase
-            .from('orders')
-            .update(updateData)
-            .eq('id', id);
-
-        if (updateError) {
-            console.error('Failed to cancel order:', updateError);
-            sendError(res, `Database update failed: ${updateError.message}`);
+        if (rpcError) {
+            console.error('Failed to cancel order with RPC:', rpcError);
+            sendError(res, `Cancellation failed: ${rpcError.message}`);
             return;
+        }
+
+        // ─── Refund Logic: If order is PAID and status is now CANCELLED ──────────
+        if (order.payment_status === 'paid') {
+            const amount = parseFloat(order.total_amount || '0');
+            const userId = order.user_id;
+
+            if (amount > 0 && userId) {
+                console.log(`[Refund] Order #${id} cancelled. Refunding ₹${amount} to user ${userId}`);
+                
+                // 1. Credit wallet
+                const { error: walletError } = await supabase.rpc('increment_wallet', { 
+                    user_uuid: userId, 
+                    amount_to_add: amount 
+                });
+
+                if (walletError) {
+                    const { data: user } = await supabase.from('users').select('wallet_balance').eq('id', userId).single();
+                    if (user) {
+                        const newBalance = (parseFloat(user.wallet_balance) || 0) + amount;
+                        await supabase.from('users').update({ wallet_balance: newBalance }).eq('id', userId);
+                    }
+                }
+
+                // 2. Mark as REFUNDED
+                await supabase.from('orders').update({ payment_status: 'refunded' }).eq('id', id);
+
+                // 3. Log it
+                await auditLog({
+                    action: 'PAYMENT_REFUND_ISSUED',
+                    actorId: req.user.id,
+                    actorRole: req.user.role,
+                    targetId: id as string,
+                    targetType: 'order',
+                    details: { userId, amount, reason: 'ORDER_CANCELLED_IN_DETAIL_VIEW' }
+                });
+            }
         }
 
         if (req.user) {
@@ -667,11 +745,12 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
         let query = supabase
             .from('orders')
             .select(`
-                id, status, payment_status, total_amount, created_at, delivered_at,
+                id, status, payment_status, total_amount, created_at, delivered_at, payment_method,
                 user:users!user_id(name, email),
                 order_items (id, quantity, price, item_name, menu_items(name))
             `, { count: 'exact' })
             .eq('outlet_id', outlet.id)
+            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
             .order('created_at', { ascending: false });
 
         if (studentName) {
@@ -766,8 +845,9 @@ export const getGlobalOrderStats = async (req: AuthRequest, res: Response): Prom
 
         const { data: orders, error: orderError } = await supabase
             .from('orders')
-            .select('outlet_id, status')
-            .in('status', ['pending', 'placed', 'preparing', 'ready']);
+            .select('outlet_id, status, payment_status, payment_method')
+            .in('status', ['pending', 'placed', 'preparing', 'ready'])
+            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`);
         if (orderError) throw orderError;
 
         const stats = (outlets || []).map(outlet => {

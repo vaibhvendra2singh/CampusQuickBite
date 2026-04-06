@@ -260,6 +260,12 @@ const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) => {
                                 )
                             )}
                             <InfoRow icon={FiMail} label="Contact Email" value={user.email} />
+                            {!isOwner && !isAdmin && (
+                                <div className="bg-brand-500/5 p-4 rounded-2xl border border-brand-500/20 flex flex-col items-center justify-center space-y-1">
+                                    <p className="text-[10px] font-bold text-brand-500 uppercase tracking-widest">Available Balance</p>
+                                    <p className="text-3xl font-black text-[var(--text-primary)]">₹{user.walletBalance?.toFixed(2) || '0.00'}</p>
+                                </div>
+                            )}
                             {isEditing ? (
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">Primary Phone</p>

@@ -39,9 +39,9 @@ const createRedisClient = (): Redis | null => {
 
     try {
         const client = new RedisClient(redisUrl, {
-            maxRetriesPerRequest: 3,
-            connectTimeout: 5000,
-            lazyConnect: true, // Don't fail startup if Redis is unavailable
+            maxRetriesPerRequest: 1, // Don't retry endlessly
+            connectTimeout: 500,     // 500ms instead of 5s
+            lazyConnect: true,
         });
 
         client.on('connect', () => logger.info('[Cache] Redis connected ✓'));
@@ -55,9 +55,15 @@ const createRedisClient = (): Redis | null => {
     }
 };
 
-const getClient = (): Redis | null => {
+export const initCache = (): void => {
     if (!redisClient) {
         redisClient = createRedisClient();
+    }
+};
+
+const getClient = (): Redis | null => {
+    if (!redisClient) {
+        initCache();
     }
     return redisClient;
 };

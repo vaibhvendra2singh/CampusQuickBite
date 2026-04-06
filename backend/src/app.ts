@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import morgan from 'morgan';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import logger from './services/logger';
@@ -25,19 +26,30 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 
 const app = express();
+app.use(morgan('dev')); // Added for request logging
 console.log('--- CAMPUS BITE BACKEND HEARTBEAT ---');
 
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) return callback(null, true);
     
-    // Allow local development
-    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01]))\.\d+\.\d+(:\d+)?$/);
+    // Allow common local development origins and common loopback IPs
+    const allowed = [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://127.0.2.2:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000'
+    ];
+    
+    if (origin && allowed.includes(origin)) return callback(null, true);
+    
+    // Also keep the regex as fallback for other IPs
+    const isLocalIP = origin && origin.match(/^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
     if (isLocalIP) return callback(null, true);
 
-    // Get the configured URLs and strip trailing slashes for comparison
     const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
     const corsOrigin = process.env.CORS_ORIGIN?.replace(/\/$/, '');
-    const cleanOrigin = origin.replace(/\/$/, '');
+    const cleanOrigin = origin?.replace(/\/$/, '');
 
     if ((frontendUrl && cleanOrigin === frontendUrl) || (corsOrigin && cleanOrigin === corsOrigin)) {
         return callback(null, true);

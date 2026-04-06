@@ -69,19 +69,36 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             setItems([]);
             setOutletId(null);
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, user, syncCart]);
 
     const addToCart = useCallback(async (item: Omit<CartItem, 'quantity'>) => {
-        const res = await api.post('/cart/add', {
-            menuItemId: item.menuItemId,
-            quantity: 1,
+        // Optimistic Update (Immediate UI response)
+        const newItem: CartItem = { ...item, quantity: 1 };
+        setItems(prev => {
+            const existing = prev.find(i => i.menuItemId === item.menuItemId);
+            if (existing) {
+                return prev.map(i => i.menuItemId === item.menuItemId ? { ...i, quantity: i.quantity + 1 } : i);
+            }
+            return [...prev, newItem];
         });
-        const { outletId: oid, items: itms } = mapCartResponse(res.data);
-        setOutletId(oid);
-        setItems(itms);
-    }, []);
+
+        try {
+            const res = await api.post('/cart/add', {
+                menuItemId: item.menuItemId,
+                quantity: 1,
+            });
+            const { outletId: oid, items: itms } = mapCartResponse(res.data);
+            setOutletId(oid);
+            setItems(itms);
+        } catch (err) {
+            syncCart();
+            throw err;
+        }
+    }, [syncCart]);
 
     const removeFromCart = useCallback(async (menuItemId: number) => {
+        // Optimistic Update
+        setItems(prev => prev.filter(i => i.menuItemId !== menuItemId));
         try {
             const res = await api.delete(`/cart/remove/${menuItemId}`);
             const { outletId: oid, items: itms } = mapCartResponse(res.data);
@@ -89,8 +106,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             setItems(itms);
         } catch (err) {
             console.error('Failed to remove from cart:', err);
+            syncCart();
         }
-    }, []);
+    }, [syncCart]);
 
     const clearCart = useCallback(async (localOnly: boolean = false) => {
         try {
@@ -101,10 +119,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             setOutletId(null);
         } catch (err) {
             console.error('Failed to clear cart:', err);
+            syncCart();
         }
-    }, []);
+    }, [syncCart]);
 
     const updateItemQuantity = useCallback(async (cartItemId: number, action: 'increase' | 'decrease') => {
+        // Optimistic Update
+        setItems(prev => prev.map(item => 
+            item.id === cartItemId 
+                ? { ...item, quantity: action === 'increase' ? item.quantity + 1 : Math.max(0, item.quantity - 1) } 
+                : item
+        ).filter(item => item.quantity > 0));
+
         try {
             const res = await api.put('/cart/update', { cartItemId, action });
             const { outletId: oid, items: itms } = mapCartResponse(res.data);
@@ -112,8 +138,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             setItems(itms);
         } catch (err) {
             console.error('Failed to update cart item quantity:', err);
+            syncCart();
         }
-    }, []);
+    }, [syncCart]);
 
     const cartTotal = useMemo(() => items.reduce((total, item) => total + item.price * item.quantity, 0), [items]);
 

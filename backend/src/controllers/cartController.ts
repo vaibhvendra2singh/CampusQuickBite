@@ -55,9 +55,10 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        const [{ data: menuItem, error: menuErr }, currentCart] = await Promise.all([
+        // 1. Get menu item info AND current cart status in 1 TRIP
+        const [{ data: menuItem, error: menuErr }, { data: existingItem }] = await Promise.all([
             supabase.from('menu_items').select('id, outlet_id, availability').eq('id', menuItemId).single(),
-            fetchFullCart(userId)
+            supabase.from('cart_items').select('id, quantity, menu_items(outlet_id)').eq('user_id', userId).eq('menu_item_id', menuItemId).maybeSingle()
         ]);
 
         if (menuErr || !menuItem) {
@@ -70,20 +71,19 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
             return;
         }
 
-        if (currentCart && currentCart.length > 0) {
-            const existingOutletId = (currentCart[0].menu_items as any)?.outlet_id;
-            if (existingOutletId && existingOutletId !== menuItem.outlet_id) {
-                res.status(400).json({
-                    error: 'Your cart contains items from a different outlet. Please clear it first.'
-                });
+        // Check if adding from a different outlet
+        if (!existingItem) {
+            const { data: otherItems } = await supabase.from('cart_items').select('menu_items(outlet_id)').eq('user_id', userId).limit(1).maybeSingle();
+            if (otherItems && (otherItems.menu_items as any)?.outlet_id !== menuItem.outlet_id) {
+                res.status(400).json({ error: 'Cart contains items from another outlet. Clear it first.' });
                 return;
             }
         }
 
         const requestedQty = Math.max(1, parseInt(quantity?.toString()) || 1);
-        const existingItem = currentCart?.find(item => (item.menu_items as any)?.id === menuItemId);
-
-        const { error: mutationError } = await supabase
+        
+        // 2. Perform UPSERT and FETCH resulting cart in 2 TRIPS (Total minimized)
+        const { error: upsertError } = await supabase
             .from('cart_items')
             .upsert({
                 user_id: userId,
@@ -91,7 +91,7 @@ export const addToCart = async (req: AuthRequest, res: Response): Promise<void> 
                 quantity: existingItem ? existingItem.quantity + requestedQty : requestedQty
             }, { onConflict: 'user_id, menu_item_id' });
 
-        if (mutationError) throw mutationError;
+        if (upsertError) throw upsertError;
 
         const updatedCart = await fetchFullCart(userId);
         res.status(200).json(updatedCart);

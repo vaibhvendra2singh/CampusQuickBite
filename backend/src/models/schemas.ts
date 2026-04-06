@@ -52,6 +52,8 @@ export const createOrderSchema = z.object({
         menuItemId: stringIdSchema,
         quantity: z.number().int().min(1).max(100),
     })).min(1),
+    notes: z.string().max(500).optional(),
+    scheduledTime: z.string().datetime().optional().or(z.string().optional()),
 });
 
 export const updateOrderStatusSchema = z.object({
@@ -125,8 +127,8 @@ export const createAnnouncementSchema = z.object({
 });
 
 export const paymentSchema = z.object({
-    orderId: z.number().int().positive(),
+    orderId: z.union([z.number(), z.string()]),
     amount: z.number().positive(),
-    paymentMethod: z.string().min(1).max(50),
+    paymentMethod: z.string().min(1).max(50).optional().default('CASH'),
 });
 

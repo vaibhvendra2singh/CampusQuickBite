@@ -116,6 +116,13 @@ const Cart = () => {
             return;
         }
 
+        const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+        if (!rzpKey || rzpKey === 'rzp_test_placeholder') {
+            setError('Payment gateway is not currently configured. Please try again later.');
+            showToast('Razorpay keys missing in configuration.', 'error');
+            return;
+        }
+
         setIsProcessing(true);
         setError('');
 
@@ -124,7 +131,8 @@ const Cart = () => {
             const orderPayload: Record<string, unknown> = {
                 outletId,
                 items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
-                notes: orderNotes
+                notes: orderNotes,
+                paymentMethod: 'RAZORPAY'
             };
             if (isScheduled && selectedTime) {
                 orderPayload.scheduledTime = parseTimeTo24h(selectedTime);
@@ -139,13 +147,6 @@ const Cart = () => {
                 amount: order.total_amount
             });
             const rzpOrder = rzpOrderRes.data;
-            const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-
-            if (!rzpKey || rzpKey === 'rzp_test_placeholder') {
-                showToast('Razorpay key not found. Using test cash payment.', 'info');
-                await handleCashPayment(order.id, order.total_amount);
-                return;
-            }
 
             // 3. Open the Razorpay Modal
             const options = {
@@ -183,14 +184,31 @@ const Cart = () => {
                     color: "#f97316", // Brand Orange
                 },
                 modal: {
-                    ondismiss: () => {
+                    ondismiss: async () => {
                         setIsProcessing(false);
-                        showToast('Payment cancelled.', 'info');
+                        showToast('Checkout abandoned. Stock restored.', 'info');
+                        try {
+                            await api.put(`/orders/${order.id}/cancel`);
+                        } catch (e) {
+                            console.warn('Failed to cleanup ghost order', e);
+                        }
                     }
                 }
             };
 
             const rzp = new (window as any).Razorpay(options);
+            
+            rzp.on('payment.failed', async (response: any) => {
+                console.error(' [RAZORPAY_PAYMENT_FAILED]', response.error);
+                setError(`Payment failed: ${response.error.description}. Your order has been cancelled.`);
+                setIsProcessing(false);
+                try {
+                    await api.put(`/orders/${order.id}/cancel`);
+                } catch (e) {
+                    console.warn('Failed to cleanup failed order', e);
+                }
+            });
+
             rzp.open();
 
         } catch (err: any) {
@@ -205,23 +223,7 @@ const Cart = () => {
         }
     };
 
-    const handleCashPayment = async (orderId: string, amount: number) => {
-        try {
-            const verifyRes = await api.post('/payments/cash', {
-                orderId,
-                amount
-            });
 
-            if (verifyRes.data.success) {
-                clearCart();
-                showToast('Order placed! Please pay at the counter.', 'success');
-                navigate(`/orders/${orderId}/status`);
-            }
-        } catch (err: any) {
-            setError(err.response?.data?.error || 'Cash payment failed.');
-            setIsProcessing(false);
-        }
-    };
 
     if (items.length === 0) {
         return (
@@ -428,29 +430,7 @@ const Cart = () => {
                             )}
                         </button>
 
-                        <button
-                            onClick={async () => {
-                                if (!outletId || items.length === 0) return;
-                                setIsProcessing(true);
-                                try {
-                                    const orderPayload: any = {
-                                        outletId,
-                                        items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
-                                        notes: orderNotes
-                                    };
-                                    if (isScheduled && selectedTime) orderPayload.scheduledTime = parseTimeTo24h(selectedTime);
-                                    const orderRes = await api.post('/orders', orderPayload);
-                                    await handleCashPayment(orderRes.data.id, orderRes.data.total_amount);
-                                } catch (err: any) {
-                                    setError(err.response?.data?.error || 'Failed to place order');
-                                    setIsProcessing(false);
-                                }
-                            }}
-                            disabled={isProcessing || user?.isFrozen}
-                            className="w-full mt-3 py-3 rounded-xl font-bold text-sm border border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-input)] transition-all flex items-center justify-center"
-                        >
-                            Pay with Cash / COD
-                        </button>
+
 
                         <div className="mt-6 text-center">
                             <p className="text-xs text-[var(--text-muted)] px-4">
