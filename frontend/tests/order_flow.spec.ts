@@ -89,7 +89,7 @@ test.describe('Student Order Flow', () => {
     });
 
     test('should allow student to login and view outlets', async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto(`${BASE_URL}/login`);
 
         // Fill login
         await page.fill('input[type="email"]', 'student@campus.edu');
@@ -102,7 +102,7 @@ test.describe('Student Order Flow', () => {
     });
 
     test('should allow student to add items to cart and place order', async ({ page }) => {
-        await page.goto(BASE_URL);
+        await page.goto(`${BASE_URL}/login`);
 
         // Login first
         await page.fill('input[type="email"]', 'student@campus.edu');

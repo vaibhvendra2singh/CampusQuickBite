@@ -69,7 +69,7 @@ test.describe('Student: Auth & Navigation Flow', () => {
     });
 
     test('Login page renders with email and password fields', async ({ page }) => {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
         // Should see some form fields
         const emailField = page.locator('input[type="email"], input[placeholder*="email" i], input[name="email"]').first();
@@ -91,7 +91,7 @@ test.describe('Student: Auth & Navigation Flow', () => {
     });
 
     test('Forgot password link is present', async ({ page }) => {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(`${BASE_URL}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
         const forgotLink = page.getByRole('link', { name: /forgot|reset password/i }).first();
         const forgotLinkAlt = page.locator('a[href*="forgot"], a[href*="reset"]').first();
