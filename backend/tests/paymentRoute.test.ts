@@ -18,6 +18,7 @@ const mockFrom = jest.fn(() => ({
     select: jest.fn().mockReturnThis(),
     eq: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
     single: mockSingle,
 }));
 
@@ -130,6 +131,7 @@ describe('Payment Route POST /api/v1/payments', () => {
             update: jest.fn().mockReturnValue({
                 eq: jest.fn().mockResolvedValue({ error: null }),
             }),
+            delete: jest.fn().mockReturnThis(),
             single: mockSingle,
         });
 

@@ -30,7 +30,10 @@ app.use(morgan('dev')); // Added for request logging
 console.log('--- CAMPUS BITE BACKEND HEARTBEAT ---');
 
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    if (!origin) return callback(null, true);
+    if (!origin) {
+        logger.info('[CORS] Allowing request with no origin');
+        return callback(null, true);
+    }
     
     // Allow common local development origins and common loopback IPs
     const allowed = [
@@ -41,20 +44,28 @@ const allowedOrigins = (origin: string | undefined, callback: (err: Error | null
         'http://127.0.0.1:3000'
     ];
     
-    if (origin && allowed.includes(origin)) return callback(null, true);
-    
-    // Also keep the regex as fallback for other IPs
-    const isLocalIP = origin && origin.match(/^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
-    if (isLocalIP) return callback(null, true);
-
-    const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
-    const corsOrigin = process.env.CORS_ORIGIN?.replace(/\/$/, '');
-    const cleanOrigin = origin?.replace(/\/$/, '');
-
-    if ((frontendUrl && cleanOrigin === frontendUrl) || (corsOrigin && cleanOrigin === corsOrigin)) {
+    if (allowed.includes(origin)) {
+        logger.info(`[CORS] Allowing specific origin: ${origin}`);
         return callback(null, true);
     }
     
+    // Also keep the regex as fallback for other IPs
+    const isLocalIP = origin.match(/^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
+    if (isLocalIP) {
+        logger.info(`[CORS] Allowing local IP: ${origin}`);
+        return callback(null, true);
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
+    const corsOrigin = process.env.CORS_ORIGIN?.replace(/\/$/, '');
+    const cleanOrigin = origin.replace(/\/$/, '');
+
+    if ((frontendUrl && cleanOrigin === frontendUrl) || (corsOrigin && cleanOrigin === corsOrigin)) {
+        logger.info(`[CORS] Allowing env-defined origin: ${origin}`);
+        return callback(null, true);
+    }
+    
+    logger.warn(`[CORS] Rejected origin: ${origin}`);
     callback(new Error('Not allowed by CORS'));
 };
 

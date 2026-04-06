@@ -22,16 +22,22 @@ export const MiniGameWindow: React.FC<MiniGameWindowProps> = ({
     defaultX,
     defaultY,
 }) => {
-    const [pos, setPos] = useState({
-        x: defaultX ?? Math.random() * (window.innerWidth - defaultWidth - 40) + 20,
-        y: defaultY ?? Math.random() * (window.innerHeight - defaultHeight - 80) + 80,
-    });
+    const [pos, setPos] = useState({ x: defaultX ?? 0, y: defaultY ?? 0 });
     const [{ w: sizeW, h: sizeH }] = useState({ w: defaultWidth, h: defaultHeight });
     const [dragging, setDragging] = useState(false);
     const [maximized, setMaximized] = useState(false);
     const [minimized, setMinimized] = useState(false);
     const dragOffset = useRef({ x: 0, y: 0 });
     const windowRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (defaultX === undefined || defaultY === undefined) {
+            setPos({
+                x: defaultX ?? Math.random() * (window.innerWidth - defaultWidth - 40) + 20,
+                y: defaultY ?? Math.random() * (window.innerHeight - defaultHeight - 80) + 80,
+            });
+        }
+    }, [defaultX, defaultY, defaultWidth, defaultHeight]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         if (maximized) return;

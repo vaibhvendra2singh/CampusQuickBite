@@ -172,6 +172,7 @@ const Cart = () => {
                             navigate(`/orders/${order.id}/status`);
                         }
                     } catch (err: any) {
+                        console.error('Payment verification failed:', err);
                         setError('Payment verification failed. Please check your bank and contact support if needed.');
                         setIsProcessing(false);
                     }

@@ -58,7 +58,7 @@ const OrderHistory = () => {
                     );
                     setOrders(sortedOrders);
                 }
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("Failed to fetch order history", error);
             } finally {
                 setIsLoading(false);
@@ -115,8 +115,8 @@ const OrderHistory = () => {
                 await api.post('/users/badge', { type: 'night_owl' });
                 if (updateUser) updateUser({ ...user, hasNightOwlBadge: true });
                 showToast('🌙 Night Owl Badge Unlocked! Late night hunger is real. (+20 XP)', 'success');
-            } catch (err: any) {
-                if (err.response?.status === 409 && updateUser) {
+            } catch (err: unknown) {
+                if ((err as any).response?.status === 409 && updateUser) {
                     updateUser({ ...user, hasNightOwlBadge: true });
                 }
             }

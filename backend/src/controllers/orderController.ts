@@ -3,7 +3,7 @@ import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { createCanvas } from 'canvas';
-import { notifyOrderUpdate } from '../services/socketService';
+import { notifyOrderUpdate, notifyWalletUpdate } from '../services/socketService';
 import { sendSuccess, sendError, sendPaginated } from '../utils/response';
 import { auditLog } from '../utils/auditLog';
 
@@ -410,6 +410,11 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
                     amount_to_add: amount 
                 });
 
+                const { data: userRecord } = await supabase.from('users').select('wallet_balance').eq('id', currentOrder.user_id).single();
+                if (userRecord) {
+                    notifyWalletUpdate(currentOrder.user_id, userRecord.wallet_balance, amount, 'REFUND');
+                }
+
                 await supabase.from('orders').update({ payment_status: 'refunded' }).eq('id', id);
 
                 await auditLog({
@@ -506,6 +511,11 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
 
                 // 2. Mark as REFUNDED
                 await supabase.from('orders').update({ payment_status: 'refunded' }).eq('id', id);
+
+                const { data: userRec } = await supabase.from('users').select('wallet_balance').eq('id', userId).single();
+                if (userRec) {
+                    notifyWalletUpdate(userId, userRec.wallet_balance, amount, 'REFUND');
+                }
 
                 // 3. Log it
                 await auditLog({

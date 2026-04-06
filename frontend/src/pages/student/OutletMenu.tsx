@@ -167,7 +167,9 @@ const OutletMenu = () => {
                         }, 1500);
                     }
                 }
-            } catch {
+            } catch (err) {
+                // Silently ignore upsell errors to keep primary checkout flow stable
+                console.debug('Upsell suggest fail:', err);
             }
 
         } catch (err: unknown) {

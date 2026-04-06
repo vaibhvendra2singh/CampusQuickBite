@@ -25,7 +25,8 @@ const AnnouncementWidget = ({ compact = false }: Props) => {
             try {
                 const res = await api.get('/announcements');
                 setAnnouncements(res.data);
-            } catch {
+            } catch (error) {
+                console.debug('Failed to load local announcements', error);
             }
         };
         fetch();

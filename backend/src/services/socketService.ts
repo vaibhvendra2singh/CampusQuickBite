@@ -106,3 +106,19 @@ export const notifyMenuUpdate = (outletId: string) => {
         io.emit('menu_update', { outletId });
     }
 };
+
+export const notifyWalletUpdate = (userId: string, newBalance: number, amount: number, type: 'REFUND' | 'CREDIT') => {
+    if (io) {
+        const message = type === 'REFUND' 
+            ? `₹${amount.toFixed(2)} Refunded to Wallet 💰`
+            : `₹${amount.toFixed(2)} Credited to Wallet 💰`;
+            
+        console.log(`Emitting wallet_update to user ${userId}: ${message}`);
+        io.to(userId).emit('wallet_update', {
+            newBalance,
+            amount,
+            type,
+            message
+        });
+    }
+};

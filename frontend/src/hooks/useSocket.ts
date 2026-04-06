@@ -46,6 +46,14 @@ export const useSocket = () => {
                     isBanned: data.isBanned ?? user.isBanned
                 });
             });
+            
+            newSocket.on('wallet_update', (data: { newBalance: number, amount: number, message: string }) => {
+                console.log('Received wallet update:', data);
+                showToast(data.message, 'success');
+                if (user) {
+                    updateUser({ ...user, walletBalance: data.newBalance });
+                }
+            });
 
             if (Notification.permission === 'default') {
                 Notification.requestPermission();
