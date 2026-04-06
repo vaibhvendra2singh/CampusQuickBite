@@ -25,6 +25,7 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 
 const app = express();
+console.log('--- CAMPUS BITE BACKEND HEARTBEAT ---');
 
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) return callback(null, true);
