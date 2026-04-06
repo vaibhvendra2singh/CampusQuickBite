@@ -120,6 +120,7 @@ const Cart = () => {
         setError('');
 
         try {
+            // 1. Create the Order in our database
             const orderPayload: Record<string, unknown> = {
                 outletId,
                 items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
@@ -132,26 +133,67 @@ const Cart = () => {
             const orderRes = await api.post('/orders', orderPayload);
             const order = orderRes.data;
 
-            const paymentPayload = {
+            // 2. Create the Razorpay Order on our backend
+            const rzpOrderRes = await api.post('/payments/razorpay/order', {
                 orderId: order.id,
-                transactionId: `TXN${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-                amount: order.total_amount,
-                paymentMethod: 'ONLINE'
-            };
-            await api.post('/payments', paymentPayload);
+                amount: order.total_amount
+            });
+            const rzpOrder = rzpOrderRes.data;
 
-            clearCart();
-            showToast('Order sent through! Get ready for your meal.', 'success');
-            navigate(`/orders/${order.id}/status`);
+            // 3. Open the Razorpay Modal
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_placeholder', // rzp_test_... from your dashboard
+                amount: rzpOrder.amount,
+                currency: "INR",
+                name: "CampusBite",
+                description: "Fuel for your brain 🍔",
+                order_id: rzpOrder.id,
+                handler: async (response: any) => {
+                    try {
+                        // 4. Send the payment details to the backend to verify the signature
+                        const verifyRes = await api.post('/payments/razorpay/verify', {
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderId: order.id
+                        });
+
+                        if (verifyRes.data.success) {
+                            clearCart();
+                            showToast('Payment successful! Your meal is being prepared.', 'success');
+                            navigate(`/orders/${order.id}/status`);
+                        }
+                    } catch (err: any) {
+                        setError('Payment verification failed. Please check your bank and contact support if needed.');
+                        setIsProcessing(false);
+                    }
+                },
+                prefill: {
+                    name: user?.name,
+                    email: user?.email,
+                },
+                theme: {
+                    color: "#f97316", // Brand Orange
+                },
+                modal: {
+                    ondismiss: () => {
+                        setIsProcessing(false);
+                        showToast('Payment cancelled.', 'info');
+                    }
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+
         } catch (err: any) {
             const errorMsg = err.response?.data?.error;
             if (errorMsg === 'ACCOUNT_FROZEN') {
-                setError('Your account is currently restricted from placing new orders. Please contact an administrator.');
+                setError('Your account is currently restricted from placing new orders.');
                 if (user) updateUser({ ...user, isFrozen: true });
             } else {
-                setError(errorMsg || 'Something went wrong on our end. Please try again.');
+                setError(errorMsg || 'Failed to start payment. Please try again.');
             }
-        } finally {
             setIsProcessing(false);
         }
     };
