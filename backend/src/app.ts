@@ -62,14 +62,20 @@ app.use(helmet({
 
 const allowedOrigins = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin) return callback(null, true);
-    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
     
-    if (isLocalIP) {
+    // Allow local development
+    const isLocalIP = origin.match(/^https?:\/\/(127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
+    if (isLocalIP) return callback(null, true);
+
+    // Get the configured URLs and strip trailing slashes for comparison
+    const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
+    const corsOrigin = process.env.CORS_ORIGIN?.replace(/\/$/, '');
+    const cleanOrigin = origin.replace(/\/$/, '');
+
+    if ((frontendUrl && cleanOrigin === frontendUrl) || (corsOrigin && cleanOrigin === corsOrigin)) {
         return callback(null, true);
     }
-    if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
-        return callback(null, true);
-    }
+    
     callback(new Error('Not allowed by CORS'));
 };
 
