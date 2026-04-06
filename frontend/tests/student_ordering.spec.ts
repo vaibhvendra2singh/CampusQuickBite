@@ -29,10 +29,10 @@ async function stubAuthAPIs(page: Page) {
                 id: 'student-1',
                 name: 'Test Student',
                 email: 'student@campus.edu',
-                role: 'Student',
+                role: 'STUDENT',
                 user: {
                     id: 'student-1', name: 'Test Student', email: 'student@campus.edu',
-                    role: 'student', is_email_verified: true, is_banned: false,
+                    role: 'STUDENT', is_email_verified: true, is_banned: false,
                     xp: 25, tier: 'BRONZE', enrollmentNumber: 'E2026001',
                 },
             }),

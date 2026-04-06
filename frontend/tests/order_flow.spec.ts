@@ -105,7 +105,7 @@ async function stubOrderFlow(page: Page) {
             contentType: 'application/json',
             body: JSON.stringify({
                 success: true,
-                data: { id: 'student-1', name: 'Test Student', role: 'student' }
+                data: { id: 'student-1', name: 'Test Student', role: 'STUDENT' }
             })
         });
     });
