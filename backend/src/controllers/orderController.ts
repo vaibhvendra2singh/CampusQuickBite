@@ -196,7 +196,7 @@ export const getOrdersByUser = async (req: AuthRequest, res: Response): Promise<
                 )
             `, { count: 'exact' })
             .eq('user_id', userId)
-            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
+            .or(`payment_status.in.(paid,refunded),status.eq.cancelled,payment_method.in.(CASH,cash)`)
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -248,9 +248,7 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
                 )
             `, { count: 'exact' })
             .eq('outlet_id', outletId)
-            // AUTHORIZATION FILTER: Show if PAID or if it's a CASH order
-            // (Note: Using .or for complex filtering since we want to avoid ghost online orders)
-            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
+            .or(`payment_status.in.(paid,refunded),status.eq.cancelled,payment_method.in.(CASH,cash)`)
             .order('created_at', { ascending: false })
             .range(from, to);
 
@@ -760,7 +758,7 @@ export const getOwnerOrderHistory = async (req: AuthRequest, res: Response): Pro
                 order_items (id, quantity, price, item_name, menu_items(name))
             `, { count: 'exact' })
             .eq('outlet_id', outlet.id)
-            .or(`payment_status.eq.paid,payment_method.eq.CASH,payment_method.eq.cash`)
+            .or(`payment_status.in.(paid,refunded),status.eq.cancelled,payment_method.in.(CASH,cash)`)
             .order('created_at', { ascending: false });
 
         if (studentName) {
