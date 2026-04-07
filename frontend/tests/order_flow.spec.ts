@@ -90,12 +90,21 @@ async function stubOrderFlow(page: Page) {
                 status: 201,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    success: true,
-                    message: 'Order placed',
-                    data: { id: 'order-123', status: 'pending', total_amount: 35.0 }
+                    id: 'order-123',
+                    total_amount: 35.0,
+                    status: 'pending'
                 })
             });
         }
+    });
+
+    // 4b. Payment Stub (Mock/Razorpay fallback)
+    await page.route('**/api/v1/payments**', async (route) => {
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ success: true, message: 'Payment successful' }),
+        });
     });
 
     // 5. User Profile/State
@@ -153,18 +162,19 @@ test.describe('Student Order Flow', () => {
         await addButton.click();
 
         // Click cart / checkout
-        const checkoutButton = page.locator('button:has-text("Checkout"), button:has-text("Cart")').first();
+        const checkoutButton = page.locator('a[href="/cart"]').first();
         await checkoutButton.click();
 
         // Verify we are on checkout
-        await expect(page.locator('text=Checkout')).toBeVisible();
+        await expect(page.locator('h1:has-text("Your Cart")')).toBeVisible();
         await expect(page.locator('text=Masala Chai')).toBeVisible();
 
-        // Click place order
-        const placeOrderButton = page.locator('button:has-text("Place Order"), button:has-text("Confirm Connection")').first();
+        // Click place order (The Razorpay button)
+        const placeOrderButton = page.locator('button:has-text("Pay Online")').first();
         await placeOrderButton.click();
 
-        // Should show success or redirect to order list
-        await expect(page.locator('text=Order placed')).toBeVisible({ timeout: 10000 });
+        // Should show success toast and redirect to status page
+        await expect(page.locator('text=successful')).toBeVisible({ timeout: 10000 });
+        await expect(page).toHaveURL(/.*\/orders\/order-123\/status/);
     });
 });
