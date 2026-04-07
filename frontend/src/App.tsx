@@ -127,9 +127,15 @@ const AuthCallback = () => {
 };
 
 const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) => {
+    const navigate = useNavigate();
     const { user, logout } = useAuth();
     const { items } = useCart();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+    const handleLogout = () => {
+        logout();
+        navigate('/login', { replace: true });
+    };
 
     return (
         <header
@@ -206,7 +212,7 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
                                 <FiUser className="text-brand-600 dark:text-brand-400 w-4 h-4" />
                             )}
                         </button>
-                        <button onClick={logout} className="p-2 sm:p-2.5 text-red-500 rounded-full bg-[var(--bg-card)] shadow-sm transition-transform bg-red-50 dark:bg-red-500/10" title="Exit">
+                        <button onClick={handleLogout} className="p-2 sm:p-2.5 text-red-500 rounded-full bg-[var(--bg-card)] shadow-sm transition-transform bg-red-50 dark:bg-red-500/10" title="Exit">
                             <FiLogOut className="w-4 h-4" />
                         </button>
                     </div>
