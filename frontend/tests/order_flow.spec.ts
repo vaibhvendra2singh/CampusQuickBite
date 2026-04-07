@@ -12,14 +12,12 @@ async function stubOrderFlow(page: Page) {
             body: JSON.stringify({
                 success: true,
                 message: 'Login successful',
-                data: {
-                    token: 'mock-jwt.header.payload',
-                    user: {
-                        id: 'student-1',
-                        name: 'Test Student',
-                        email: 'student@campus.edu',
-                        role: 'STUDENT'
-                    }
+                token: 'mock-jwt.header.payload',
+                user: {
+                    id: 'student-1',
+                    name: 'Test Student',
+                    email: 'student@campus.edu',
+                    role: 'STUDENT'
                 }
             }),
         });
@@ -126,11 +124,11 @@ test.describe('Student Order Flow', () => {
         // Fill login
         await page.fill('input[type="email"]', 'student@campus.edu');
         await page.fill('input[type="password"]', 'SecurePass123');
-        await page.fill('#login-enrollment', 'E2026123456');
+        await page.fill('input[placeholder*="enrollment" i]', 'E2026123456');
         await page.click('button[type="submit"]');
 
         // Should land on home/outlets
-        await expect(page.locator('text=Chai Junction')).toBeVisible({ timeout: 15000 });
+        await expect(page.locator('text=Chai Junction')).toBeVisible({ timeout: 10000 });
         await expect(page.locator('text=Pizza Hut Campus')).toBeVisible();
     });
 
@@ -148,7 +146,7 @@ test.describe('Student Order Flow', () => {
 
         // Should see menu
         await expect(page.locator('text=Masala Chai')).toBeVisible({ timeout: 10000 });
-        
+
         // Add item (assumes there's an "add" button or [+] icon)
         // Adjusting selector for common UI patterns
         const addButton = page.locator('button:has-text("Add"), button:has-text("+")').first();
