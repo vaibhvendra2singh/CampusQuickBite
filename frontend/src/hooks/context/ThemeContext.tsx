@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
 interface ThemeContextType {
     isDark: boolean;
@@ -11,24 +11,14 @@ const ThemeContext = createContext<ThemeContextType>({ isDark: false, toggleThem
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [isDark, setIsDark] = useState(() => {
-        const saved = localStorage.getItem('campusbite-theme');
-        if (saved) return saved === 'dark';
-        return true; // Dark mode is the default experience
-    });
+    const isDark = true; // Dark mode is the absolute only theme
 
     useEffect(() => {
-        const root = document.documentElement;
-        if (isDark) {
-            root.classList.add('dark');
-            localStorage.setItem('campusbite-theme', 'dark');
-        } else {
-            root.classList.remove('dark');
-            localStorage.setItem('campusbite-theme', 'light');
-        }
-    }, [isDark]);
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('campusbite-theme', 'dark');
+    }, []);
 
-    const toggleTheme = () => setIsDark(prev => !prev);
+    const toggleTheme = () => { /* No-op: only dark mode allowed */ };
 
     return (
         <ThemeContext.Provider value={{ isDark, toggleTheme }}>

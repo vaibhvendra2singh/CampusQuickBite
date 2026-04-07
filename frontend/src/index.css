@@ -154,32 +154,9 @@
   animation: heartbeat 3s ease-in-out infinite;
 }
 
-/* ====== LIGHT THEME ====== */
-:root {
-  --bg-primary: transparent;
-  --bg-body: #f8fafc;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F1F5F9;
-  --bg-input: #F1F5F9;
-  --bg-header: #FFFFFF;
-  --bg-footer: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #334155;
-  --text-muted: #64748B;
-  --border-color: #E2E8F0;
-  --border-hover: #94A3B8;
-  --shadow-color: rgba(15, 23, 42, 0.06);
-  --glass-bg: rgba(241, 245, 255, 0.92);
-  --glass-border: rgba(37, 99, 235, 0.14);
-  --glass-shadow: rgba(37, 99, 235, 0.08);
-  --nav-icon-bg: #DDE3ED;
-  --nav-icon-border: rgba(148, 163, 184, 0.4);
-  --nav-pill-bg: #EEF1F7;
-}
-
-/* ====== DARK THEME ====== */
+/* ====== DARK THEME (DEFAULT & ONLY) ====== */
 /* Colors matched to the cinematic warm dark palette from the loading page */
-.dark {
+:root {
   --bg-primary: transparent;
   --bg-body: #0D0C0B;           /* deep warm near-black — matches loading page bg */
   --bg-card: #1A1916;           /* warm charcoal card surface */

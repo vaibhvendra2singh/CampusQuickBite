@@ -32,10 +32,9 @@ const KitchenDisplay = React.lazy(() => import('./pages/owner/KitchenDisplay'));
 
 const AdminDashboard = React.lazy(() => import('./pages/admin/AdminDashboard'));
 
-import { FiLogOut, FiUser, FiZap, FiShoppingBag, FiMoon, FiSun, FiShoppingCart, FiServer, FiAward, FiCompass } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiZap, FiShoppingBag, FiShoppingCart, FiServer, FiAward, FiCompass } from 'react-icons/fi';
 import { useCart } from './hooks/context/CartContext';
 import { useToast } from './hooks/context/ToastContext';
-import { useTheme } from './hooks/context/ThemeContext';
 import api from './services/api';
 import confetti from 'canvas-confetti';
 import ProfileModal from './components/common/ProfileModal';
@@ -126,7 +125,7 @@ const AuthCallback = () => {
     return <FullScreenLoader />;
 };
 
-const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDarkMode: (v: boolean) => void }) => {
+const Header = React.memo(() => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const { items } = useCart();
@@ -188,10 +187,6 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
             )}
 
             <div className="flex items-center gap-1 sm:gap-1.5 bg-[var(--nav-pill-bg)] p-1 sm:p-1.5 md:p-2 rounded-[1.5rem] sm:rounded-[2rem] shadow-sm border border-[var(--glass-border)] flex-shrink-0">
-                <button onClick={() => setDarkMode(!darkMode)} className="p-2 sm:p-2.5 rounded-full text-[var(--text-secondary)] bg-[var(--bg-card)] shadow-sm transition-transform" title="Shift View">
-                    {darkMode ? <FiSun className="w-4 h-4 sm:w-5 sm:h-5" /> : <FiMoon className="w-4 h-4 sm:w-5 sm:h-5" />}
-                </button>
-
                 {user ? (
                     <div className="flex items-center gap-1">
                         <button 
@@ -227,7 +222,6 @@ const Header = React.memo(({ darkMode, setDarkMode }: { darkMode: boolean, setDa
 });
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
-    const { isDark, toggleTheme } = useTheme();
     const { user } = useAuth();
     useSocket(); // Initialize real-time listeners
 
@@ -268,7 +262,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <div className="min-h-screen bg-[var(--bg-primary)] flex flex-col font-sans selection:bg-brand-500/30 selection:text-brand-700">
-            <Header darkMode={isDark} setDarkMode={toggleTheme} />
+            <Header />
 
 
 
