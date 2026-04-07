@@ -137,9 +137,11 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
 
         res.status(200).json({
             success: true,
-            id: razorpayOrder.id,
-            amount: razorpayOrder.amount,
-            currency: razorpayOrder.currency,
+            data: {
+                id: razorpayOrder.id,
+                amount: razorpayOrder.amount,
+                currency: razorpayOrder.currency,
+            }
         });
 
     } catch (error: any) {
