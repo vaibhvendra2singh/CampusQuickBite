@@ -156,7 +156,7 @@ const Cart = () => {
                     notes: orderNotes,
                     paymentMethod: 'MOCK'
                 });
-                await handleMockCheckout(orderRes.data.id, orderRes.data.total_amount);
+                await handleMockCheckout(orderRes.data.id, orderRes.data.totalAmount);
             } catch (err: any) {
                 setError(err.response?.data?.error || 'Failed to start payment');
                 setIsProcessing(false);
@@ -185,7 +185,7 @@ const Cart = () => {
             // 2. Create the Razorpay Order on our backend
             const rzpOrderRes = await api.post('/payments/razorpay/order', {
                 orderId: order.id,
-                amount: order.total_amount
+                amount: order.totalAmount
             });
             const rzpOrder = rzpOrderRes.data;
 
