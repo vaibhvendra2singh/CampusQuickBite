@@ -142,7 +142,27 @@ const Cart = () => {
         }
 
         const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-        const isDemoMode = !rzpKey || rzpKey === 'rzp_test_placeholder';
+        
+        // If there's NO key at all, we fall back to mock so they can at least place orders.
+        // But if there IS a key (even a test one), we try Razorpay.
+        if (!rzpKey) {
+            console.warn(' [DEMO_MODE] No Razorpay key found. Using mock checkout flow.');
+            showToast('No payment gateway found. Using Test Mode.', 'info');
+            setIsProcessing(true);
+            try {
+                const orderRes = await api.post('/orders', {
+                    outletId,
+                    items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
+                    notes: orderNotes,
+                    paymentMethod: 'MOCK'
+                });
+                await handleMockCheckout(orderRes.data.id, orderRes.data.total_amount);
+            } catch (err: any) {
+                setError(err.response?.data?.error || 'Failed to start payment');
+                setIsProcessing(false);
+            }
+            return;
+        }
 
         setIsProcessing(true);
         setError('');
@@ -153,7 +173,7 @@ const Cart = () => {
                 outletId,
                 items: items.map(i => ({ menuItemId: i.menuItemId, quantity: i.quantity })),
                 notes: orderNotes,
-                paymentMethod: isDemoMode ? 'MOCK' : 'RAZORPAY'
+                paymentMethod: 'RAZORPAY'
             };
             if (isScheduled && selectedTime) {
                 orderPayload.scheduledTime = parseTimeTo24h(selectedTime);
@@ -161,14 +181,6 @@ const Cart = () => {
 
             const orderRes = await api.post('/orders', orderPayload);
             const order = orderRes.data;
-
-            // ─── Demo Mode Bypass ─────────────────────────────────────────
-            if (isDemoMode) {
-                console.warn(' [DEMO_MODE] No Razorpay key found. Using mock checkout flow.');
-                showToast('No payment gateway found. Using Test Mode.', 'info');
-                await handleMockCheckout(order.id, order.total_amount);
-                return;
-            }
 
             // 2. Create the Razorpay Order on our backend
             const rzpOrderRes = await api.post('/payments/razorpay/order', {
