@@ -59,13 +59,14 @@ const AuthCallback = () => {
     const { showToast } = useToast();
 
     useEffect(() => {
+        let isMounted = true;
         const handleCallback = async () => {
             try {
-                // Supabase puts tokens in the hash (#access_token=...) sometimes
-                // We'll wait a brief moment for the Supabase client to process it
-                const redirectTo = `${window.location.origin}/auth/callback`;
-                console.log('Redirecting to Google with callback:', redirectTo);
+                // Give Supabase a moment to parse the URL hash/fragment on mobile
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
+                if (!isMounted) return;
+
                 const { data, error } = await supabase.auth.getSession();
                 
                 if (error) {
@@ -87,13 +88,16 @@ const AuthCallback = () => {
                     navigate('/');
                 } else {
                     // Manual Hash Parser Fallback 
-                    const hash = window.location.hash;
-                    if (hash && hash.includes('access_token=')) {
-                        console.log('Detected hash token, parsing manually...');
-                        const params = new URLSearchParams(hash.substring(1));
-                        const accessToken = params.get('access_token');
+                    const hash = window.location.hash || window.location.search;
+                    console.log('AuthCallback - No session found, checking URL hash/search:', !!hash);
+                    
+                    if (hash && (hash.includes('access_token=') || hash.includes('code='))) {
+                        const cleanHash = hash.startsWith('#') || hash.startsWith('?') ? hash.substring(1) : hash;
+                        const params = new URLSearchParams(cleanHash);
+                        const accessToken = params.get('access_token') || params.get('code');
                         
                         if (accessToken) {
+                            console.log('Detected token in URL, syncing...');
                             const response = await api.post('/auth/google', {
                                 token: accessToken
                             });
@@ -104,10 +108,9 @@ const AuthCallback = () => {
                             return;
                         }
                     }
-                    console.warn('No session found yet - checking URL hash');
-                    if (!hash) {
-                        navigate('/login');
-                    }
+                    
+                    console.warn('No session or token found after delay');
+                    navigate('/login');
                 }
             } catch (err: any) {
                 console.error('Backend Sync Error:', err);
@@ -117,6 +120,7 @@ const AuthCallback = () => {
         };
 
         handleCallback();
+        return () => { isMounted = false; };
     }, [login, navigate, showToast]);
 
     return <FullScreenLoader />;
@@ -343,12 +347,12 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
     const { user, isAuthenticated, isLoading } = useAuth();
 
     if (isLoading) return (
-        <div className="h-screen bg-transparent flex flex-col items-center justify-center space-y-4">
+        <div className="h-screen bg-[var(--bg-body)] flex flex-col items-center justify-center space-y-4 z-[100]">
             <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
                 <FiZap className="text-white w-8 h-8" />
             </div>
             <div className="flex flex-col items-center">
-                <p className="text-lg font-bold text-[var(--text-primary)] mb-1">Loading</p>
+                <p className="text-lg font-bold text-[var(--text-primary)] mb-1">Verifying Credentials</p>
                 <div className="flex space-x-1">
                     <div className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse"></div>
                     <div className="w-1.5 h-1.5 bg-brand-500 rounded-full animate-pulse [animation-delay:0.2s]"></div>
@@ -365,13 +369,13 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode,
 };
 
 const FullScreenLoader = () => (
-    <div className="h-screen bg-transparent flex flex-col items-center justify-center space-y-5">
-        <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg">
+    <div className="h-screen bg-[var(--bg-body)] flex flex-col items-center justify-center space-y-5 z-[100] transition-none animate-none">
+        <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center shadow-lg animate-pulse">
             <FiZap className="text-white w-8 h-8" />
         </div>
         <div className="flex flex-col items-center">
             <p className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-1">Campus Bites</p>
-            <p className="text-sm text-[var(--text-muted)]">Loading your campus feed</p>
+            <p className="text-sm text-[var(--text-muted)] font-medium">Initialising secure session...</p>
         </div>
     </div>
 );

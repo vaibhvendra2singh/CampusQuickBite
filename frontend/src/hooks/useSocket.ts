@@ -26,10 +26,10 @@ export const useSocket = () => {
 
                 showToast(data.message, 'info');
 
-                if (Notification.permission === 'granted') {
+                if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification('CampusQuickBite Update', {
                         body: data.message,
-                        icon: '/logo192.png' // Use project icon if available
+                        icon: '/logo192.png'
                     });
                 }
             });
@@ -55,7 +55,7 @@ export const useSocket = () => {
                 }
             });
 
-            if (Notification.permission === 'default') {
+            if ('Notification' in window && Notification.permission === 'default') {
                 Notification.requestPermission();
             }
 
