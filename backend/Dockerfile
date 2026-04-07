@@ -29,7 +29,7 @@ RUN npm prune --production
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Install runtime libraries for 'canvas'
+# Install runtime libraries for 'canvas' and system fonts
 RUN apk add --no-cache \
     cairo \
     pango \
@@ -37,7 +37,11 @@ RUN apk add --no-cache \
     giflib \
     librsvg \
     pixman \
-    curl
+    curl \
+    ttf-dejavu \
+    ttf-freefont \
+    fontconfig && \
+    fc-cache -f
 
 # Copy dependencies and compiled output from builder
 COPY --from=builder /app/node_modules ./node_modules

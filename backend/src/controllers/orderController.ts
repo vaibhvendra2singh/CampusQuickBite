@@ -926,55 +926,46 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
         ctx.fillRect(0, 0, width, 120);
 
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = 'bold 28px "DejaVu Sans", sans-serif';
         ctx.fillText('CAMPUSBITE', 30, 60);
-
-        ctx.font = '14px sans-serif';
+        ctx.font = '14px "DejaVu Sans", sans-serif';
         ctx.fillText('ORDER AHEAD', 30, 85);
-
-        ctx.font = 'bold 18px sans-serif';
+        ctx.font = 'bold 18px "DejaVu Sans", sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText('RECEIPT', width - 30, 60);
-        ctx.font = '12px sans-serif';
+        ctx.font = '12px "DejaVu Sans", sans-serif';
         ctx.fillText(`#${order.id}`, width - 30, 85);
-
         ctx.textAlign = 'left';
         ctx.fillStyle = textColor;
-        ctx.font = 'bold 16px sans-serif';
+        ctx.font = 'bold 16px "DejaVu Sans", sans-serif';
         ctx.fillText(order.outlets?.name?.toUpperCase() || 'OUTLET', 30, 160);
-
-        ctx.font = '12px sans-serif';
+        ctx.font = '12px "DejaVu Sans", sans-serif';
         ctx.fillStyle = subduedColor;
         ctx.fillText(new Date(order.created_at).toLocaleString(), 30, 185);
-
         ctx.fillStyle = textColor;
-        ctx.font = 'bold 11px sans-serif';
+        ctx.font = 'bold 11px "DejaVu Sans", sans-serif';
         ctx.fillText('STUDENT:', 30, 210);
-        ctx.font = '11px sans-serif';
+        ctx.font = '11px "DejaVu Sans", sans-serif';
         ctx.fillText(`${order.user?.name || 'N/A'}`, 100, 210);
-
-        ctx.font = 'bold 11px sans-serif';
+        ctx.font = 'bold 11px "DejaVu Sans", sans-serif';
         ctx.fillText('PHONE:', 30, 230);
-        ctx.font = '11px sans-serif';
+        ctx.font = '11px "DejaVu Sans", sans-serif';
         ctx.fillText(`${order.user?.phone_number || 'N/A'}`, 100, 230);
-
         ctx.strokeStyle = '#EEEEEE';
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(30, 250);
         ctx.lineTo(width - 30, 250);
         ctx.stroke();
-
         let y = 290;
         ctx.fillStyle = textColor;
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = 'bold 12px "DejaVu Sans", sans-serif';
         ctx.fillText('ITEM', 30, y);
         ctx.textAlign = 'right';
         ctx.fillText('QTY', width - 120, y);
         ctx.fillText('PRICE', width - 30, y);
-
         y += 30;
-        ctx.font = '12px sans-serif';
+        ctx.font = '12px "DejaVu Sans", sans-serif';
         (order.order_items || []).forEach((item: any) => {
             const name = item.item_name || item.menu_items?.name || 'Unknown';
             ctx.textAlign = 'left';
@@ -984,27 +975,23 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             ctx.fillText(`₹${(item.price * item.quantity).toFixed(2)}`, width - 30, y);
             y += 25;
         });
-
         y += 20;
         ctx.beginPath();
         ctx.moveTo(30, y);
         ctx.lineTo(width - 30, y);
         ctx.stroke();
-
         y += 40;
-        ctx.font = 'bold 18px sans-serif';
+        ctx.font = 'bold 18px "DejaVu Sans", sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('TOTAL AMOUNT', 30, y);
         ctx.textAlign = 'right';
         ctx.fillStyle = brandColor;
         ctx.fillText(`₹${order.total_amount}`, width - 30, y);
-
         const orderStatus = (order.status || '').toUpperCase();
         const isCancelled = orderStatus === 'CANCELLED';
-
         y += 28;
         ctx.textAlign = 'center';
-        ctx.font = 'bold 11px sans-serif';
+        ctx.font = 'bold 11px "DejaVu Sans", sans-serif';
         if (isCancelled) {
             ctx.fillStyle = '#EF4444';
             ctx.fillText('STATUS: CANCELLED', width / 2, y);
@@ -1012,10 +999,9 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             ctx.fillStyle = '#10B981';
             ctx.fillText(`STATUS: ${orderStatus}`, width / 2, y);
         }
-
         y += 36;
         ctx.fillStyle = subduedColor;
-        ctx.font = 'italic 12px sans-serif';
+        ctx.font = 'italic 12px "DejaVu Sans", sans-serif';
         ctx.textAlign = 'center';
         if (isCancelled) {
             ctx.fillText('This order was cancelled.', width / 2, y);
@@ -1026,19 +1012,17 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             y += 20;
             ctx.fillText('Skip the queue, pick up when ready.', width / 2, y);
         }
-
         ctx.globalAlpha = 0.07;
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 60px sans-serif';
+        ctx.font = 'bold 60px "DejaVu Sans", sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('CAMPUSBITE', width / 2, height - 30);
         ctx.globalAlpha = 1.0;
-
         if (isCancelled) {
             ctx.save();
             ctx.globalAlpha = 0.13;
             ctx.fillStyle = '#EF4444';
-            ctx.font = 'bold 80px sans-serif';
+            ctx.font = 'bold 80px "DejaVu Sans", sans-serif';
             ctx.textAlign = 'center';
             ctx.translate(width / 2, height / 2);
             ctx.rotate(-Math.PI / 6);
