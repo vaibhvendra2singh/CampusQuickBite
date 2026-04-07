@@ -189,18 +189,14 @@ const Cart = () => {
             });
             const rzpOrder = rzpOrderRes.data;
 
-            // 3. Open the Razorpay Modal
-            if (!(window as any).Razorpay) {
-                console.error('Razorpay SDK not loaded. Please check your internet connection or ad-blockers.');
-                showToast('Payment gateway failed to load. Please refresh the page.', 'error');
-                setIsProcessing(false);
-                return;
-            }
+            console.log(' [RAZORPAY_INIT] Initializing Modal with:', { 
+                orderId: order.id, 
+                rzpOrderId: rzpOrder.id,
+                hasKey: !!rzpKey 
+            });
 
             const options = {
                 key: rzpKey,
-                amount: rzpOrder.amount,
-                currency: "INR",
                 name: "CampusBite",
                 description: "Fuel for your brain 🍔",
                 order_id: rzpOrder.id,
