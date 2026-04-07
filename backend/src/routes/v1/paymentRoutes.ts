@@ -143,17 +143,18 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
         });
 
     } catch (error: any) {
+        const foundEnvKeys = Object.keys(process.env).filter(k => k.includes('RAZOR')).join(', ');
         console.error(' [RAZORPAY_FAILURE] Detailed Error:', {
             message: error.message,
             code: error.code,
             description: error.description,
-            metadata: error.metadata,
+            envKeysFound: foundEnvKeys,
             stack: error.stack
         });
         res.status(500).json({ 
             error: 'Failed to create Razorpay order', 
             details: error.message,
-            suggestion: 'Check if Razorpay server is reachable or if keys are valid'
+            suggestion: `Check if (.env) contains valid keys. Detected keys: [${foundEnvKeys || 'None'}]. Try restarting with "docker compose up -d --build" if on Docker.`
         });
     }
 });

@@ -75,6 +75,8 @@ services:
       # Razorpay Payments
       RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
       RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+    env_file:
+      - .env
     ports:
       - "5001:5001"
     networks:
