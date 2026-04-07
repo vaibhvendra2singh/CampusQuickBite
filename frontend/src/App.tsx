@@ -12,10 +12,11 @@ function ScrollToTop() {
 import { useAuth } from './hooks/context/AuthContext';
 import type { User } from './hooks/context/AuthContext';
 const GameHubButton = React.lazy(() => import('./components/student/GameHub').then(m => ({ default: m.GameHubInline })));
-const Login = React.lazy(() => import('./pages/Login'));
-const Register = React.lazy(() => import('./pages/Register'));
+import Login from './pages/Login';
+import Register from './pages/Register';
+import OutletList from './pages/student/OutletList';
+
 const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
-const OutletList = React.lazy(() => import('./pages/student/OutletList'));
 const OutletMenu = React.lazy(() => import('./pages/student/OutletMenu'));
 const Cart = React.lazy(() => import('./pages/student/Cart'));
 const OrderLiveStatus = React.lazy(() => import('./pages/student/OrderLiveStatus'));
@@ -52,6 +53,15 @@ const CommandPalette = React.lazy(() => import('./components/common/CommandPalet
 import { useSocket } from './hooks/useSocket';
 
 const Scene = React.lazy(() => import('./canvas/Scene').then(module => ({ default: module.Scene })));
+
+const SceneComponent = () => (
+    <div className="canvas-container fixed inset-0 w-full h-full -z-10 pointer-events-none transition-opacity duration-1000">
+        <React.Suspense fallback={null}>
+            <Scene />
+        </React.Suspense>
+    </div>
+);
+
 const AuthCallback = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -500,9 +510,7 @@ function App() {
 
     return (
         <div className="html-overlay min-h-screen flex flex-col">
-            <React.Suspense fallback={null}>
-                <Scene />
-            </React.Suspense>
+            <SceneComponent />
             <Router>
                 <ScrollToTop />
                 <React.Suspense fallback={<FullScreenLoader />}>

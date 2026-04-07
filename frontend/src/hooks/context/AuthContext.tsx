@@ -54,24 +54,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (storedToken && storedUser) {
             try {
+                // Optimistically restore from cache immediately
+                setToken(storedToken);
+                setUser(JSON.parse(storedUser));
+                setIsLoading(false); // Immediate entry!
+
                 const payload = JSON.parse(atob(storedToken.split('.')[1]));
-                // Silently refresh user data from server if token exists
+                // Silently refresh in background
                 api.get(`/users/${payload.id}?t=${Date.now()}`).then(res => {
-                    setToken(storedToken);
                     setUser(res.data);
                     localStorage.setItem('user', JSON.stringify(res.data));
                 }).catch((err: any) => {
-                    console.error('Initial user fetch failed:', err);
+                    console.error('Check: Background sync failed', err);
                     if (err.response?.status === 401 || err.response?.status === 403) {
-                        // Server explicitly rejected the token — force logout
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
-                    } else {
-                        // Network error or server down — restore from cache so user stays logged in
-                        setToken(storedToken);
-                        setUser(JSON.parse(storedUser));
+                        logout();
                     }
-                }).finally(() => setIsLoading(false));
+                });
                 return;
             } catch (e) {
                 localStorage.removeItem('token');
