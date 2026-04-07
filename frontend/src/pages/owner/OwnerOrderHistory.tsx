@@ -440,7 +440,7 @@ const OwnerOrderHistory = () => {
         <th className="p-8 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Amount</th>
         <th className="p-8 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Timeline</th>
         <th className="p-8 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-        <th className="p-8 text-right opacity-0">Action</th>
+        <th className="p-8 text-right text-slate-400 font-bold uppercase tracking-wider">Action</th>
        </tr>
       </thead>
       <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -514,7 +514,7 @@ const OwnerOrderHistory = () => {
            <button
             onClick={() => handleViewReceipt(order.id)}
             disabled={downloadingReceiptId === order.id}
-            className="w-12 h-12 bg-slate-900 border border-slate-800 text-white flex items-center justify-center rounded-xl  transition-all shadow-sm opacity-0 group-"
+            className="w-12 h-12 bg-slate-900 dark:bg-slate-800 border border-slate-800 text-white flex items-center justify-center rounded-xl transition-all shadow-sm opacity-60 group-hover:opacity-100"
             title="View Receipt"
            >
             <FiDownload className="w-5 h-5 stroke-[2]" />
