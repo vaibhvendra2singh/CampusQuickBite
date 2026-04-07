@@ -13,8 +13,16 @@ const router = Router();
 let _razorpay: Razorpay | null = null;
 const getRazorpayClient = () => {
     if (!_razorpay) {
-        const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
-        const key_secret = process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder';
+        const key_id = process.env.RAZORPAY_KEY_ID;
+        const key_secret = process.env.RAZORPAY_KEY_SECRET;
+        
+        if (!key_id || !key_secret) {
+            console.error('[RAZORPAY_INIT_ERROR] Missing Razorpay credentials in process.env');
+            // We'll throw an error here so it's caught by the request try-catch
+            throw new Error('Razorpay configuration missing');
+        }
+
+        console.log(`[RAZORPAY_INIT] Initializing with Key ID starting with: ${key_id.substring(0, 8)}...`);
         _razorpay = new Razorpay({ key_id, key_secret });
     }
     return _razorpay;
@@ -123,12 +131,8 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
 
         console.log('[RAZORPAY_CREATING_ORDER]', options);
 
-        if (process.env.RAZORPAY_KEY_ID === 'rzp_test_placeholder' || !process.env.RAZORPAY_KEY_ID) {
-            console.error('[RAZORPAY_CONFIG_ERROR] Razorpay Key ID is not configured!');
-            return res.status(500).json({ error: 'Payment gateway configuration missing' });
-        }
-
-        const razorpayOrder = await getRazorpayClient().orders.create(options);
+        const rzpClient = getRazorpayClient();
+        const razorpayOrder = await rzpClient.orders.create(options);
         console.log('[RAZORPAY_ORDER_CREATED]', razorpayOrder.id);
 
         res.status(200).json({

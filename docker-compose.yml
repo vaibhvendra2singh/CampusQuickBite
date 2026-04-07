@@ -72,6 +72,9 @@ services:
       VAPID_EMAIL: ${VAPID_EMAIL}
       # SENTRY (optional)
       SENTRY_DSN: ${SENTRY_DSN:-}
+      # Razorpay Payments
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
     ports:
       - "5001:5001"
     networks:
@@ -94,6 +97,7 @@ services:
         # Inject the backend API URL at build time
         VITE_API_URL: ${VITE_API_URL:-http://localhost:5001}
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID}
     container_name: campusbite_frontend
     restart: unless-stopped
     depends_on:
