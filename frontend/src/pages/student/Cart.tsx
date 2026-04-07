@@ -195,29 +195,31 @@ const Cart = () => {
                 orderId: orderId,
                 amount: amountToPay
             });
-            const rzpOrder = rzpOrderRes.data?.data || rzpOrderRes.data;
-            
-            // Clean the key from any accidental quotes added in environment variables
-            const cleanKey = rzpKey.replace(/['"]+/g, '').trim();
 
-            console.log(' [RAZORPAY_INIT] Initializing Modal with:', { 
-                orderId: orderId, 
-                rzpOrderId: rzpOrder?.id,
-                amount: rzpOrder?.amount,
-                hasKey: !!cleanKey 
+            // DEFENSIVE: Try to find data in every possible location
+            const rzpOrder = rzpOrderRes.data?.data || rzpOrderRes.data;
+            const rzpOrderId = rzpOrder?.id || rzpOrder?.rzpOrderId;
+            const rzpAmount = rzpOrder?.amount;
+
+            // Clean the key from any accidental quotes added in environment variables
+            const cleanKey = (rzpKey || '').replace(/['"]+/g, '').trim();
+
+            console.log(' [RAZORPAY_DEBUG] Key Check:', { 
+                maskedKey: `${cleanKey.substring(0, 8)}...${cleanKey.substring(cleanKey.length - 4)}`,
+                orderId: rzpOrderId,
+                amount: rzpAmount 
             });
 
-            if (!rzpOrder?.id) {
-                throw new Error('Razorpay order creation failed (No ID returned)');
+            if (!rzpOrderId) {
+                throw new Error('Payment server failed to return a valid Razorpay Order ID. Please check your backend keys.');
             }
 
             const options = {
                 key: cleanKey,
-                amount: rzpOrder.amount, // Include as a fallback
-                currency: rzpOrder.currency || "INR",
+                order_id: rzpOrderId,
+                amount: Math.round(Number(rzpAmount)),
+                currency: "INR",
                 name: "CampusBite",
-                description: "Fuel for your brain 🍔",
-                order_id: rzpOrder.id,
                 handler: async (response: any) => {
                     try {
                         // 4. Send the payment details to the backend to verify the signature
