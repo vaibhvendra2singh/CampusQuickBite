@@ -180,23 +180,41 @@ const Cart = () => {
             }
 
             const orderRes = await api.post('/orders', orderPayload);
-            const order = orderRes.data;
+            // Robust extraction: Handle either the unwrapped data or the raw response
+            const order = orderRes.data?.data || orderRes.data;
+            const orderId = order?.id;
+            const amountToPay = order?.totalAmount || order?.total_amount;
+
+            if (!orderId || amountToPay === undefined) {
+                console.error(' [ORDER_FORMAT_ERROR] Could not find ID or Amount in:', order);
+                throw new Error('Server returned an invalid order format. Please check console.');
+            }
 
             // 2. Create the Razorpay Order on our backend
             const rzpOrderRes = await api.post('/payments/razorpay/order', {
-                orderId: order.id,
-                amount: order.totalAmount
+                orderId: orderId,
+                amount: amountToPay
             });
-            const rzpOrder = rzpOrderRes.data;
+            const rzpOrder = rzpOrderRes.data?.data || rzpOrderRes.data;
+            
+            // Clean the key from any accidental quotes added in environment variables
+            const cleanKey = rzpKey.replace(/['"]+/g, '').trim();
 
             console.log(' [RAZORPAY_INIT] Initializing Modal with:', { 
-                orderId: order.id, 
-                rzpOrderId: rzpOrder.id,
-                hasKey: !!rzpKey 
+                orderId: orderId, 
+                rzpOrderId: rzpOrder?.id,
+                amount: rzpOrder?.amount,
+                hasKey: !!cleanKey 
             });
 
+            if (!rzpOrder?.id) {
+                throw new Error('Razorpay order creation failed (No ID returned)');
+            }
+
             const options = {
-                key: rzpKey,
+                key: cleanKey,
+                amount: rzpOrder.amount, // Include as a fallback
+                currency: rzpOrder.currency || "INR",
                 name: "CampusBite",
                 description: "Fuel for your brain 🍔",
                 order_id: rzpOrder.id,
