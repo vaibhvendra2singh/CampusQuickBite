@@ -10,10 +10,15 @@ import crypto from 'crypto';
 const router = Router();
 
 // ─── Razorpay Configuration ──────────────────────────────────────────
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder',
-});
+let _razorpay: Razorpay | null = null;
+const getRazorpayClient = () => {
+    if (!_razorpay) {
+        const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder';
+        const key_secret = process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder';
+        _razorpay = new Razorpay({ key_id, key_secret });
+    }
+    return _razorpay;
+};
 
 // ─── Shared Validation Logic ─────────────────────────────────────────
 async function validateOrderForPayment(orderId: any, amount: number, userId: string) {
@@ -34,16 +39,19 @@ async function validateOrderForPayment(orderId: any, amount: number, userId: str
     const order = result.data;
 
     if (order.user_id !== userId) {
-        return { error: 'Access Denied: You cannot pay for someone else\'s order', status: 403 };
+        return { error: 'Access Denied: Payment ownership verification failed', status: 403 };
     }
 
     if (order.payment_status === 'paid') {
         return { error: 'Order is already paid', status: 400 };
     }
 
-    // Price Forgery Check: database total_amount vs the amount sent from client
-    if (Math.abs(parseFloat(order.total_amount) - amount) > 0.01) {
-        return { error: 'Payment amount mismatch (Price Forgery detected)', status: 400 };
+    // Price Forgery Check with epsilon tolerance for float precision
+    const dbAmount = parseFloat(order.total_amount);
+    const diff = Math.abs(dbAmount - amount);
+    if (diff > 0.05) { // Tolerate up to 5 paise difference
+        console.warn(`[PAYMENT_FRAUD_CHECK] Mismatch! DB: ${dbAmount}, Sent: ${amount}, Diff: ${diff}`);
+        return { error: `Payment amount mismatch: expected ₹${dbAmount.toFixed(2)} but received ₹${amount.toFixed(2)}`, status: 400 };
     }
 
     return { order, status: 200 };
@@ -94,23 +102,34 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
         const { orderId, amount } = req.body;
         const userId = req.user?.id;
 
-        if (!orderId || !amount || !userId) {
+        console.log(`[RAZORPAY_ORDER_START] OrderID: ${orderId}, Amount: ${amount}, UserID: ${userId}`);
+
+        if (!orderId || amount === undefined || !userId) {
             return res.status(400).json({ error: 'Order ID and Amount are required' });
         }
 
         // Verify with DB before creating Razorpay order!
-        const validation = await validateOrderForPayment(orderId, amount, userId);
+        const validation = await validateOrderForPayment(orderId, parseFloat(amount.toString()), userId);
         if (validation.error) {
+            console.warn('[RAZORPAY_VALIDATION_FAILED]', validation.error);
             return res.status(validation.status).json({ error: validation.error });
         }
 
         const options = {
-            amount: Math.round(Number(amount) * 100), // Razorpay expects amount in paise (₹1 = 100 paise)
+            amount: Math.round(Number(amount) * 100), // Razorpay expects amount in paise
             currency: 'INR',
             receipt: `receipt_${orderId}`,
         };
 
-        const razorpayOrder = await razorpay.orders.create(options);
+        console.log('[RAZORPAY_CREATING_ORDER]', options);
+
+        if (process.env.RAZORPAY_KEY_ID === 'rzp_test_placeholder' || !process.env.RAZORPAY_KEY_ID) {
+            console.error('[RAZORPAY_CONFIG_ERROR] Razorpay Key ID is not configured!');
+            return res.status(500).json({ error: 'Payment gateway configuration missing' });
+        }
+
+        const razorpayOrder = await getRazorpayClient().orders.create(options);
+        console.log('[RAZORPAY_ORDER_CREATED]', razorpayOrder.id);
 
         res.status(200).json({
             success: true,
@@ -120,10 +139,17 @@ router.post('/razorpay/order', authenticateUser as any, async (req: AuthRequest,
         });
 
     } catch (error: any) {
-        console.error(' [RAZORPAY_FAILURE] Failed to create order:', error);
+        console.error(' [RAZORPAY_FAILURE] Detailed Error:', {
+            message: error.message,
+            code: error.code,
+            description: error.description,
+            metadata: error.metadata,
+            stack: error.stack
+        });
         res.status(500).json({ 
             error: 'Failed to create Razorpay order', 
-            details: error.message 
+            details: error.message,
+            suggestion: 'Check if Razorpay server is reachable or if keys are valid'
         });
     }
 });

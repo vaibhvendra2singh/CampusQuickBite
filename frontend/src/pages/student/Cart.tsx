@@ -259,7 +259,9 @@ const Cart = () => {
                 setError('Your account is currently restricted from placing new orders.');
                 if (user) updateUser({ ...user, isFrozen: true });
             } else {
-                setError(errorMsg || 'Failed to start payment. Please try again.');
+                const details = err.response?.data?.details ? `: ${err.response.data.details}` : '';
+                const suggestion = err.response?.data?.suggestion ? ` (${err.response.data.suggestion})` : '';
+                setError(errorMsg ? `${errorMsg}${details}${suggestion}` : 'Failed to start payment. Please try again.');
             }
             setIsProcessing(false);
         }
