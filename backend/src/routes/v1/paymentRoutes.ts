@@ -39,7 +39,7 @@ async function validateOrderForPayment(orderId: any, amount: number, userId: str
     const order = result.data;
 
     if (order.user_id !== userId) {
-        return { error: 'Access Denied: Payment ownership verification failed', status: 403 };
+        return { error: 'Access Denied: You cannot pay for someone else\'s order', status: 403 };
     }
 
     if (order.payment_status === 'paid') {
