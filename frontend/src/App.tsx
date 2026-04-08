@@ -11,7 +11,11 @@ function ScrollToTop() {
 }
 import { useAuth } from './hooks/context/AuthContext';
 import type { User } from './hooks/context/AuthContext';
-const GameHubButton = React.lazy(() => import('./components/student/GameHub').then(m => ({ default: m.GameHubInline })));
+
+const GameHubModule = () => import('./components/student/GameHub');
+const GameHubButton = React.lazy(() => GameHubModule().then(m => ({ default: m.GameHubInline })));
+const GameHub = React.lazy(GameHubModule);
+
 import Login from './pages/Login';
 import Register from './pages/Register';
 import OutletList from './pages/student/OutletList';
@@ -45,7 +49,6 @@ const HelpFAQ = React.lazy(() => import('./pages/public/HelpFAQ'));
 const ContactUs = React.lazy(() => import('./pages/public/ContactUs'));
 const PrivacyPolicy = React.lazy(() => import('./pages/public/PrivacyPolicy'));
 const TermsOfService = React.lazy(() => import('./pages/public/TermsOfService'));
-const GameHub = React.lazy(() => import('./components/student/GameHub'));
 const SecretPage = React.lazy(() => import('./pages/public/SecretPage'));
 const BadgeHints = React.lazy(() => import('./pages/public/BadgeHints'));
 const CommandPalette = React.lazy(() => import('./components/common/CommandPalette'));
@@ -54,13 +57,13 @@ import { useSocket } from './hooks/useSocket';
 
 const Scene = React.lazy(() => import('./canvas/Scene').then(module => ({ default: module.Scene })));
 
-const SceneComponent = () => (
+const SceneComponent = React.memo(() => (
     <div className="canvas-container fixed inset-0 w-full h-full -z-10 pointer-events-none transition-opacity duration-1000">
         <React.Suspense fallback={null}>
             <Scene />
         </React.Suspense>
     </div>
-);
+));
 
 const AuthCallback = () => {
     const { login } = useAuth();

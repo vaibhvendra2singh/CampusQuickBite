@@ -564,27 +564,22 @@ header {
   letter-spacing: -0.01em;
 }
 
-/* ====== GLOBAL TRANSITIONS — opt-in only, not wildcard ====== */
-.transition-theme {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 0.25s;
-  transition-timing-function: ease;
-}
-
 /* 
   BUTTERY THEME TRANSITIONS 
-  This safely transitions colors globally when the .dark class is toggled on HTML/body,
-  without transitioning layout properties (which causes lag).
+  Transitions are targeted to specific properties and containers to maintain high FPS.
 */
-body, body * {
-  transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-  transition-duration: 0.4s;
+body {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-theme, .card-modern, .card-vibrant, .btn-primary, .btn-secondary, .nav-icon-btn, .input-field {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, transform;
+  transition-duration: 0.3s;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Except for elements that explicitly opt-out or use framer-motion */
-body .animate-none, 
-body .transition-none {
+.animate-none, .transition-none {
   transition: none !important;
 }
 

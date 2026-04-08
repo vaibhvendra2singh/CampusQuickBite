@@ -44,21 +44,50 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [token, setToken] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState<User | null>(() => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (e) {
+            return null;
+        }
+    });
+
+    const [token, setToken] = useState<string | null>(() => {
+        return localStorage.getItem('token');
+    });
+
+    const [isLoading, setIsLoading] = useState(() => {
+        // If we have token and user, we can start immediately
+        const hasToken = localStorage.getItem('token');
+        const hasUser = localStorage.getItem('user');
+        return !Boolean(hasToken && hasUser);
+    });
+
+    const logout = useCallback(() => {
+        setUser(null);
+        setToken(null);
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+    }, []);
+
+    const login = useCallback((userData: User, newToken: string) => {
+        setUser(userData);
+        setToken(newToken);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('token', newToken);
+    }, []);
+
+    const updateUser = useCallback((userData: User) => {
+        setUser(userData);
+        localStorage.setItem('user', JSON.stringify(userData));
+    }, []);
 
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
 
-        if (storedToken && storedUser) {
+        if (storedToken) {
             try {
-                // Optimistically restore from cache immediately
-                setToken(storedToken);
-                setUser(JSON.parse(storedUser));
-                setIsLoading(false); // Immediate entry!
-
                 const payload = JSON.parse(atob(storedToken.split('.')[1]));
                 // Silently refresh in background
                 api.get(`/users/${payload.id}?t=${Date.now()}`).then(res => {
@@ -70,14 +99,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         logout();
                     }
                 });
-                return;
             } catch (e) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
+                console.error('Auth sync failed', e);
             }
         }
         setIsLoading(false);
-    }, []);
+    }, [logout]);
 
     useEffect(() => {
         const syncAuth = (e: StorageEvent) => {
@@ -91,25 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         window.addEventListener('storage', syncAuth);
         return () => window.removeEventListener('storage', syncAuth);
-    }, []);
-
-    const login = useCallback((userData: User, newToken: string) => {
-        setUser(userData);
-        setToken(newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('token', newToken);
-    }, []);
-
-    const logout = useCallback(() => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-    }, []);
-
-    const updateUser = useCallback((userData: User) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
     }, []);
 
     const value = useMemo(() => ({

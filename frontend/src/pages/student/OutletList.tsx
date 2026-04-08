@@ -442,23 +442,36 @@ const HomepageSections = ({ outlets }: { outlets: Outlet[] }) => {
 };
 
 const OutletList = () => {
-    const [outlets, setOutlets] = useState<Outlet[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [outlets, setOutlets] = useState<Outlet[]>(() => {
+        const cached = localStorage.getItem('cached_outlets');
+        return cached ? JSON.parse(cached) : [];
+    });
+    const [isLoading, setIsLoading] = useState(!outlets.length);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const res = await api.get('/outlets');
-                setOutlets([...res.data].reverse());
-            } catch (err) { console.error(err); }
-            finally { setIsLoading(false); }
+                const data = [...res.data].reverse();
+                setOutlets(data);
+                localStorage.setItem('cached_outlets', JSON.stringify(data));
+            } catch (err) { 
+                console.error(err); 
+            } finally { 
+                setIsLoading(false); 
+            }
         };
         fetchData();
         const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
     }, []);
 
-    if (isLoading) return <div className="pt-40 text-center font-black animate-pulse text-[var(--text-muted)] tracking-widest uppercase">Scanning Campus...</div>;
+    if (isLoading && !outlets.length) return (
+        <div className="pt-40 text-center flex flex-col items-center justify-center space-y-4">
+            <div className="w-12 h-12 border-4 border-brand-500/20 border-t-brand-500 rounded-full animate-spin"></div>
+            <p className="font-black animate-pulse text-[var(--text-muted)] tracking-widest uppercase text-xs">Scanning Campus...</p>
+        </div>
+    );
 
     return (
         <div className="pb-20 animate-none">
