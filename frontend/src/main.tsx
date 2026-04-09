@@ -7,6 +7,7 @@ import { AuthProvider } from './hooks/context/AuthContext';
 import { ThemeProvider } from './hooks/context/ThemeContext';
 import { ToastProvider } from './hooks/context/ToastContext';
 import { CartProvider } from './hooks/context/CartContext';
+import { NotificationProvider } from './hooks/context/NotificationContext';
 import * as Sentry from '@sentry/react';
 
 if (import.meta.env.VITE_SENTRY_DSN) {
@@ -30,9 +31,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <AuthProvider>
    <ThemeProvider>
     <ToastProvider>
-     <CartProvider>
-      <App />
-     </CartProvider>
+     <NotificationProvider>
+      <CartProvider>
+       <App />
+      </CartProvider>
+     </NotificationProvider>
     </ToastProvider>
    </ThemeProvider>
   </AuthProvider>

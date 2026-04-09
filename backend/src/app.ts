@@ -5,6 +5,9 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import logger from './services/logger';
 import { errorHandler } from './middleware/errorHandler';
+import { initFCM } from './services/fcmService';
+
+initFCM();
 
 import authRoutes from './routes/v1/authRoutes';
 import menuRoutes from './routes/v1/menuRoutes';

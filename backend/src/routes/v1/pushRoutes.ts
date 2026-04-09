@@ -41,4 +41,33 @@ router.post('/subscribe', authenticateUser as any, async (req: any, res: any) =>
     }
 });
 
+router.post('/register-fcm', authenticateUser as any, async (req: any, res: any) => {
+    try {
+        const { token } = req.body;
+        const userId = req.user?.id;
+
+        if (!token || !userId) {
+            return res.status(400).json({ error: 'Token and user ID are required' });
+        }
+
+        const { error } = await supabase
+            .from('users')
+            .update({ 
+                fcm_token: token,
+                push_type: 'fcm'
+            })
+            .eq('id', userId);
+
+        if (error) {
+            console.error('FCM Token save error DB:', error);
+            return res.status(500).json({ error: error.message });
+        }
+
+        res.status(200).json({ message: 'FCM token registered successfully' });
+    } catch (error) {
+        console.error('FCM registration error:', error);
+        res.status(500).json({ error: 'Failed to register FCM token' });
+    }
+});
+
 export default router;

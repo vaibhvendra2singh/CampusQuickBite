@@ -1,6 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { sendPushNotification } from './pushService';
+import { sendFCMNotification } from './fcmService';
 import { supabase } from '../config/supabase';
 
 let io: SocketIOServer | null = null;
@@ -72,25 +73,35 @@ export const notifyOrderUpdate = async (userId: string, orderId: any, status: st
     try {
         const { data: user } = await supabase
             .from('users')
-            .select('push_subscription')
+            .select('push_subscription, fcm_token')
             .eq('id', userId)
             .single();
 
-        if (user && user.push_subscription) {
-            await sendPushNotification(user.push_subscription, {
-                title: 'Order Status Update',
-                body: message,
-                icon: '/icon-192x192.png',
-                badge: '/icon-192x192.png',
-                tag: 'order-update',
-                data: { url: '/orders' }
-            });
-            console.log(`Push notification sent to user ${userId}`);
+        if (user) {
+            // Priority 1: FCM (Native app feel)
+            if (user.fcm_token) {
+                await sendFCMNotification(user.fcm_token, {
+                    title: 'Order Status Update',
+                    body: message,
+                    data: { url: '/orders', orderId: String(orderId) }
+                });
+                console.log(`FCM notification sent to user ${userId}`);
+            } 
+            // Priority 2: Web Push (Browser fallback)
+            else if (user.push_subscription) {
+                await sendPushNotification(user.push_subscription, {
+                    title: 'Order Status Update',
+                    body: message,
+                    icon: '/pwa-192x192.png',
+                    badge: '/pwa-192x192.png',
+                    tag: 'order-update',
+                    data: { url: '/orders' }
+                });
+                console.log(`Web push notification sent to user ${userId}`);
+            }
         }
     } catch (err: any) {
-        if (!err.message?.includes('push_subscription')) {
-             console.error('Failed to send push notification:', err.message);
-        }
+        console.error('Failed to send push notification:', err.message);
     }
 };
 

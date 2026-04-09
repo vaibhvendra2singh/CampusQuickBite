@@ -234,6 +234,9 @@ const Header = React.memo(() => {
     );
 });
 
+import InstallPrompt from './components/InstallPrompt';
+import OfflineBanner from './components/common/OfflineBanner';
+
 const Layout = ({ children }: { children: React.ReactNode }) => {
     const { user } = useAuth();
     useSocket(); // Initialize real-time listeners
@@ -282,6 +285,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             <main className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 md:px-12 pb-16 pt-24 sm:pt-28 md:pt-32 relative z-0 isolation-auto transition-all duration-150">
                 {children}
             </main>
+
+            <InstallPrompt />
 
             {user?.role === 'STUDENT' && (
                 <React.Suspense fallback={null}>
@@ -514,6 +519,7 @@ function App() {
     return (
         <div className="html-overlay min-h-screen flex flex-col">
             <SceneComponent />
+            <OfflineBanner />
             <Router>
                 <ScrollToTop />
                 <React.Suspense fallback={<FullScreenLoader />}>
