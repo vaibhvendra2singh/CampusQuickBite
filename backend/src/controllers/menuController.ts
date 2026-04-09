@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { notifyMenuUpdate } from '../services/socketService';
@@ -71,7 +72,7 @@ export const addMenuItem = async (req: AuthRequest, res: Response): Promise<void
             return;
         }
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
                 .select('owner_id')
@@ -174,7 +175,7 @@ export const updateMenuItem = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             if ((menuItem.outlets as any).owner_id !== userId) {
                 sendError(res, 'Unauthorized: You do not own the outlet for this menu item', 403);
                 return;
@@ -274,7 +275,7 @@ export const deleteMenuItem = async (req: AuthRequest, res: Response): Promise<v
             return;
         }
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             if ((menuItem.outlets as any).owner_id !== userId) {
                 sendError(res, 'Unauthorized: You do not own the outlet for this menu item', 403);
                 return;

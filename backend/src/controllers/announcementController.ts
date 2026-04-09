@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
@@ -41,7 +42,7 @@ export const getAnnouncements = async (req: AuthRequest, res: Response): Promise
             .select('*')
             .order('created_at', { ascending: false });
 
-        if (req.user?.role !== 'admin') {
+        if (normalizeRole(req.user?.role) !== ROLES.ADMIN) {
             query = query
                 .or(`target_role.eq.all,target_role.eq.${userRole}`)
                 .or(`expires_at.is.null,expires_at.gt.${now}`);

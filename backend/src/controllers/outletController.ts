@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
@@ -136,7 +137,7 @@ export const updateOutlet = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
                 .select('owner_id')
@@ -188,7 +189,7 @@ export const deleteOutlet = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
                 .select('owner_id')

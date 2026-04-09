@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
@@ -158,12 +159,12 @@ export const getOrderById = async (req: AuthRequest, res: Response): Promise<voi
         const userId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole === 'STUDENT') {
+        if (normalizeRole(userRole) === ROLES.STUDENT) {
             if (data.user_id !== userId) {
                 sendError(res, 'Unauthorized to view this order', 403);
                 return;
             }
-        } else if (userRole === 'SHOP_OWNER') {
+        } else if (normalizeRole(userRole) === ROLES.OWNER) {
             if ((data.outlets as any)?.owner_id !== userId) {
                 sendError(res, 'Unauthorized: This order belongs to a different outlet', 403);
                 return;
@@ -223,7 +224,7 @@ export const getOrdersByOutlet = async (req: AuthRequest, res: Response): Promis
         const from = page * size;
         const to = from + size - 1;
 
-        if (userRole !== 'ADMIN') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             const { data: outlet, error: outletError } = await supabase
                 .from('outlets')
                 .select('id')
@@ -326,7 +327,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         }
 
         if (!allowedTransitions[currentStatus]?.includes(requestedStatus)) {
-            if (req.user?.role !== 'ADMIN') {
+            if (normalizeRole(req.user?.role) !== ROLES.ADMIN) {
                 console.error(`[OrderUpdate] Invalid transition from ${currentStatus} to ${requestedStatus}`);
                 sendError(res, 'Invalid state transition', 400);
                 return;
@@ -334,7 +335,7 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
         }
 
         if (['preparing', 'ready', 'completed'].includes(requestedStatus)) {
-            if (currentOrder.payment_status !== 'paid' && req.user?.role !== 'ADMIN') {
+            if (currentOrder.payment_status !== 'paid' && normalizeRole(req.user?.role) !== ROLES.ADMIN) {
                 sendError(res, 'Cannot process unpaid orders', 400);
                 return;
             }
@@ -463,7 +464,7 @@ export const cancelOrder = async (req: AuthRequest, res: Response): Promise<void
         }
 
         const outletOwnerId = (order.outlets as any)?.owner_id;
-        if (userRole !== 'ADMIN' && outletOwnerId !== actorId) {
+        if (normalizeRole(userRole) !== ROLES.ADMIN && outletOwnerId !== actorId) {
             sendError(res, 'Unauthorized: You can only cancel orders for your own outlet', 403);
             return;
         }
@@ -682,7 +683,7 @@ export const markOrderAsDelivered = async (req: AuthRequest, res: Response): Pro
         const operatorId = req.user?.id;
         const userRole = req.user?.role;
 
-        if (userRole !== 'ADMIN') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             sendError(res, 'Security: Manual completion is restricted to administrators', 403);
             return;
         }
@@ -905,7 +906,7 @@ export const generateReceiptImage = async (req: AuthRequest, res: Response): Pro
             return;
         }
 
-        if (order.user_id !== userId && order.outlets?.owner_id !== userId && req.user?.role !== 'admin') {
+        if (order.user_id !== userId && order.outlets?.owner_id !== userId && normalizeRole(req.user?.role) !== ROLES.ADMIN) {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }

@@ -66,10 +66,11 @@ export const requireRole = (roles: string[]) => {
             }
 
             const normalizedRequiredRoles = roles.map(r => normalizeRole(r));
-            if (!normalizedRequiredRoles.includes(userData.role)) {
+            if (!normalizedRequiredRoles.includes(normalizeRole(userData.role))) {
                 res.status(403).json({ error: 'Forbidden: Insufficient permissions' });
                 return;
             }
+
 
             next();
         } catch (error) {

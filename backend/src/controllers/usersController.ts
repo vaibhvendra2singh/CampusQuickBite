@@ -320,7 +320,7 @@ export const resetAdminInsights = async (req: AuthRequest, res: Response): Promi
     try {
         const id = req.user?.id;
         
-        if (!id || req.user?.role !== 'admin') {
+        if (!id || normalizeRole(req.user?.role) !== ROLES.ADMIN) {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }
@@ -347,7 +347,7 @@ export const resetAllStudentXP = async (req: AuthRequest, res: Response): Promis
     try {
         const id = req.user?.id;
         
-        if (!id || req.user?.role !== 'admin') {
+        if (!id || normalizeRole(req.user?.role) !== ROLES.ADMIN) {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }
@@ -374,7 +374,7 @@ export const nukeDatabase = async (req: AuthRequest, res: Response): Promise<voi
         const id = req.user?.id;
         const { password } = req.body;
 
-        if (!id || req.user?.role !== 'admin') {
+        if (!id || normalizeRole(req.user?.role) !== ROLES.ADMIN) {
             res.status(403).json({ error: 'Forbidden' });
             return;
         }

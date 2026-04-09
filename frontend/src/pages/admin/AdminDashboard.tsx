@@ -160,7 +160,7 @@ const AdminDashboard = () => {
         const value = action === 'ban' || action === 'freeze';
         const safeIds = [...selectedUsers].filter((id: string) => {
             const u = users.find((u: any) => u.id === id);
-            return u && u.role !== 'admin';
+            return u && u.role?.toLowerCase() !== 'admin';
         });
         if (safeIds.length === 0) { showToast('No non-admin users selected', 'error'); return; }
         try {
@@ -235,9 +235,10 @@ const AdminDashboard = () => {
             const response = await api.post('/users/admin/reset-insights');
             setResetAt(new Date(response.data.resetAt));
             showToast('Admin Dispatcher Insights reset successfully.', 'success');
-        } catch (error) {
-            console.error(error);
-            showToast('Failed to reset insights.', 'error');
+        } catch (err: any) {
+            console.error(err);
+            const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Failed to reset insights.';
+            showToast(errorMsg, 'error');
         }
     };
 
@@ -247,7 +248,8 @@ const AdminDashboard = () => {
             await api.post('/users/admin/reset-xp');
             showToast('All Student XP has been successfully reset to zero.', 'success');
         } catch (err: any) {
-            showToast(err.response?.data?.error || 'Failed to reset student XP', 'error');
+            const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Failed to reset student XP';
+            showToast(errorMsg, 'error');
         } finally {
             setShowResetXPModal(false);
         }
@@ -291,13 +293,15 @@ const AdminDashboard = () => {
             showToast('DATABASE COMPLETELY WIPED.', 'success');
             setTimeout(() => window.location.reload(), 2000); // Reload entire system
         } catch (err: any) {
-            showToast(err.response?.data?.error || 'Database Wipe Failed', 'error');
+            const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Wipe sequence aborted - Security handshake failed.';
+            showToast(errorMsg, 'error');
             setNukeStage(0);
         } finally {
             setIsNukeLoading(false);
             setNukePassword('');
         }
     };
+
 
 
     const fetchAnnouncements = async () => {
@@ -324,12 +328,16 @@ const AdminDashboard = () => {
     const fetchOutlets = async () => {
         try {
             const response = await api.get('/outlets');
-            setOutlets(response.data);
+            const outletsData = Array.isArray(response.data) ? response.data : [];
+            setOutlets(outletsData);
+            
             const statsMap: Record<string, OutletStats> = {};
-            for (const outlet of response.data) {
+            
+            // Parallelize stats fetching for all outlets to prevent dashboard hang
+            await Promise.all(outletsData.map(async (outlet: Outlet) => {
                 try {
                     const [menuRes, ordersRes] = await Promise.all([
-                        api.get(`/menu/outlet/${outlet.id}`),
+                        api.get(`/menu/outlet/${outlet.id}`).catch(() => ({ data: [] })),
                         api.get(`/orders/outlet/${outlet.id}`).catch(() => ({ data: [] })),
                     ]);
                     
@@ -343,20 +351,23 @@ const AdminDashboard = () => {
                     statsMap[outlet.id] = {
                         menuItems: menuRes.data?.length || 0,
                         totalOrders: orders.length,
-                        totalRevenue: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0),
+                        totalRevenue: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || o.total_amount || 0), 0),
                         activeOrders: orders.filter((o: any) => !['completed', 'cancelled'].includes(o.status)).length,
                     };
-                } catch {
+                } catch (err) {
+                    console.error(`[AdminDashboard] Failed stats for outlet ${outlet.id}:`, err);
                     statsMap[outlet.id] = { menuItems: 0, totalOrders: 0, totalRevenue: 0, activeOrders: 0 };
                 }
-            }
+            }));
+            
             setOutletStats(statsMap);
         } catch (error) {
-            console.error("Failed to load outlets", error);
+            console.error("Failed to load outlets:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
 
     useEffect(() => {
         if (activeTab === 'outlets') fetchOutlets();
@@ -482,8 +493,9 @@ const AdminDashboard = () => {
             showToast('Announcement broadcasted!', 'success');
             setNewAnnouncement({ title: '', message: '', target_role: 'all' });
             fetchAnnouncements();
-        } catch (error) {
-            showToast('Failed to post announcement.', 'error');
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Failed to post announcement.';
+            showToast(errorMsg, 'error');
         }
     };
 
@@ -492,8 +504,9 @@ const AdminDashboard = () => {
             await api.delete(`/announcements/${id}`);
             showToast('Announcement removed.', 'success');
             fetchAnnouncements();
-        } catch (error) {
-            showToast('Failed to delete announcement.', 'error');
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.details?.[0]?.message || err.response?.data?.error || 'Failed to delete announcement.';
+            showToast(errorMsg, 'error');
         }
     };
 

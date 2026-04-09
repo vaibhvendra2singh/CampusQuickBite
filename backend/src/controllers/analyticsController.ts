@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
@@ -20,7 +21,7 @@ export const getOutletAnalytics = async (req: AuthRequest, res: Response): Promi
             return;
         }
 
-        if (req.user?.role !== 'admin' && outlet.owner_id !== userId) {
+        if (normalizeRole(req.user?.role) !== ROLES.ADMIN && outlet.owner_id !== userId) {
             res.status(403).json({ error: 'Unauthorized access to analytics' });
             return;
         }

@@ -1,3 +1,4 @@
+import { normalizeRole, ROLES } from '../utils/roles';
 import { Response } from 'express';
 import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
@@ -182,7 +183,7 @@ export const toggleReviewVisibility = async (req: AuthRequest, res: Response): P
             return;
         }
 
-        if (userRole !== 'admin') {
+        if (normalizeRole(userRole) !== ROLES.ADMIN) {
             let authorized = false;
             
             if (review.outlet_id && (review.outlets as any)?.owner_id === userId) {
