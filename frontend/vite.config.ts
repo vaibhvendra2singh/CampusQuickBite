@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'CampusQuickBite',
         short_name: 'CampusBite',
         description: 'Premium Campus Food Ordering App',
-        theme_color: '#f97316',
+        theme_color: '#0070FF',
         background_color: '#0f172a',
         display: 'standalone',
         icons: [
