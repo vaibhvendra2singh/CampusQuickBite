@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FiWifiOff } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 
