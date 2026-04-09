@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
+import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -10,33 +10,18 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-const app = import.meta.env.VITE_FIREBASE_API_KEY ? initializeApp(firebaseConfig) : null;
-
+const app = initializeApp(firebaseConfig);
 let messaging: any = null;
-
-const initMessaging = async () => {
-    if (app && typeof window !== 'undefined') {
-        try {
-            const supported = await isSupported();
-            if (supported) {
-                messaging = getMessaging(app);
-            }
-        } catch (err) {
-            console.warn("FCM not supported in this environment", err);
-        }
-    }
-};
-
-initMessaging();
+try {
+  if (typeof window !== 'undefined' && 'Notification' in window && firebaseConfig.apiKey) {
+    messaging = getMessaging(app);
+  }
+} catch (e) {
+  console.error("Firebase Messaging not supported", e);
+}
 
 export const requestForToken = async () => {
   try {
-    if (!messaging) {
-      await initMessaging();
-    }
-
-    if (typeof window === 'undefined' || !('Notification' in window)) return null;
-
     const permission = await Notification.requestPermission();
     if (permission === "granted" && messaging) {
       const token = await getToken(messaging, {
@@ -55,18 +40,12 @@ export const requestForToken = async () => {
   return null;
 };
 
-export const onMessageListener = async () => {
-  // Wait a bit for initialization if it's still null
-  if (!messaging) {
-    await initMessaging();
-  }
-  
-  return new Promise((resolve) => {
+export const onMessageListener = () =>
+  new Promise((resolve) => {
     if (!messaging) return;
     onMessage(messaging, (payload) => {
       resolve(payload);
     });
   });
-};
 
 export default app;

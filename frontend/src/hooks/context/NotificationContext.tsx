@@ -39,12 +39,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [user]);
 
   useEffect(() => {
-    onMessageListener()
-      .then((payload: any) => {
-        setNotification(payload);
-        showToast(`${payload.notification.title}: ${payload.notification.body}`, 'info');
-      })
-      .catch((err) => console.log('failed: ', err));
+    const listener = onMessageListener();
+    if (listener) {
+      listener
+        .then((payload: any) => {
+          setNotification(payload);
+          showToast(`${payload.notification.title}: ${payload.notification.body}`, 'info');
+        })
+        .catch((err) => console.log('Listener failed: ', err));
+    }
   }, []);
 
   return (
