@@ -42,7 +42,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     onMessageListener()
       .then((payload: any) => {
         setNotification(payload);
-        showToast(payload.notification.title, payload.notification.body, 'info');
+        showToast(`${payload.notification.title}: ${payload.notification.body}`, 'info');
       })
       .catch((err) => console.log('failed: ', err));
   }, []);
