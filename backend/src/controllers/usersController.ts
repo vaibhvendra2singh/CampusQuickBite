@@ -402,24 +402,29 @@ export const nukeDatabase = async (req: AuthRequest, res: Response): Promise<voi
             return;
         }
 
-        // Proceed with Wipe
-        const results = await Promise.all([
-            supabase.from('cart_items').delete().neq('id', 0),
-            supabase.from('order_items').delete().neq('id', 0),
-            supabase.from('orders').delete().neq('id', 0),
-            supabase.from('transactions').delete().neq('id', 0),
-            supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).eq('role', 'student'),
-            supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin')
-        ]);
+        // Sequential Wipe to satisfy Foreign Key Constraints
+        const tablesToClear = ['audit_logs', 'transactions', 'owner_order_history', 'order_items', 'orders', 'ratings', 'cart_items', 'menu_items', 'outlets', 'announcements'];
+        
+        for (const table of tablesToClear) {
+            const { error } = await supabase.from(table).delete().not('id', 'is', null);
+            if (error) {
+                console.warn(`[NUKE] Warning: Skipping ${table} - ${error.message}`);
+            }
+        }
 
-        const anyError = results.some(r => r.error);
-        if (anyError) {
-            console.error('[NUKE_ERROR] Database wipe failed:', results);
-            res.status(500).json({ error: 'Database wipe critical error' });
+        // Reset User statistics
+        const { error: userError } = await supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).neq('role', 'admin');
+        const { error: resetErr } = await supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin');
+
+
+        if (userError || resetErr) {
+            console.error('[NUKE_ERROR] User reset failed:', { userError, resetErr });
+            res.status(500).json({ error: 'Database wipe critical error', details: 'Failed to reset user stats' });
             return;
         }
 
         res.status(200).json({ message: 'DATABASE SUCCESSFULLY PURGED' });
+
     } catch (error) {
         console.error('Nuke database error:', error);
         res.status(500).json({ error: 'Internal Server Error' });
