@@ -354,7 +354,19 @@ export const resetAllStudentXP = async (req: AuthRequest, res: Response): Promis
 
         const { error } = await supabase
             .from('users')
-            .update({ xp: 0, tier: 'BRONZE' })
+            .update({ 
+                xp: 0, 
+                tier: 'BRONZE',
+                has_shadow_badge: false,
+                has_caffeine_badge: false,
+                has_glutton_badge: false,
+                has_night_owl_badge: false,
+                has_arcade_badge: false,
+                has_explorer_badge: false,
+                has_pro_gamer_badge: false,
+                has_completionist_badge: false,
+                has_hacker_badge: false
+            })
             .eq('role', 'student');
 
         if (error) {
@@ -413,7 +425,19 @@ export const nukeDatabase = async (req: AuthRequest, res: Response): Promise<voi
         }
 
         // Reset User statistics
-        const { error: userError } = await supabase.from('users').update({ xp: 0, tier: 'BRONZE' }).neq('role', 'admin');
+        const { error: userError } = await supabase.from('users').update({ 
+            xp: 0, 
+            tier: 'BRONZE',
+            has_shadow_badge: false,
+            has_caffeine_badge: false,
+            has_glutton_badge: false,
+            has_night_owl_badge: false,
+            has_arcade_badge: false,
+            has_explorer_badge: false,
+            has_pro_gamer_badge: false,
+            has_completionist_badge: false,
+            has_hacker_badge: false
+        }).neq('role', 'admin');
         const { error: resetErr } = await supabase.from('users').update({ admin_insights_reset_at: null }).eq('role', 'admin');
 
 
