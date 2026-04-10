@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { requestForToken, onMessageListener } from '../../firebase/config';
 import { useAuth } from './AuthContext';
-import axios from 'axios';
+import api from '../../services/api';
 import { useToast } from './ToastContext';
 
 interface NotificationContextType {
@@ -24,9 +24,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (token) {
           setFcmToken(token);
           try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/push/register-fcm`, { token }, {
-              withCredentials: true
-            });
+            await api.post(`/push/register-fcm`, { token });
             console.log('FCM token registered with backend');
           } catch (error) {
             console.error('Failed to register FCM token with backend', error);

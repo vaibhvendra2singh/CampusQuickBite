@@ -3,7 +3,10 @@ import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../hooks/context/AuthContext';
 import { useToast } from '../hooks/context/ToastContext';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5001' : `http://${window.location.host}`);
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 
+    (window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001' 
+        : `${window.location.protocol}//${window.location.host}`);
 
 export const useSocket = () => {
     const { user, isAuthenticated, updateUser } = useAuth();
@@ -12,7 +15,11 @@ export const useSocket = () => {
 
     useEffect(() => {
         if (isAuthenticated && user) {
-            const newSocket = io(SOCKET_URL);
+            const newSocket = io(SOCKET_URL, {
+                transports: ['polling', 'websocket'],
+                reconnection: true,
+                reconnectionDelay: 1000,
+            });
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setSocket(newSocket);
 
