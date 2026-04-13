@@ -24,7 +24,7 @@ export const registerSchema = z.object({
     email: emailSchema,
     password: z.string().min(6),
     name: sanitizedString(2, 100),
-    role: z.string().optional().transform(v => v?.toLowerCase()).pipe(z.enum(['student', 'owner', 'admin']).optional()),
+    role: z.string().optional().transform(v => v?.toLowerCase()).pipe(z.enum(['student', 'owner', 'shop_owner', 'admin']).optional()),
     enrollmentNumber: z.string().min(5).max(20).optional(),
 });
 

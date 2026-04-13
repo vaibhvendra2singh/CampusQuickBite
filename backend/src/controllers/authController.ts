@@ -20,13 +20,20 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         const { name, password, role, enrollmentNumber } = req.body;
         const email = req.body.email?.toLowerCase();
 
-
         if (!name || !email || !password) {
             res.status(400).json({ error: 'All fields are required' });
             return;
         }
 
-        const normalizedRole = ROLES.STUDENT;
+        // Normalize incoming role: support 'SHOP_OWNER', 'owner', 'admin', 'STUDENT', 'student'
+        const normalizeIncomingRole = (r?: string): typeof ROLES[keyof typeof ROLES] => {
+            if (!r) return ROLES.STUDENT;
+            const lower = r.toLowerCase();
+            if (lower === 'shop_owner' || lower === 'owner') return ROLES.OWNER;
+            if (lower === 'admin') return ROLES.ADMIN;
+            return ROLES.STUDENT;
+        };
+        const normalizedRole = normalizeIncomingRole(role);
 
         const { data: existingUser, error: checkError } = await supabase.from('users').select('id').eq('email', email).single();
 
@@ -43,8 +50,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         const hashedPassword = await bcrypt.hash(password, 12); 
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
+        // Shop owners and admins are pre-verified (no OTP needed)
+        const isOwnerOrAdmin = normalizedRole === ROLES.OWNER || normalizedRole === ROLES.ADMIN;
+        const otp = isOwnerOrAdmin ? null : Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = isOwnerOrAdmin ? null : new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
 
         const { data: dbUser, error: dbError } = await supabase
             .from('users')
@@ -56,7 +65,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
                 enrollment_number: enrollmentNumber,
                 email_verification_token: otp,
                 email_verification_expiry: otpExpiry,
-                is_email_verified: false 
+                is_email_verified: isOwnerOrAdmin // owners/admins are pre-verified
             }])
             .select()
             .single();
@@ -67,17 +76,27 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        logger.info(`User registered, awaiting verification: ${email}`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
+        logger.info(`User registered: ${email} (role: ${normalizedRole}, verified: ${isOwnerOrAdmin})`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
 
-        sendSignupOTPEmail(email, otp).catch(err => {
-            logger.error(`Failed to send signup OTP to ${email}:`, err);
-        });
+        if (!isOwnerOrAdmin && otp) {
+            sendSignupOTPEmail(email, otp).catch(err => {
+                logger.error(`Failed to send signup OTP to ${email}:`, err);
+            });
+        }
 
-        res.status(201).json({
-            message: 'Registration successful! Please check your email for the verification code.',
-            requiresVerification: true,
-            email: email
-        });
+        if (isOwnerOrAdmin) {
+            res.status(201).json({
+                message: 'Account created successfully! You can now log in.',
+                requiresVerification: false,
+                email: email
+            });
+        } else {
+            res.status(201).json({
+                message: 'Registration successful! Please check your email for the verification code.',
+                requiresVerification: true,
+                email: email
+            });
+        }
     } catch (error) {
         logger.error(`Registration critical error:`, { error, ip: req.ip });
         res.status(500).json({ error: 'Internal Server Error' });
@@ -113,7 +132,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        if (profileData.is_email_verified === false) {
+        // Only students must verify their email. Owners/admins are provisioned by admin and skip verification.
+        const userRole = profileData.role as string;
+        const requiresVerification = userRole !== ROLES.OWNER && userRole !== ROLES.ADMIN;
+        if (requiresVerification && profileData.is_email_verified === false) {
              logger.warn(`Login failed: Email not verified - ${email}`, { ip: req.ip });
             sendError(res, 'ACCOUNT_NOT_VERIFIED', 401);
             return;

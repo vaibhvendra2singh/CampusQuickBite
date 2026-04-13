@@ -83,7 +83,8 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
                 name: ownerName,
                 email: ownerEmail,
                 password: hashedPassword,
-                role: 'owner'
+                role: 'owner',
+                is_email_verified: true // Admin-created owners don't need email verification
             }])
             .select()
             .single();

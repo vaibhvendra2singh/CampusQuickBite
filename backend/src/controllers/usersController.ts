@@ -270,7 +270,8 @@ export const getUserById = async (req: AuthRequest, res: Response): Promise<void
         const authenticatedUserId = req.user?.id;
         const authenticatedUserRole = req.user?.role;
 
-        if (authenticatedUserRole !== 'admin' && String(id) !== String(authenticatedUserId)) {
+        // JWT payload stores display roles ('ADMIN','SHOP_OWNER'), normalizeRole handles both formats
+        if (normalizeRole(authenticatedUserRole) !== ROLES.ADMIN && String(id) !== String(authenticatedUserId)) {
             res.status(403).json({ error: 'Forbidden: You can only view your own profile' });
             return;
         }
