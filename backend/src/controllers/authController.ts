@@ -17,7 +17,7 @@ const getJwtSecret = () => {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { name, password, role, enrollmentNumber } = req.body;
+        const { name, password, role, enrollmentNumber, shopName, shopLocation } = req.body;
         const email = req.body.email?.toLowerCase();
 
         if (!name || !email || !password) {
@@ -34,6 +34,12 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             return ROLES.STUDENT;
         };
         const normalizedRole = normalizeIncomingRole(role);
+
+        // Shop owners must provide a shop name
+        if (normalizedRole === ROLES.OWNER && !shopName) {
+            res.status(400).json({ error: 'Shop name is required for shop owner registration' });
+            return;
+        }
 
         const { data: existingUser, error: checkError } = await supabase.from('users').select('id').eq('email', email).single();
 
@@ -53,7 +59,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         // Shop owners and admins are pre-verified (no OTP needed)
         const isOwnerOrAdmin = normalizedRole === ROLES.OWNER || normalizedRole === ROLES.ADMIN;
         const otp = isOwnerOrAdmin ? null : Math.floor(100000 + Math.random() * 900000).toString();
-        const otpExpiry = isOwnerOrAdmin ? null : new Date(Date.now() + 10 * 60000).toISOString(); // 10 minutes
+        const otpExpiry = isOwnerOrAdmin ? null : new Date(Date.now() + 10 * 60000).toISOString();
 
         const { data: dbUser, error: dbError } = await supabase
             .from('users')
@@ -78,6 +84,26 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         logger.info(`User registered: ${email} (role: ${normalizedRole}, verified: ${isOwnerOrAdmin})`, { userId: dbUser.id, role: normalizedRole, ip: req.ip });
 
+        // ── Auto-create outlet for self-registering shop owners ─────────────────
+        if (normalizedRole === ROLES.OWNER && shopName) {
+            const { error: outletError } = await supabase
+                .from('outlets')
+                .insert([{
+                    name: shopName.trim(),
+                    location: shopLocation?.trim() || 'Campus',
+                    owner_id: dbUser.id,
+                    is_open: false
+                }]);
+
+            if (outletError) {
+                // Non-blocking: user account is created; outlet can be set up later
+                logger.warn(`[REGISTER] Outlet creation failed for new owner ${email}: ${outletError.message}`);
+            } else {
+                logger.info(`[REGISTER] Outlet "${shopName}" created and linked to owner ${email}`, { userId: dbUser.id });
+            }
+        }
+        // ────────────────────────────────────────────────────────────────────────
+
         if (!isOwnerOrAdmin && otp) {
             sendSignupOTPEmail(email, otp).catch(err => {
                 logger.error(`Failed to send signup OTP to ${email}:`, err);
@@ -86,7 +112,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
         if (isOwnerOrAdmin) {
             res.status(201).json({
-                message: 'Account created successfully! You can now log in.',
+                message: normalizedRole === ROLES.OWNER
+                    ? `Account and shop "${shopName}" created! You can now log in.`
+                    : 'Account created successfully! You can now log in.',
                 requiresVerification: false,
                 email: email
             });
@@ -102,6 +130,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
 
 export const login = async (req: Request, res: Response): Promise<void> => {
     try {

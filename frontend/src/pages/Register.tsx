@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../hooks/context/AuthContext';
-import { FiMail, FiLock, FiUser, FiArrowRight, FiHash } from 'react-icons/fi';
+import { FiMail, FiLock, FiUser, FiArrowRight, FiHash, FiMapPin, FiShoppingBag } from 'react-icons/fi';
 import { FadeIn } from '../components/animations/FadeIn';
 
 const ENROLLMENT_REGEX = /^[a-zA-Z0-9]{8,12}$/;
@@ -28,6 +28,9 @@ const Register = () => {
     const [enrollmentNumber, setEnrollmentNumber] = useState('');
     const [enrollmentError, setEnrollmentError] = useState('');
     const [touched, setTouched] = useState<FieldTouched>({ enrollmentNumber: false });
+    const [shopName, setShopName] = useState('');
+    const [shopLocation, setShopLocation] = useState('');
+    const [shopNameError, setShopNameError] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [step, setStep] = useState(1); // 1 = Registration, 2 = OTP
@@ -50,12 +53,14 @@ const Register = () => {
     }, [enrollmentNumber]);
 
     const isStudent = role === 'STUDENT';
+    const isShopOwner = role === 'SHOP_OWNER';
 
     const isFormValid = useMemo(() => {
         if (!name || !email || password.length < 6) return false;
         if (isStudent && !!validateEnrollment(enrollmentNumber)) return false;
+        if (isShopOwner && !shopName.trim()) return false;
         return true;
-    }, [name, email, password, isStudent, enrollmentNumber]);
+    }, [name, email, password, isStudent, isShopOwner, enrollmentNumber, shopName]);
 
     const handleSubmit = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -67,26 +72,50 @@ const Register = () => {
             if (enrErr) return;
         }
 
+        if (isShopOwner) {
+            if (!shopName.trim()) {
+                setShopNameError('Shop name is required.');
+                return;
+            }
+            setShopNameError('');
+        }
+
         setError('');
         setIsLoading(true);
 
         try {
             const payload: Record<string, string> = { name, email, password, role };
             if (isStudent) payload.enrollmentNumber = enrollmentNumber.trim();
+            if (isShopOwner) {
+                payload.shopName = shopName.trim();
+                if (shopLocation.trim()) payload.shopLocation = shopLocation.trim();
+            }
 
             const response = await api.post('/auth/register', payload);
 
-            if (response.data.requiresVerification) {
-                setMessage(response.data.message);
+            // The api interceptor unwraps { success, data } responses.
+            // The register endpoint returns bare { message, requiresVerification, email },
+            // so we check both response.data and the raw response.data directly.
+            const responseData = response.data;
+            if (responseData?.requiresVerification) {
+                setMessage(responseData.message);
                 setStep(2);
             } else {
                 // Shop owners / admins: account is immediately active, redirect to login
-                setMessage(response.data.message || 'Account created! You can now log in.');
+                setMessage(responseData?.message || 'Account created! You can now log in.');
                 setTimeout(() => navigate('/login'), 2000);
             }
         } catch (err: any) {
+            console.error('[Register] Error:', err.response?.data || err.message);
             if (err.response?.data?.error) {
                 setError(err.response.data.error);
+            } else if (err.response?.data?.details) {
+                // Zod validation error details from backend
+                const details = err.response.data.details;
+                const msgs = Array.isArray(details)
+                    ? details.map((d: any) => d.message).join(', ')
+                    : JSON.stringify(details);
+                setError(msgs || 'Validation failed. Please check your inputs.');
             } else if (err.response?.data) {
                 const msgs = Object.values(err.response.data).join(', ');
                 setError(msgs || 'Registration failed. Please try again.');
@@ -96,7 +125,7 @@ const Register = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [name, email, password, role, enrollmentNumber, isStudent, login, navigate]);
+    }, [name, email, password, role, enrollmentNumber, shopName, shopLocation, isStudent, isShopOwner, login, navigate]);
 
     const handleVerifyOtp = useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
@@ -139,6 +168,11 @@ const Register = () => {
             setEnrollmentNumber('');
             setEnrollmentError('');
             setTouched({ enrollmentNumber: false });
+        }
+        if (newRole !== 'SHOP_OWNER') {
+            setShopName('');
+            setShopLocation('');
+            setShopNameError('');
         }
     }, []);
 
@@ -282,6 +316,54 @@ const Register = () => {
                                                 </button>
                                             </div>
                                         </div>
+
+                                        {isShopOwner && (
+                                            <>
+                                                <div>
+                                                    <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">
+                                                        Shop Name
+                                                        <span className="ml-1 text-red-500">*</span>
+                                                    </label>
+                                                    <div className="relative">
+                                                        <FiShoppingBag className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] h-4 w-4" />
+                                                        <input
+                                                            id="register-shop-name"
+                                                            type="text"
+                                                            maxLength={100}
+                                                            className={inputClass(!!shopNameError)}
+                                                            placeholder="e.g. Campus Café"
+                                                            value={shopName}
+                                                            onChange={(e) => { setShopName(e.target.value); if (shopNameError) setShopNameError(''); }}
+                                                            onBlur={() => { if (!shopName.trim()) setShopNameError('Shop name is required.'); }}
+                                                            aria-invalid={!!shopNameError}
+                                                        />
+                                                    </div>
+                                                    {shopNameError && (
+                                                        <p role="alert" className="mt-1.5 text-xs font-medium text-red-500 flex items-center gap-1">
+                                                            <svg className="h-3.5 w-3.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
+                                                            {shopNameError}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm font-medium text-[var(--text-secondary)] block mb-1.5">
+                                                        Shop Location <span className="text-xs text-[var(--text-muted)]">(optional)</span>
+                                                    </label>
+                                                    <div className="relative">
+                                                        <FiMapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] h-4 w-4" />
+                                                        <input
+                                                            id="register-shop-location"
+                                                            type="text"
+                                                            maxLength={200}
+                                                            className={inputClass(false)}
+                                                            placeholder="e.g. Block A, Ground Floor"
+                                                            value={shopLocation}
+                                                            onChange={(e) => setShopLocation(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
 
                                         {isStudent && (
                                             <div>
