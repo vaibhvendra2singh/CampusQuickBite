@@ -4,13 +4,18 @@ importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compa
 // Initialize the Firebase app in the service worker by passing in
 // your app's Firebase config object.
 // https://firebase.google.com/docs/web/setup#config-object
+//
+// NOTE: The __PLACEHOLDER__ tokens below are replaced at build-time by the
+// Vite `inject-sw-env` plugin defined in vite.config.ts.  They are populated
+// from the VITE_FIREBASE_* environment variables in your .env file.
+// Never commit real secrets here — store them in .env (which is .gitignored).
 firebase.initializeApp({
-  apiKey: "REDACTED_FIREBASE_API_KEY",
-  authDomain: "REDACTED_PROJECT_ID.firebaseapp.com",
-  projectId: "REDACTED_PROJECT_ID",
-  storageBucket: "REDACTED_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "REDACTED_SENDER_ID",
-  appId: "REDACTED_FIREBASE_APP_ID"
+  apiKey: "__VITE_FIREBASE_API_KEY__",
+  authDomain: "__VITE_FIREBASE_AUTH_DOMAIN__",
+  projectId: "__VITE_FIREBASE_PROJECT_ID__",
+  storageBucket: "__VITE_FIREBASE_STORAGE_BUCKET__",
+  messagingSenderId: "__VITE_FIREBASE_MESSAGING_SENDER_ID__",
+  appId: "__VITE_FIREBASE_APP_ID__"
 });
 
 // Retrieve an instance of Firebase Messaging so that it can handle background

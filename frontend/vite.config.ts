@@ -1,11 +1,60 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import fs from 'node:fs'
+import path from 'node:path'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  // Load env vars for the current mode (development / production)
+  const env = loadEnv(mode, process.cwd(), '');
+
+  /**
+   * inject-sw-env
+   * Replaces __PLACEHOLDER__ tokens in public/firebase-messaging-sw.js with
+   * real env var values so secrets never need to be hardcoded in that file.
+   *
+   *  - Dev:   intercepts the /firebase-messaging-sw.js request via middleware
+   *  - Build: post-processes dist/firebase-messaging-sw.js in closeBundle hook
+   */
+  const swTemplate = path.resolve(__dirname, 'public/firebase-messaging-sw.js');
+
+  const injectSwEnv = {
+    name: 'inject-sw-env',
+    configureServer(server: any) {
+      server.middlewares.use((req: any, res: any, next: any) => {
+        if (req.url !== '/firebase-messaging-sw.js') return next();
+        const content = fs.readFileSync(swTemplate, 'utf-8')
+          .replaceAll('__VITE_FIREBASE_API_KEY__',            env.VITE_FIREBASE_API_KEY            ?? '')
+          .replaceAll('__VITE_FIREBASE_AUTH_DOMAIN__',        env.VITE_FIREBASE_AUTH_DOMAIN        ?? '')
+          .replaceAll('__VITE_FIREBASE_PROJECT_ID__',         env.VITE_FIREBASE_PROJECT_ID         ?? '')
+          .replaceAll('__VITE_FIREBASE_STORAGE_BUCKET__',     env.VITE_FIREBASE_STORAGE_BUCKET     ?? '')
+          .replaceAll('__VITE_FIREBASE_MESSAGING_SENDER_ID__', env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '')
+          .replaceAll('__VITE_FIREBASE_APP_ID__',             env.VITE_FIREBASE_APP_ID             ?? '');
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Service-Worker-Allowed', '/');
+        res.end(content);
+      });
+    },
+    closeBundle() {
+      const distSw = path.resolve(__dirname, 'dist/firebase-messaging-sw.js');
+      if (!fs.existsSync(distSw)) return;
+      const content = fs.readFileSync(distSw, 'utf-8')
+        .replaceAll('__VITE_FIREBASE_API_KEY__',            env.VITE_FIREBASE_API_KEY            ?? '')
+        .replaceAll('__VITE_FIREBASE_AUTH_DOMAIN__',        env.VITE_FIREBASE_AUTH_DOMAIN        ?? '')
+        .replaceAll('__VITE_FIREBASE_PROJECT_ID__',         env.VITE_FIREBASE_PROJECT_ID         ?? '')
+        .replaceAll('__VITE_FIREBASE_STORAGE_BUCKET__',     env.VITE_FIREBASE_STORAGE_BUCKET     ?? '')
+        .replaceAll('__VITE_FIREBASE_MESSAGING_SENDER_ID__', env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? '')
+        .replaceAll('__VITE_FIREBASE_APP_ID__',             env.VITE_FIREBASE_APP_ID             ?? '');
+      fs.writeFileSync(distSw, content);
+      console.log('[inject-sw-env] Firebase config injected into dist/firebase-messaging-sw.js ✓');
+    },
+  };
+
+  return {
   plugins: [
+    injectSwEnv,
     tailwindcss(),
     react(),
     VitePWA({
@@ -78,6 +127,5 @@ export default defineConfig({
           changeOrigin: true,
         }
     }
-  }
-})
-
+  };
+});
