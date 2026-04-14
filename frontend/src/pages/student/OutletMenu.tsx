@@ -90,26 +90,39 @@ const OutletMenu = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            // Set loading state
+            setIsLoading(true);
+            
             try {
-                const [menuRes, outletRes, recsRes] = await Promise.all([
-                    api.get(`/menu/${outletId}`),
-                    api.get(`/outlets/${outletId}`),
-                    user ? api.get('/analytics/recommendations/personal').catch(() => ({ data: [] })) : Promise.resolve({ data: [] })
-                ]);
-
+                // 1. Load Menu Items (Primary Priority)
+                const menuRes = await api.get(`/menu/${outletId}`);
                 setMenuItems(menuRes.data);
-                setOutlet(outletRes.data);
 
-                if (user && recsRes.data.length > 0) {
-                    const outletItemsMap = new Map(menuRes.data.map((i: MenuItem) => [i.id, i]));
-                    const mappedRecs = recsRes.data
-                        .map((r: { id: number }) => outletItemsMap.get(r.id))
-                        .filter(Boolean);
-                    setPersonalRecs(mappedRecs as MenuItem[]);
+                // 2. Load Outlet Info (Secondary)
+                const outletRes = await api.get(`/outlets/${outletId}`).catch(err => {
+                    console.error("Outlet info fetch failed", err);
+                    return null;
+                });
+                if (outletRes) setOutlet(outletRes.data);
+
+                // 3. Load Recommendations (Low Priority - Non-blocking)
+                if (user) {
+                    api.get('/analytics/recommendations/personal')
+                        .then(recsRes => {
+                            if (recsRes.data.length > 0) {
+                                const outletItemsMap = new Map(menuRes.data.map((i: MenuItem) => [i.id, i]));
+                                const mappedRecs = recsRes.data
+                                    .map((r: { id: number }) => outletItemsMap.get(r.id))
+                                    .filter(Boolean);
+                                setPersonalRecs(mappedRecs as MenuItem[]);
+                            }
+                        })
+                        .catch(err => console.debug("Recommendation fetch ignored", err));
                 }
 
             } catch (error) {
-                console.error("Failed to fetch menu data", error);
+                console.error("Critical: Failed to fetch menu data", error);
+                showToast("Failed to load menu. Please check your connection.", "error");
             } finally {
                 setIsLoading(false);
             }

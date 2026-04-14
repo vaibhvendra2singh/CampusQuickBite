@@ -33,20 +33,31 @@ const createRedisClient = (): Redis | null => {
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
-        logger.warn('[Cache] REDIS_URL not set — caching is DISABLED. Set REDIS_URL to enable.');
+        logger.warn('[Cache] REDIS_URL not set — caching is DISABLED.');
         return null;
     }
 
     try {
         const client = new RedisClient(redisUrl, {
-            maxRetriesPerRequest: 1, // Don't retry endlessly
-            connectTimeout: 500,     // 500ms instead of 5s
-            lazyConnect: true,
+            maxRetriesPerRequest: 0, // Fail immediately if a request can't be processed
+            connectTimeout: 500,     // Wait only 500ms to connect
+            enableOfflineQueue: false, // Don't queue commands when Redis is down
+            retryStrategy: (times) => {
+                // Circuit Breaker: If we've failed more than 3 times, stop retrying for 5 minutes
+                if (times > 3) {
+                    logger.error('[Cache] Redis Circuit Breaker triggered. Disabling cache for 5 minutes.');
+                    return null; // Stop retrying
+                }
+                return Math.min(times * 100, 2000); // Gradual backoff
+            }
         });
 
         client.on('connect', () => logger.info('[Cache] Redis connected ✓'));
-        client.on('error', (err) => logger.error('[Cache] Redis error:', { message: err.message }));
-        client.on('close', () => logger.warn('[Cache] Redis connection closed'));
+        client.on('error', (err) => {
+            // Log briefly but don't crash
+            logger.debug('[Cache] Redis unstable state detected.');
+        });
+        client.on('close', () => logger.warn('[Cache] Redis connection closed. Falling back to DB.'));
 
         return client;
     } catch (err) {
@@ -70,6 +81,20 @@ const getClient = (): Redis | null => {
 
 
 /**
+ * Helper to wrap any async call in a timeout.
+ * Ensures we don't block the request if Redis is hanging.
+ */
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 400): Promise<T | null> => {
+    return Promise.race([
+        promise,
+        new Promise<null>((_, reject) => setTimeout(() => reject(new Error('Redis Timeout')), timeoutMs))
+    ]).catch((err) => {
+        logger.error('[Cache] Redis Operation Failed/Timed out:', err.message);
+        return null;
+    });
+};
+
+/**
  * Get a cached value. Returns `null` on miss or error.
  */
 export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
@@ -77,7 +102,7 @@ export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
     if (!client) return null;
 
     try {
-        const value = await client.get(key);
+        const value = await withTimeout(client.get(key));
         if (!value) return null;
         return JSON.parse(value) as T;
     } catch (err) {
@@ -88,16 +113,13 @@ export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
 
 /**
  * Set a cached value with an optional TTL.
- * @param key Cache key
- * @param value Serializable JS value
- * @param ttlSeconds TTL in seconds (default: 5 minutes)
  */
 export const cacheSet = async (key: string, value: any, ttlSeconds: number = CACHE_TTL.MENU): Promise<void> => {
     const client = getClient();
     if (!client) return;
 
     try {
-        await client.set(key, JSON.stringify(value), 'EX', ttlSeconds);
+        await withTimeout(client.set(key, JSON.stringify(value), 'EX', ttlSeconds));
     } catch (err) {
         logger.error(`[Cache] SET failed for key "${key}":`, err);
     }
@@ -111,7 +133,7 @@ export const cacheDel = async (...keys: string[]): Promise<void> => {
     if (!client) return;
 
     try {
-        await client.del(...keys);
+        await withTimeout(client.del(...keys));
         logger.info(`[Cache] Invalidated keys: ${keys.join(', ')}`);
     } catch (err) {
         logger.error(`[Cache] DEL failed for keys "${keys.join(', ')}":`, err);
@@ -120,7 +142,6 @@ export const cacheDel = async (...keys: string[]): Promise<void> => {
 
 /**
  * Delete all keys matching a pattern (e.g. "menu:outlet:*").
- * Use sparingly — SCAN is O(n) on keyspace.
  */
 export const cacheDelPattern = async (pattern: string): Promise<void> => {
     const client = getClient();
@@ -129,10 +150,10 @@ export const cacheDelPattern = async (pattern: string): Promise<void> => {
     try {
         let cursor = '0';
         do {
-            const [nextCursor, keys] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+            const [nextCursor, keys] = await withTimeout(client.scan(cursor, 'MATCH', pattern, 'COUNT', 100)) as any || ['0', []];
             cursor = nextCursor;
-            if (keys.length > 0) {
-                await client.del(...keys);
+            if (keys && keys.length > 0) {
+                await withTimeout(client.del(...keys));
                 logger.info(`[Cache] Invalidated ${keys.length} keys matching "${pattern}"`);
             }
         } while (cursor !== '0');
