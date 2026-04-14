@@ -6,11 +6,13 @@ build/
 
 # Environment Variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+.env.*
+!.env.example
+*.pem
+*.key
+certs/*.key
+backend/credentials_log.txt
+credentials_log.txt
 # IDEs
 .vscode/
 .idea/

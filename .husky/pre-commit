@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+
+# Ensure color output is clear
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
+# Ensure common paths are included (especially for Mac Homebrew)
+export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+echo "🔍 [DevSecOps] Starting Pre-commit Secret Scan..."
+
+# Check if Gitleaks is installed
+if ! command -v gitleaks > /dev/null 2>&1; then
+    echo "${YELLOW}⚠️  WARNING: gitleaks is not installed locally.${NC}"
+    echo "To maintain security standards, please install gitleaks:"
+    echo "  - macOS: brew install gitleaks"
+    echo "  - docker: docker pull zricethezav/gitleaks"
+    
+    if command -v docker > /dev/null 2>&1; then
+        echo "🐳 Docker found. Running gitleaks via Docker..."
+        # Run gitleaks docker image to scan staged files
+        docker run --rm -v $(pwd):/path zricethezav/gitleaks:latest protect -v --staged --source="/path"
+        SCAN_RESULT=$?
+    else
+        echo "${RED}❌ ERROR: Neither gitleaks nor Docker are available.${NC}"
+        echo "${RED}Commit blocked. Please install gitleaks to proceed.${NC}"
+        exit 1
+    fi
+else
+    echo "🚀 Running local gitleaks..."
+    gitleaks protect -v --staged
+    SCAN_RESULT=$?
+fi
+
+# Evaluate scan result
+if [ $SCAN_RESULT -eq 0 ]; then
+    echo "${GREEN}✅ No secrets detected. Clean to commit!${NC}"
+    exit 0
+else
+    echo "${RED}🚨🚨 LEAK DETECTED 🚨🚨${NC}"
+    echo "${RED}Commit rejected to prevent sensitive data exposure.${NC}"
+    echo "${YELLOW}Please remove the sensitive data from your staged files.${NC}"
+    echo "${YELLOW}If this is a false positive, use #gitleaks:allow inline comment.${NC}"
+    exit 1
+fi
