@@ -401,48 +401,54 @@ const FullScreenLoader = () => (
 const useCyberAudioLogic = (user: User | null, updateUser: (u: User) => void, showToast: (m: string, s: 'success' | 'error' | 'info') => void) => {
     const isAwarding = React.useRef(false);
 
-    useEffect(() => {
-        let audioCtx: AudioContext | null = null;
-        let isPlaying = false;
-        let interval: ReturnType<typeof setInterval> | null = null;
-        let masterGain: GainNode | null = null;
+    // BUG-008 FIX: Store the audio engine state in refs so it survives across
+    // effect re-runs. When [user] changes and the effect re-runs, the cleanup
+    // function will tear down the existing interval/AudioContext before a new
+    // MutationObserver is attached — preventing stacked audio chains and GainNode leaks.
+    const audioCtxRef = React.useRef<AudioContext | null>(null);
+    const masterGainRef = React.useRef<GainNode | null>(null);
+    const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+    const isPlayingRef = React.useRef(false);
 
+    useEffect(() => {
         const playCyberpunkTheme = () => {
-            if (isPlaying) return;
-            isPlaying = true;
-            
+            if (isPlayingRef.current) return;
+            isPlayingRef.current = true;
+
             try {
-                audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                masterGain = audioCtx.createGain();
-                masterGain.gain.value = 0.15; // keep it subtle
-                masterGain.connect(audioCtx.destination);
-                
+                audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                masterGainRef.current = audioCtxRef.current.createGain();
+                masterGainRef.current.gain.value = 0.15;
+                masterGainRef.current.connect(audioCtxRef.current.destination);
+
                 // Arpeggio notes: E2, B2, E3, G3
-                const baseFreqs = [82.41, 123.47, 164.81, 196.00]; 
+                const baseFreqs = [82.41, 123.47, 164.81, 196.00];
                 let step = 0;
-                
-                interval = setInterval(() => {
-                    if (!audioCtx || !masterGain) return;
-                    
-                    const osc = audioCtx.createOscillator();
-                    osc.type = 'sawtooth'; 
-                    
+
+                intervalRef.current = setInterval(() => {
+                    const ctx = audioCtxRef.current;
+                    const gain = masterGainRef.current;
+                    if (!ctx || !gain) return;
+
+                    const osc = ctx.createOscillator();
+                    osc.type = 'sawtooth';
+
                     const octaveMult = (step % 8 === 7) ? 2 : 1;
                     const detune = 1 + (Math.random() * 0.01 - 0.005);
                     const freq = baseFreqs[step % baseFreqs.length] * octaveMult * detune;
-                    
-                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                    
-                    const env = audioCtx.createGain();
-                    env.connect(masterGain);
+
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+                    const env = ctx.createGain();
+                    env.connect(gain);
                     osc.connect(env);
-                    
-                    env.gain.setValueAtTime(0, audioCtx.currentTime);
-                    env.gain.linearRampToValueAtTime(0.8, audioCtx.currentTime + 0.02);
-                    env.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
-                    
-                    osc.start(audioCtx.currentTime);
-                    osc.stop(audioCtx.currentTime + 0.15);
+
+                    env.gain.setValueAtTime(0, ctx.currentTime);
+                    env.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.02);
+                    env.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+
+                    osc.start(ctx.currentTime);
+                    osc.stop(ctx.currentTime + 0.15);
                     step++;
                 }, 140);
             } catch (err) {
@@ -451,15 +457,25 @@ const useCyberAudioLogic = (user: User | null, updateUser: (u: User) => void, sh
         };
 
         const stopCyberpunkTheme = () => {
-            isPlaying = false;
-            if (interval) clearInterval(interval);
-            if (masterGain) {
-                masterGain.gain.exponentialRampToValueAtTime(0.01, (audioCtx?.currentTime || 0) + 0.5);
+            // Immediately clear the interval so no new oscillators are scheduled
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
             }
-            if (audioCtx) {
+            isPlayingRef.current = false;
+
+            if (masterGainRef.current && audioCtxRef.current) {
+                masterGainRef.current.gain.exponentialRampToValueAtTime(
+                    0.01,
+                    audioCtxRef.current.currentTime + 0.5
+                );
+            }
+            if (audioCtxRef.current) {
+                const ctxToClose = audioCtxRef.current;
+                audioCtxRef.current = null;
+                masterGainRef.current = null;
                 setTimeout(() => {
-                    audioCtx?.close().catch(() => {});
-                    audioCtx = null;
+                    ctxToClose.close().catch(() => {});
                 }, 500);
             }
         };
@@ -503,7 +519,7 @@ const useCyberAudioLogic = (user: User | null, updateUser: (u: User) => void, sh
         return () => {
             observer.disconnect();
             stopCyberpunkTheme();
-};
+        };
     }, [user, updateUser, showToast]);
 };
 

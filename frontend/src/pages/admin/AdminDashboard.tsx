@@ -376,8 +376,15 @@ const AdminDashboard = () => {
         if (activeTab === 'announcements') fetchAnnouncements();
         if (activeTab === 'reviews') fetchReviews();
 
+        // BUG-007 FIX: The interval only re-fetches the lightweight outlet list.
+        // Full per-outlet stats (2×N sub-requests) are NOT re-triggered every 30s;
+        // they are computed on tab switch or manual sync to prevent an N+1 DDoS pattern.
         const interval = setInterval(() => {
-            if (activeTab === 'outlets') fetchOutlets();
+            if (activeTab === 'outlets') {
+                api.get('/outlets')
+                    .then(r => { if (Array.isArray(r.data)) setOutlets(r.data); })
+                    .catch(() => {});
+            }
             if (activeTab === 'orders') fetchGlobalOrders();
         }, 30000);
 
@@ -595,16 +602,28 @@ const AdminDashboard = () => {
                                     <thead className="bg-[var(--bg-card)] border-b border-[var(--border-color)]">
                                         <tr>
                                             <th className="px-4 py-4">
-                                                <input type="checkbox"
-                                                    checked={
-                                        users.filter((u: any) => u.role !== 'admin').length > 0 &&
-                                        selectedUsers.size === users.filter((u: any) => u.role !== 'admin').length
-                                    }
-                                                    onChange={e => setSelectedUsers(
-                                        e.target.checked
-                                            ? new Set(users.filter((u: any) => u.role !== 'admin').map((u: any) => u.id))
-                                            : new Set()
-                                    )}
+                                        <input type="checkbox"
+                                                    // BUG-003 FIX: Exclude both admin accounts AND the current
+                                                    // logged-in user (self) from the selectable set, so the
+                                                    // checked state and selectedUsers.size are always in sync.
+                                                    checked={(() => {
+                                                        const selectable = users.filter(
+                                                            (u: any) => u.role !== 'admin' && u.id !== currentUser?.id
+                                                        );
+                                                        return selectable.length > 0 &&
+                                                            selectedUsers.size === selectable.length &&
+                                                            selectable.every((u: any) => selectedUsers.has(u.id));
+                                                    })()}
+                                                    onChange={e => {
+                                                        const selectable = users.filter(
+                                                            (u: any) => u.role !== 'admin' && u.id !== currentUser?.id
+                                                        );
+                                                        setSelectedUsers(
+                                                            e.target.checked
+                                                                ? new Set(selectable.map((u: any) => u.id))
+                                                                : new Set()
+                                                        );
+                                                    }}
                                                     className="w-4 h-4 accent-brand-500"
                                                 />
                                             </th>

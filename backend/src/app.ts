@@ -52,11 +52,14 @@ const allowedOrigins = (origin: string | undefined, callback: (err: Error | null
         return callback(null, true);
     }
     
-    // Also keep the regex as fallback for other IPs
-    const isLocalIP = origin.match(/^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
-    if (isLocalIP) {
-        logger.info(`[CORS] Allowing local IP: ${origin}`);
-        return callback(null, true);
+    // BUG-006 FIX: Local-IP regex is only active in non-production environments.
+    // In production, only explicit env-var origins are trusted.
+    if (process.env.NODE_ENV !== 'production') {
+        const isLocalIP = origin.match(/^https?:\/\/(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/);
+        if (isLocalIP) {
+            logger.info(`[CORS] Allowing local IP (dev only): ${origin}`);
+            return callback(null, true);
+        }
     }
 
     const frontendUrl = process.env.FRONTEND_URL?.replace(/\/$/, '');
@@ -140,10 +143,16 @@ const loginLimiter = rateLimit({
 });
 app.use('/api/auth/login', loginLimiter);
 
+// BUG-001 FIX: Key the limiter on the registrant's email (from request body),
+// falling back to IP only if email is absent. This prevents shared campus NAT
+// from blocking legitimate new users when the 3-per-hour cap is hit.
 const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour window
-    max: 3, // Only 3 registrations per hour per IP
+    max: 5, // 5 registrations per unique email per hour
+    keyGenerator: (req) => req.body?.email?.toLowerCase()?.trim() || req.ip || 'unknown',
     message: { error: 'Account creation limit reached. Please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 app.use('/api/auth/register', registerLimiter);
 

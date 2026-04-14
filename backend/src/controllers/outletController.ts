@@ -4,8 +4,9 @@ import { supabase } from '../config/supabase';
 import bcrypt from 'bcryptjs';
 import { AuthRequest } from '../middleware/auth';
 import { sendSuccess, sendError } from '../utils/response';
-import { cacheGet, cacheSet, cacheDel, CacheKey, CACHE_TTL } from '../services/cacheService';
+import { cacheGet, cacheSet, cacheDel, cacheDelPattern, CacheKey, CACHE_TTL } from '../services/cacheService';
 import { auditLog } from '../utils/auditLog';
+import logger from '../services/logger';
 
 export const getAllOutlets = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -110,6 +111,10 @@ export const createOutlet = async (req: Request, res: Response): Promise<void> =
             .single();
 
         if (outletError) {
+            // BUG-004 FIX: Roll back the orphaned owner account when outlet creation fails.
+            // Without this, stranded user records accumulate in the DB with no attached outlet.
+            logger.warn(`[createOutlet] Outlet insert failed; rolling back owner account ${newUser.id}.`);
+            await supabase.from('users').delete().eq('id', newUser.id);
             sendError(res, outletError.message, 500);
             return;
         }
@@ -249,8 +254,12 @@ export const updateOutletStatus = async (req: AuthRequest, res: Response): Promi
             return;
         }
 
-        // CLEAR CACHE - This was missing!
-        await cacheDel(CacheKey.outlets(), CacheKey.outletById(id as string));
+        // BUG-005 FIX: Use pattern-based invalidation to cover all outlet cache keys
+        // (including any future paginated or filtered keys that share the 'outlet:' prefix).
+        await Promise.all([
+            cacheDel(CacheKey.outlets()),
+            cacheDelPattern('outlet:*'),
+        ]);
 
         res.status(200).json(data);
     } catch (error) {
